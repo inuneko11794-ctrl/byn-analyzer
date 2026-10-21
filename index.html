@@ -41,10 +41,10 @@
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <button id="pwaInstallBtn" onclick="openPwaGuide()" class="hidden md:flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded-lg transition shadow">
+        <button id="pwaInstallBtn" type="button" onclick="openPwaGuide()" class="hidden md:flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded-lg transition shadow">
           <i class="fa-solid fa-mobile-screen-button"></i> ホーム追加
         </button>
-        <button onclick="loadSampleData()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 py-1.5 px-3 rounded-lg border border-slate-600 transition">
+        <button type="button" onclick="loadSampleData()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 py-1.5 px-3 rounded-lg border border-slate-600 transition">
           <i class="fa-solid fa-flask text-amber-400 me-1"></i> サンプル
         </button>
       </div>
@@ -62,7 +62,7 @@
           <p class="text-slate-300">ワンタップでいつでも起動できます</p>
         </div>
       </div>
-      <button onclick="openPwaGuide()" class="bg-indigo-500 hover:bg-indigo-400 text-white font-bold px-3 py-1.5 rounded-lg shadow whitespace-nowrap">
+      <button type="button" onclick="openPwaGuide()" class="bg-indigo-500 hover:bg-indigo-400 text-white font-bold px-3 py-1.5 rounded-lg shadow whitespace-nowrap">
         追加手順
       </button>
     </div>
@@ -126,7 +126,8 @@
           <h3 class="font-bold text-white text-base flex items-center gap-2">
             <i class="fa-solid fa-pen-to-square text-indigo-400"></i> レース・買い目登録
           </h3>
-          <button onclick="openOcrModal()" class="text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-1.5 px-3 rounded-lg shadow flex items-center gap-1.5 transition">
+          <!-- type="button" を明確に設定 -->
+          <button type="button" onclick="openOcrModal()" class="text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-1.5 px-3 rounded-lg shadow flex items-center gap-1.5 transition">
             <i class="fa-solid fa-camera"></i> 📸 スクショ一括読み込み
           </button>
         </div>
@@ -258,7 +259,7 @@
                 <option value="Y">1重: Yのみ</option>
                 <option value="N">1重: Nのみ</option>
               </select>
-              <button onclick="exportCSV()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1.5 rounded-lg border border-slate-600">
+              <button type="button" onclick="exportCSV()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-2 py-1.5 rounded-lg border border-slate-600">
                 <i class="fa-solid fa-download"></i> CSV
               </button>
             </div>
@@ -272,7 +273,7 @@
 
         <div class="mt-4 pt-3 border-t border-slate-700 flex justify-between items-center text-xs text-slate-400">
           <span>※データはブラウザに自動保存されます</span>
-          <button onclick="clearAllData()" class="text-rose-400 hover:underline">全データ削除</button>
+          <button type="button" onclick="clearAllData()" class="text-rose-400 hover:underline">全データ削除</button>
         </div>
       </div>
 
@@ -287,7 +288,7 @@
         <h3 class="font-bold text-white text-base flex items-center gap-2">
           <i class="fa-solid fa-sliders text-indigo-400"></i> 画像一括解析 ＆ サイト重複設定
         </h3>
-        <button onclick="closeOcrModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" onclick="closeOcrModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <!-- モーダルボディ -->
@@ -308,11 +309,11 @@
 
         <!-- 1日分全レースの動的重複設定テーブル -->
         <div id="batchRaceListContainer" class="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-          <!-- JSで全レース(7R, 9R, 12R等)が自動挿入されます -->
+          <!-- JSで全レースが自動挿入されます -->
         </div>
 
         <div id="batchSaveSection" class="hidden mt-4 pt-3 border-t border-slate-700 flex justify-end">
-          <button onclick="saveAllBatchRaces()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-lg transition">
+          <button type="button" onclick="saveAllBatchRaces()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-lg transition">
             <i class="fa-solid fa-cloud-arrow-up me-1.5"></i> 選択した全レースを一括保存・分析する
           </button>
         </div>
@@ -321,7 +322,7 @@
 
       <!-- モーダルフッター -->
       <div class="p-3 border-t border-slate-700 bg-slate-850 flex justify-end">
-        <button onclick="closeOcrModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs px-4 py-2 rounded-xl">閉じる</button>
+        <button type="button" onclick="closeOcrModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs px-4 py-2 rounded-xl">閉じる</button>
       </div>
     </div>
   </div>
@@ -331,7 +332,7 @@
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 text-slate-200">
       <div class="flex justify-between items-center border-b border-slate-700 pb-2">
         <h3 class="font-bold text-white text-base">📱 ホーム画面への追加方法</h3>
-        <button onclick="closePwaGuide()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" onclick="closePwaGuide()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
       
       <div class="space-y-3 text-xs leading-relaxed">
@@ -353,7 +354,7 @@
         </div>
       </div>
 
-      <button onclick="closePwaGuide()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs">
+      <button type="button" onclick="closePwaGuide()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs">
         閉じる
       </button>
     </div>
