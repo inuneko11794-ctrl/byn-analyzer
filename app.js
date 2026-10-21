@@ -3,15 +3,18 @@ window.closePwaGuide = function() { document.getElementById('pwaModal').classLis
 
 let races = [];
 let chartInstance = null;
+let canvas, ctx;
+let isDrawing = false;
 let parsedResultsMap = {}; // { 1: { combo: '5-1-6', payout: 920 }, ... }
 
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+  initCanvas();
+  addTicketRow();
   renderAll();
   const today = new Date().toISOString().split('T')[0];
-  if (document.getElementById('preRaceDate')) {
-    document.getElementById('preRaceDate').value = today;
-  }
+  if (document.getElementById('preRaceDate')) document.getElementById('preRaceDate').value = today;
+  if (document.getElementById('raceDate')) document.getElementById('raceDate').value = today;
   window.addEventListener('paste', handlePasteImage);
 });
 
@@ -51,6 +54,27 @@ function saveData() {
   renderAll();
 }
 
+// タブ切替
+function switchInputMode(mode) {
+  const btnBatch = document.getElementById('tabBtnBatch');
+  const btnSingle = document.getElementById('tabBtnSingle');
+  const secBatch = document.getElementById('modeBatchSection');
+  const secSingle = document.getElementById('modeSingleSection');
+
+  if (mode === 'batch') {
+    btnBatch.className = "px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow";
+    btnSingle.className = "px-4 py-2 text-xs font-bold rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600";
+    secBatch.classList.remove('hidden');
+    secSingle.classList.add('hidden');
+  } else {
+    btnSingle.className = "px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow";
+    btnBatch.className = "px-4 py-2 text-xs font-bold rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600";
+    secSingle.classList.remove('hidden');
+    secBatch.classList.add('hidden');
+  }
+}
+
+// 📋 STEP 1: 予想一括保存
 function savePreRaces() {
   const date = document.getElementById('preRaceDate').value;
   const venue = document.getElementById('preRaceVenue').value || '平塚';
@@ -73,6 +97,7 @@ function savePreRaces() {
         patternKey: getPatternKey(sites),
         resultCombo: '',
         payoutAmount: 0,
+        tickets: [],
         totalInvest: 100,
         totalReturn: 0,
         isHit: false,
@@ -187,7 +212,7 @@ function renderResultTable() {
 
   const rKeys = Object.keys(parsedResultsMap).sort((a, b) => parseInt(a) - parseInt(b));
   if (rKeys.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の2つの枠にそれぞれのスクショを貼ると、ここに一覧表示されます。</p>';
+    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の2つの枠にスクショを貼ると一覧表示されます。</p>';
     return;
   }
 
@@ -197,15 +222,15 @@ function renderResultTable() {
     const isMatched = !!matchedRace;
 
     const row = document.createElement('div');
-    row.className = `p-2 bg-slate-900 border ${isMatched ? 'border-emerald-500/50' : 'border-slate-700'} rounded-xl flex items-center justify-between text-xs animate-fade-in`;
+    row.className = `p-2 bg-slate-800 border ${isMatched ? 'border-emerald-500/50' : 'border-slate-700'} rounded-xl flex items-center justify-between text-xs animate-fade-in`;
     row.innerHTML = `
       <div class="flex items-center gap-1.5">
-        <span class="font-black text-amber-400 text-sm bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
+        <span class="font-black text-amber-400 text-sm bg-slate-900 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
         ${isMatched ? '<span class="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded font-bold">合致</span>' : '<span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">未登録</span>'}
       </div>
       <div class="flex items-center gap-2">
-        <span>🏁 <input type="text" value="${data.combo}" id="res_combo_${r}" class="w-16 bg-slate-800 border border-indigo-500/50 rounded text-center text-white font-mono font-bold py-0.5"></span>
-        <span>💰 <input type="number" value="${data.payout}" id="res_payout_${r}" class="w-20 bg-slate-800 border border-emerald-500/50 rounded text-right text-white font-mono font-bold py-0.5">円</span>
+        <span>🏁 <input type="text" value="${data.combo}" id="res_combo_${r}" class="w-16 bg-slate-900 border border-indigo-500/50 rounded text-center text-white font-mono font-bold py-0.5"></span>
+        <span>💰 <input type="number" value="${data.payout}" id="res_payout_${r}" class="w-20 bg-slate-900 border border-emerald-500/50 rounded text-right text-white font-mono font-bold py-0.5">円</span>
       </div>
     `;
     container.appendChild(row);
@@ -234,11 +259,94 @@ function applyResultsToRaces() {
 
   if (updatedCount > 0) {
     saveData();
-    alert(`${updatedCount}件の予想レースに結果（着順・配当）が合致・反映されました！`);
+    alert(`${updatedCount}件の予想レースに結果が合致・反映されました！`);
   } else {
-    alert('合致する予想レース（STEP 1）がありませんでした。先にSTEP 1で予想レースを登録してください。');
+    alert('合致する予想レース（STEP 1）がありませんでした。');
   }
 }
+
+// 🖊️ 詳細・単発登録用の機能 (多点買い & 手書き)
+function addTicketRow(c='', a=100) {
+  const container = document.getElementById('ticketsContainer');
+  if(!container) return;
+  const id = 't_' + Date.now() + Math.random().toString(36).substr(2,3);
+  container.insertAdjacentHTML('beforeend', `<div id="${id}" class="flex items-center gap-2 bg-slate-900 p-1 rounded-lg border border-slate-700"><input type="text" value="${c}" placeholder="5-1-6" class="ticket-combo w-1/2 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono"><input type="number" value="${a}" class="ticket-amount w-1/3 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono text-right"><span class="text-xs text-slate-400">円</span><button type="button" onclick="document.getElementById('${id}').remove()" class="text-slate-500 hover:text-rose-400 px-1"><i class="fa-solid fa-xmark"></i></button></div>`);
+}
+
+function updateOverlapBadge() {
+  const sites = [];
+  if (document.getElementById('siteB')?.checked) sites.push('B');
+  if (document.getElementById('siteY')?.checked) sites.push('Y');
+  if (document.getElementById('siteN')?.checked) sites.push('N');
+  const badge = document.getElementById('overlapDisplayBadge');
+  if (!badge) return;
+  const key = getPatternKey(sites);
+  if (key === 'NONE') { badge.textContent = "選択なし"; badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-300 font-bold"; }
+  else { const pat = PATTERNS.find(p => p.id === key); badge.textContent = pat.label; badge.className = `text-xs px-2.5 py-0.5 rounded-full border font-bold ${pat.badgeClass}`; }
+}
+
+function saveSingleRace(e) {
+  e.preventDefault();
+  const sites = [];
+  if (document.getElementById('siteB').checked) sites.push('B');
+  if (document.getElementById('siteY').checked) sites.push('Y');
+  if (document.getElementById('siteN').checked) sites.push('N');
+  if (sites.length === 0) return alert('推奨サイトを選択してください');
+
+  const resultCombo = document.getElementById('resultCombo').value.trim();
+  const payoutAmount = parseInt(document.getElementById('payoutAmount').value) || 0;
+  
+  const drawingData = canvas ? canvas.toDataURL() : '';
+
+  races.unshift({
+    id: 'race_' + Date.now(),
+    date: document.getElementById('raceDate').value,
+    venue: document.getElementById('venue').value || '平塚',
+    raceNum: parseInt(document.getElementById('raceNum').value || '1'),
+    sites: sites,
+    patternKey: getPatternKey(sites),
+    resultCombo: resultCombo,
+    payoutAmount: payoutAmount,
+    totalInvest: 100,
+    totalReturn: resultCombo ? payoutAmount : 0,
+    isHit: !!resultCombo,
+    drawingData: drawingData,
+    status: resultCombo ? 'COMPLETED' : 'PENDING'
+  });
+
+  saveData();
+  resetSingleForm();
+  alert('詳細レースを保存しました！');
+}
+
+function resetSingleForm() {
+  document.getElementById('raceForm').reset();
+  document.getElementById('ticketsContainer').innerHTML = '';
+  addTicketRow();
+  updateOverlapBadge();
+  clearCanvas();
+}
+
+function initCanvas() {
+  canvas = document.getElementById('handwritingCanvas');
+  if(!canvas) return;
+  ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 3; ctx.lineCap = 'round';
+  const getPos = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  };
+  const start = (e) => { isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
+  const move = (e) => { if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
+  const stop = () => { isDrawing = false; };
+  canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop);
+  canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
+}
+
+function clearCanvas() { if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
 
 function calculateStats() {
   const stats = {};
