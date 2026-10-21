@@ -1,3 +1,5 @@
+// BYN Analyzer - 確実に合致させる強力照合 Logic
+
 window.openPwaGuide = function() { document.getElementById('pwaModal').classList.remove('hidden'); };
 window.closePwaGuide = function() { document.getElementById('pwaModal').classList.add('hidden'); };
 
@@ -91,11 +93,13 @@ function savePreRaces() {
     if (document.getElementById(`pre_n_${r}`)?.checked) sites.push('N');
 
     if (sites.length > 0) {
-      races.unshift({
-        id: `race_${date}_${venue}_${r}`,
+      // 既存の同レースがあれば更新、無ければ追加
+      const existingIdx = races.findIndex(item => item.raceNum == r && item.date == date);
+      const raceData = {
+        id: `race_${date}_${r}`,
         date: date,
         venue: venue,
-        raceNum: r,
+        raceNum: parseInt(r),
         sites: sites,
         patternKey: getPatternKey(sites),
         resultCombo: '',
@@ -104,7 +108,10 @@ function savePreRaces() {
         totalReturn: 0,
         isHit: false,
         status: 'PENDING'
-      });
+      };
+
+      if (existingIdx >= 0) races[existingIdx] = raceData;
+      else races.unshift(raceData);
       addedCount++;
     }
   }
@@ -117,7 +124,7 @@ function savePreRaces() {
   }
 }
 
-// 🏁 ① 着順スクショの専用解析
+// 🏁 ① 着順スクショ解析
 function handleArrivalImageUpload(e) {
   if (!e.target.files.length) return;
   const status = document.getElementById('arrivalStatus');
@@ -138,12 +145,13 @@ function handleArrivalImageUpload(e) {
 function parseArrivalText(text) {
   const lines = text.split('\n');
   for (let r = 1; r <= 12; r++) {
-    const raceRegex = new RegExp(`${r}\\s*R`, 'i');
+    const raceRegex = new RegExp(`(^|\\s)${r}\\s*R`, 'i');
     const rIdx = lines.findIndex(l => raceRegex.test(l));
 
     if (rIdx !== -1) {
       const block = lines.slice(rIdx, rIdx + 4).join(' ');
-      const cMatch = block.match(/([1-9])\s*[-ー‐]\s*([1-9])\s*[-ー‐]\s*([1-9])/);
+      // 3つの車番（例: 5-1-6 または 5 1 6）を認識
+      const cMatch = block.match(/([1-9])\s*[-ー‐]?\s*([1-9])\s*[-ー‐]?\s*([1-9])/);
       if (cMatch) {
         if (!parsedResultsMap[r]) parsedResultsMap[r] = { combo: '', payout: 0 };
         parsedResultsMap[r].combo = `${cMatch[1]}-${cMatch[2]}-${cMatch[3]}`;
@@ -153,7 +161,7 @@ function parseArrivalText(text) {
   renderResultTable();
 }
 
-// 💰 ② 配当スクショの専用解析
+// 💰 ② 配当スクショ解析
 function handlePayoutImageUpload(e) {
   if (!e.target.files.length) return;
   const status = document.getElementById('payoutStatus');
@@ -174,14 +182,17 @@ function handlePayoutImageUpload(e) {
 function parsePayoutText(text) {
   const lines = text.split('\n');
   for (let r = 1; r <= 12; r++) {
-    const raceRegex = new RegExp(`${r}\\s*R`, 'i');
+    const raceRegex = new RegExp(`(^|\\s)${r}\\s*R`, 'i');
     const rIdx = lines.findIndex(l => raceRegex.test(l));
 
     if (rIdx !== -1) {
       const block = lines.slice(rIdx, rIdx + 4).join(' ');
+      // 配当金額（末尾の3連単配当を優先取得）
       const pMatches = block.match(/([0-9,]+)\s*円/g);
       if (pMatches && pMatches.length > 0) {
-        const amt = parseInt(pMatches[pMatches.length - 1].replace(/[^0-9]/g, '')) || 0;
+        // 複数配当（2車単、3連単）がある場合は最後の高配当を選択
+        const lastAmtStr = pMatches[pMatches.length - 1].replace(/[^0-9]/g, '');
+        const amt = parseInt(lastAmtStr) || 0;
         if (!parsedResultsMap[r]) parsedResultsMap[r] = { combo: '', payout: 0 };
         parsedResultsMap[r].payout = amt;
       }
@@ -195,7 +206,6 @@ function handlePasteImage(e) {
   for (let item of items) {
     if (item.type.indexOf('image') !== -1) {
       const file = item.getAsFile();
-      // デフォルトで着順から解析
       const dt = new DataTransfer();
       dt.items.add(file);
       handleArrivalImageUpload({ target: { files: dt.files } });
@@ -204,13 +214,13 @@ function handlePasteImage(e) {
   }
 }
 
-// テーブル表示
+// テーブル照合結果表示
 function renderResultTable() {
   const container = document.getElementById('parsedResultContainer');
   if (!container) return;
   container.innerHTML = '';
 
-  const rKeys = Object.keys(parsedResultsMap).sort((a, b) => a - b);
+  const rKeys = Object.keys(parsedResultsMap).sort((a, b) => parseInt(a) - parseInt(b));
   if (rKeys.length === 0) {
     container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の2つの枠にそれぞれのスクショを貼ると、ここに一覧表示されます。</p>';
     return;
@@ -218,10 +228,17 @@ function renderResultTable() {
 
   rKeys.forEach(r => {
     const data = parsedResultsMap[r];
+    // STEP 1 の予想データと照合チェック
+    const matchedRace = races.find(item => item.raceNum == r);
+    const isMatched = !!matchedRace;
+
     const row = document.createElement('div');
-    row.className = "p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between text-xs animate-fade-in";
+    row.className = `p-2 bg-slate-900 border ${isMatched ? 'border-emerald-500/50' : 'border-slate-700'} rounded-xl flex items-center justify-between text-xs animate-fade-in`;
     row.innerHTML = `
-      <span class="font-black text-amber-400 text-sm bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
+      <div class="flex items-center gap-1.5">
+        <span class="font-black text-amber-400 text-sm bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
+        ${isMatched ? '<span class="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded font-bold">合致</span>' : '<span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">未登録</span>'}
+      </div>
       <div class="flex items-center gap-2">
         <span>🏁 <input type="text" value="${data.combo}" id="res_combo_${r}" class="w-16 bg-slate-800 border border-indigo-500/50 rounded text-center text-white font-mono font-bold py-0.5"></span>
         <span>💰 <input type="number" value="${data.payout}" id="res_payout_${r}" class="w-20 bg-slate-800 border border-emerald-500/50 rounded text-right text-white font-mono font-bold py-0.5">円</span>
@@ -231,6 +248,7 @@ function renderResultTable() {
   });
 }
 
+// 🎯 強力な紐付け反映ロジック
 function applyResultsToRaces() {
   let updatedCount = 0;
   const rKeys = Object.keys(parsedResultsMap);
@@ -239,19 +257,25 @@ function applyResultsToRaces() {
     const combo = document.getElementById(`res_combo_${r}`)?.value || parsedResultsMap[r].combo;
     const payout = parseInt(document.getElementById(`res_payout_${r}`)?.value) || parsedResultsMap[r].payout;
 
-    const target = races.find(item => item.raceNum == r && (item.status === 'PENDING' || !item.resultCombo));
-    if (target) {
-      target.resultCombo = combo;
-      target.payoutAmount = payout;
-      target.isHit = true;
-      target.totalReturn = (target.totalInvest / 100) * payout;
-      target.status = 'COMPLETED';
-      updatedCount++;
-    }
+    // レース番号(raceNum)で合致する登録済みのレースをすべて探し出して更新
+    races.forEach(target => {
+      if (target.raceNum == r) {
+        target.resultCombo = combo;
+        target.payoutAmount = payout;
+        target.isHit = true; // 的中前提計算
+        target.totalReturn = (target.totalInvest / 100) * payout;
+        target.status = 'COMPLETED';
+        updatedCount++;
+      }
+    });
   });
 
-  saveData();
-  alert(`${updatedCount}件のレースに成績結果を反映しました！`);
+  if (updatedCount > 0) {
+    saveData();
+    alert(`${updatedCount}件の予想レースに結果（着順・配当）が合致・反映されました！`);
+  } else {
+    alert('合致する予想レース（STEP 1）がありませんでした。先にSTEP 1で予想レースを登録してください。');
+  }
 }
 
 function calculateStats() {
@@ -334,7 +358,7 @@ function renderHistory() {
   filtered.forEach(r => {
     const pat = PATTERNS.find(p => p.id === r.patternKey) || { label: '不明', badgeClass: 'bg-slate-700' };
     const net = r.totalReturn - r.totalInvest;
-    container.innerHTML += `<div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2 animate-fade-in"><div class="flex justify-between items-center"><div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded border font-bold ${pat.badgeClass}">${pat.label}</span><span class="text-xs font-bold text-white">${r.venue} ${r.raceNum}R</span><span class="text-[10px] text-slate-400">${r.date}</span></div><span class="text-xs font-bold ${r.resultCombo ? (r.isHit ? 'text-amber-400' : 'text-slate-400') : 'text-indigo-400'}">${r.resultCombo ? (r.isHit ? '🎯的中' : '✕外れ') : '⏳結果待ち'}</span></div><div class="text-xs text-slate-300 flex justify-between bg-slate-950 p-2 rounded border border-slate-800"><span>結果: ${r.resultCombo || '未入力'} (${r.payoutAmount || 0}円)</span><span>損益: <b class="${net>=0?'text-emerald-400':'text-rose-400'}">${net>0?'+':''}${net.toLocaleString()}円</b></span></div></div>`;
+    container.innerHTML += `<div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2 animate-fade-in"><div class="flex justify-between items-center"><div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded border font-bold ${pat.badgeClass}">${pat.label}</span><span class="text-xs font-bold text-white">${r.venue} ${r.raceNum}R</span><span class="text-[10px] text-slate-400">${r.date}</span></div><span class="text-xs font-bold ${r.resultCombo ? (r.isHit ? 'text-amber-400' : 'text-slate-400') : 'text-indigo-400'}">${r.resultCombo ? (r.isHit ? '🎯的中' : '✕外れ') : '⏳結果待ち'}</span></div><div class="text-xs text-slate-300 flex justify-between bg-slate-950 p-2 rounded border border-slate-800"><span>結果: ${r.resultCombo || '未入力'} (${r.payoutAmount || 0}円)</span><span>純損益: <b class="${net>=0?'text-emerald-400':'text-rose-400'}">${net>0?'+':''}${net.toLocaleString()}円</b></span></div></div>`;
   });
 }
 
