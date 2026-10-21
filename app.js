@@ -1,4 +1,4 @@
-// BYN Analyzer - 2枠プレビュー保持＆自動照合 Logic
+// BYN Analyzer - 画像貼り付け・読み込み強化版 Logic
 
 let races = [];
 let chartInstance = null;
@@ -13,16 +13,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
   if (document.getElementById('preRaceDate')) document.getElementById('preRaceDate').value = today;
 
-  // クリップボードからのコピペ貼り付け対応
+  // 📋 クリップボード貼り付け（コピペ）の強力な受け取り処理
   window.addEventListener('paste', (e) => {
-    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+    const items = clipboardData.items;
+    if (!items) return;
+
     for (let item of items) {
       if (item.type.indexOf('image') !== -1) {
         const file = item.getAsFile();
-        if (Object.keys(arrivalMap).length === 0) {
-          processArrivalFile(file);
-        } else {
-          processPayoutFile(file);
+        if (file) {
+          // 着順がまだ無ければ「着順」へ、すでに着順があれば「配当」へ自動振り分け
+          if (Object.keys(arrivalMap).length === 0) {
+            processArrivalFile(file);
+          } else {
+            processPayoutFile(file);
+          }
         }
         break;
       }
@@ -105,10 +112,11 @@ function savePreRaces() {
     alert('推奨サイト（B/Y/N）を選択してください。');
   }
 }
-
 // 🏁 ① 着順スクショ解析
 function handleArrivalImage(e) {
-  if (e.target.files.length) processArrivalFile(e.target.files[0]);
+  if (e.target.files && e.target.files.length) {
+    processArrivalFile(e.target.files[0]);
+  }
 }
 
 async function processArrivalFile(file) {
@@ -117,11 +125,14 @@ async function processArrivalFile(file) {
   const preview = document.getElementById('arrPreviewUI');
   const imgTag = document.getElementById('arrImgTag');
 
-  idle.classList.add('hidden');
-  loading.classList.remove('hidden');
+  if (idle) idle.classList.add('hidden');
+  if (loading) loading.classList.remove('hidden');
 
+  // スマホプレビュー用サムネイル生成
   const reader = new FileReader();
-  reader.onload = (e) => { imgTag.src = e.target.result; };
+  reader.onload = (e) => { 
+    if (imgTag) imgTag.src = e.target.result; 
+  };
   reader.readAsDataURL(file);
 
   try {
@@ -143,27 +154,32 @@ async function processArrivalFile(file) {
       }
     });
 
-    loading.classList.add('hidden');
-    preview.classList.remove('hidden');
+    if (loading) loading.classList.add('hidden');
+    if (preview) preview.classList.remove('hidden');
     updateResultTable();
   } catch(err) {
     console.error(err);
-    loading.classList.add('hidden');
-    idle.classList.remove('hidden');
+    if (loading) loading.classList.add('hidden');
+    if (idle) idle.classList.remove('hidden');
   }
 }
 
 function clearArrivalImg() {
   arrivalMap = {};
-  document.getElementById('arrPreviewUI').classList.add('hidden');
-  document.getElementById('arrIdleUI').classList.remove('hidden');
-  document.getElementById('arrivalFileInput').value = '';
+  const preview = document.getElementById('arrPreviewUI');
+  const idle = document.getElementById('arrIdleUI');
+  const input = document.getElementById('arrivalFileInput');
+  if (preview) preview.classList.add('hidden');
+  if (idle) idle.classList.remove('hidden');
+  if (input) input.value = '';
   updateResultTable();
 }
 
 // 💰 ② 配当スクショ解析
 function handlePayoutImage(e) {
-  if (e.target.files.length) processPayoutFile(e.target.files[0]);
+  if (e.target.files && e.target.files.length) {
+    processPayoutFile(e.target.files[0]);
+  }
 }
 
 async function processPayoutFile(file) {
@@ -172,11 +188,13 @@ async function processPayoutFile(file) {
   const preview = document.getElementById('payPreviewUI');
   const imgTag = document.getElementById('payImgTag');
 
-  idle.classList.add('hidden');
-  loading.classList.remove('hidden');
+  if (idle) idle.classList.add('hidden');
+  if (loading) loading.classList.remove('hidden');
 
   const reader = new FileReader();
-  reader.onload = (e) => { imgTag.src = e.target.result; };
+  reader.onload = (e) => { 
+    if (imgTag) imgTag.src = e.target.result; 
+  };
   reader.readAsDataURL(file);
 
   try {
@@ -199,21 +217,24 @@ async function processPayoutFile(file) {
       }
     });
 
-    loading.classList.add('hidden');
-    preview.classList.remove('hidden');
+    if (loading) loading.classList.add('hidden');
+    if (preview) preview.classList.remove('hidden');
     updateResultTable();
   } catch(err) {
     console.error(err);
-    loading.classList.add('hidden');
-    idle.classList.remove('hidden');
+    if (loading) loading.classList.add('hidden');
+    if (idle) idle.classList.remove('hidden');
   }
 }
 
 function clearPayoutImg() {
   payoutMap = {};
-  document.getElementById('payPreviewUI').classList.add('hidden');
-  document.getElementById('payIdleUI').classList.remove('hidden');
-  document.getElementById('payoutFileInput').value = '';
+  const preview = document.getElementById('payPreviewUI');
+  const idle = document.getElementById('payIdleUI');
+  const input = document.getElementById('payoutFileInput');
+  if (preview) preview.classList.add('hidden');
+  if (idle) idle.classList.remove('hidden');
+  if (input) input.value = '';
   updateResultTable();
 }
 // 📊 照合結果表示（数値プレビュー・手修正対応）
@@ -424,3 +445,4 @@ function loadSampleData() {
 function clearAllData() {
   if (confirm('すべてのデータを削除しますか？')) { races = []; saveData(); }
 }
+
