@@ -1,44 +1,37 @@
-// モーダル表示切替関数（グローバル定義）
-window.openOcrModal = function() {
-  const modal = document.getElementById('ocrModal');
-  if (modal) modal.classList.remove('hidden');
+// BYN Analyzer - 2枠セパレート高速認識 Logic
+
+window.openPreRaceModal = function() {
+  document.getElementById('preRaceModal').classList.remove('hidden');
+  renderPreRaceForm();
+};
+window.closePreRaceModal = function() {
+  document.getElementById('preRaceModal').classList.add('hidden');
 };
 
-window.closeOcrModal = function() {
-  const modal = document.getElementById('ocrModal');
-  if (modal) modal.classList.add('hidden');
+window.openResultModal = function() {
+  document.getElementById('resultModal').classList.remove('hidden');
+};
+window.closeResultModal = function() {
+  document.getElementById('resultModal').classList.add('hidden');
 };
 
-window.openPwaGuide = function() {
-  const modal = document.getElementById('pwaModal');
-  if (modal) modal.classList.remove('hidden');
-};
-
-window.closePwaGuide = function() {
-  const modal = document.getElementById('pwaModal');
-  if (modal) modal.classList.add('hidden');
-};
+window.openPwaGuide = function() { document.getElementById('pwaModal').classList.remove('hidden'); };
+window.closePwaGuide = function() { document.getElementById('pwaModal').classList.add('hidden'); };
 
 let races = [];
 let chartInstance = null;
-let canvas, ctx;
-let isDrawing = false;
-let batchParsedData = [];
+
+// 着順と配当の読み取り結果保持オブジェクト
+let parsedResultsMap = {}; // { 1: { combo: '5-1-6', payout: 920 }, 2: ... }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initCanvas();
   loadData();
-  setDefaultDate();
-  addTicketRow();
   renderAll();
-  window.addEventListener('paste', handlePasteImage);
-});
-
-function setDefaultDate() {
   const today = new Date().toISOString().split('T')[0];
-  const dateInput = document.getElementById('raceDate');
-  if (dateInput) dateInput.value = today;
-}
+  if (document.getElementById('preRaceDate')) {
+    document.getElementById('preRaceDate').value = today;
+  }
+});
 
 const PATTERNS = [
   { id: 'B_Y_N', label: 'B & Y & N (3重複)', color: 'from-purple-600 to-indigo-600', badgeClass: 'bg-purple-900/60 text-purple-200 border-purple-500/40' },
@@ -76,254 +69,209 @@ function saveData() {
   renderAll();
 }
 
-function processImageFiles(files) {
-  const status = document.getElementById('ocrStatus');
-  if (status) {
-    status.classList.remove('hidden');
-    status.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>AI/OCRで全レース情報（1R〜）を解析中...';
+// 📋 STEP 1: レース前重複チェックフォーム
+function renderPreRaceForm() {
+  const container = document.getElementById('preRaceContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  for (let r = 1; r <= 12; r++) {
+    const row = document.createElement('div');
+    row.className = "p-2.5 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2";
+    row.innerHTML = `
+      <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-1 rounded border border-slate-700">${r}R</span>
+      <div class="flex items-center gap-1.5">
+        <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold">
+          <input type="checkbox" id="pre_b_${r}" class="hidden"> B
+        </label>
+        <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold">
+          <input type="checkbox" id="pre_y_${r}" class="hidden"> Y
+        </label>
+        <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold">
+          <input type="checkbox" id="pre_n_${r}" class="hidden"> N
+        </label>
+      </div>
+    `;
+    container.appendChild(row);
   }
-
-  let combinedText = "";
-  let processedCount = 0;
-
-  Array.from(files).forEach((file) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      Tesseract.recognize(e.target.result, 'jpn+eng')
-        .then(({ data: { text } }) => {
-          combinedText += "\n" + text;
-          processedCount++;
-          if (processedCount === files.length) {
-            if (status) status.classList.add('hidden');
-            parseBatchOcrText(combinedText);
-          }
-        })
-        .catch(err => {
-          if (status) status.classList.add('hidden');
-          console.error(err);
-        });
-    };
-    reader.readAsDataURL(file);
-  });
 }
 
-function parseBatchOcrText(text) {
-  batchParsedData = [];
-  const lines = text.split('\n');
+function savePreRaces() {
+  const date = document.getElementById('preRaceDate').value;
+  const venue = document.getElementById('preRaceVenue').value || '平塚';
+  let addedCount = 0;
 
-  const detectedRaces = new Set();
-  const raceMatches = text.matchAll(/([1-9]|1[0-2])\s*R/gi);
-  for (const match of raceMatches) {
-    detectedRaces.add(parseInt(match[1]));
+  for (let r = 1; r <= 12; r++) {
+    const sites = [];
+    if (document.getElementById(`pre_b_${r}`)?.checked) sites.push('B');
+    if (document.getElementById(`pre_y_${r}`)?.checked) sites.push('Y');
+    if (document.getElementById(`pre_n_${r}`)?.checked) sites.push('N');
+
+    if (sites.length > 0) {
+      races.unshift({
+        id: `race_${date}_${venue}_${r}`,
+        date: date,
+        venue: venue,
+        raceNum: r,
+        sites: sites,
+        patternKey: getPatternKey(sites),
+        resultCombo: '',
+        payoutAmount: 0,
+        totalInvest: 100,
+        totalReturn: 0,
+        isHit: false,
+        status: 'PENDING'
+      });
+      addedCount++;
+    }
   }
 
-  const raceNumbers = detectedRaces.size > 0 
-    ? Array.from(detectedRaces).sort((a, b) => a - b) 
-    : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+  if (addedCount > 0) {
+    saveData();
+    closePreRaceModal();
+    alert(`${addedCount}件の予想レースを登録しました！`);
+  } else {
+    alert('推奨サイト（B/Y/N）を選択してください。');
+  }
+}
 
-  raceNumbers.forEach(r => {
-    let combo = "";
-    let payout = 0;
-    let isCanceled = false;
+// 🏁 ① 着順スクショの専用高速解析
+function handleArrivalImageUpload(e) {
+  if (!e.target.files.length) return;
+  const status = document.getElementById('arrivalStatus');
+  status.classList.remove('hidden');
 
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    Tesseract.recognize(event.target.result, 'jpn+eng')
+      .then(({ data: { text } }) => {
+        status.classList.add('hidden');
+        parseArrivalText(text);
+      })
+      .catch(err => { status.classList.add('hidden'); console.error(err); });
+  };
+  reader.readAsDataURL(e.target.files[0]);
+}
+
+function parseArrivalText(text) {
+  const lines = text.split('\n');
+  for (let r = 1; r <= 12; r++) {
     const raceRegex = new RegExp(`${r}\\s*R`, 'i');
-    const rIndex = lines.findIndex(l => raceRegex.test(l));
+    const rIdx = lines.findIndex(l => raceRegex.test(l));
 
-    if (rIndex !== -1) {
-      const searchBlock = lines.slice(rIndex, rIndex + 5).join(' ');
-
-      if (searchBlock.includes('中止') || searchBlock.includes('全返還')) {
-        isCanceled = true;
-      } else {
-        const cMatch = searchBlock.match(/([1-9])\s*[-ー‐]\s*([1-9])\s*[-ー‐]\s*([1-9])/);
-        if (cMatch) combo = `${cMatch[1]}-${cMatch[2]}-${cMatch[3]}`;
-
-        const pMatches = searchBlock.match(/([0-9,]+)\s*円/g);
-        if (pMatches && pMatches.length > 0) {
-          const lastPayout = pMatches[pMatches.length - 1].replace(/[^0-9]/g, '');
-          payout = parseInt(lastPayout) || 0;
-        }
+    if (rIdx !== -1) {
+      const block = lines.slice(rIdx, rIdx + 4).join(' ');
+      const cMatch = block.match(/([1-9])\s*[-ー‐]\s*([1-9])\s*[-ー‐]\s*([1-9])/);
+      if (cMatch) {
+        if (!parsedResultsMap[r]) parsedResultsMap[r] = { combo: '', payout: 0 };
+        parsedResultsMap[r].combo = `${cMatch[1]}-${cMatch[2]}-${cMatch[3]}`;
       }
     }
-
-    if (!isCanceled) {
-      batchParsedData.push({ raceNum: r, combo, payout, isCanceled: false, sites: [] });
-    }
-  });
-
-  renderBatchTable();
+  }
+  renderResultTable();
 }
 
-function renderBatchTable() {
-  const container = document.getElementById('batchRaceListContainer');
+// 💰 ② 配当スクショの専用高速解析
+function handlePayoutImageUpload(e) {
+  if (!e.target.files.length) return;
+  const status = document.getElementById('payoutStatus');
+  status.classList.remove('hidden');
+
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    Tesseract.recognize(event.target.result, 'jpn+eng')
+      .then(({ data: { text } }) => {
+        status.classList.add('hidden');
+        parsePayoutText(text);
+      })
+      .catch(err => { status.classList.add('hidden'); console.error(err); });
+  };
+  reader.readAsDataURL(e.target.files[0]);
+}
+
+function parsePayoutText(text) {
+  const lines = text.split('\n');
+  for (let r = 1; r <= 12; r++) {
+    const raceRegex = new RegExp(`${r}\\s*R`, 'i');
+    const rIdx = lines.findIndex(l => raceRegex.test(l));
+
+    if (rIdx !== -1) {
+      const block = lines.slice(rIdx, rIdx + 4).join(' ');
+      const pMatches = block.match(/([0-9,]+)\s*円/g);
+      if (pMatches && pMatches.length > 0) {
+        const amt = parseInt(pMatches[pMatches.length - 1].replace(/[^0-9]/g, '')) || 0;
+        if (!parsedResultsMap[r]) parsedResultsMap[r] = { combo: '', payout: 0 };
+        parsedResultsMap[r].payout = amt;
+      }
+    }
+  }
+  renderResultTable();
+}
+
+// 両方の結果をテーブルに即時反映
+function renderResultTable() {
+  const container = document.getElementById('parsedResultContainer');
   if (!container) return;
-
   container.innerHTML = '';
-  batchParsedData.forEach((item, idx) => {
+
+  const rKeys = Object.keys(parsedResultsMap).sort((a, b) => a - b);
+  if (rKeys.length === 0) {
+    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の2つの枠にそれぞれのスクショを貼ってください。</p>';
+    return;
+  }
+
+  rKeys.forEach(r => {
+    const data = parsedResultsMap[r];
     const row = document.createElement('div');
-    row.className = "p-3 bg-slate-900 border border-slate-700 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in";
-
+    row.className = "p-2.5 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between text-xs animate-fade-in";
     row.innerHTML = `
-      <div class="flex items-center gap-3 w-full sm:w-auto">
-        <span class="font-black text-amber-400 text-sm bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">${item.raceNum}R</span>
-        <div>
-          <span class="text-[10px] text-slate-400 block">着順 / 配当</span>
-          <span class="text-xs font-bold text-white font-mono">${item.combo || '未検出'}</span>
-          <span class="text-xs font-mono text-emerald-400 ms-2">${item.payout ? item.payout.toLocaleString() + '円' : '0円'}</span>
-        </div>
-      </div>
-
+      <span class="font-black text-amber-400 text-sm bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
       <div class="flex items-center gap-2">
-        <span class="text-[11px] text-slate-400 me-1">推奨サイト:</span>
-        <button type="button" onclick="toggleBatchSite(${idx}, 'B')" id="batchBtn_${idx}_B" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-400">B</button>
-        <button type="button" onclick="toggleBatchSite(${idx}, 'Y')" id="batchBtn_${idx}_Y" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-400">Y</button>
-        <button type="button" onclick="toggleBatchSite(${idx}, 'N')" id="batchBtn_${idx}_N" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-400">N</button>
-        <span id="batchBadge_${idx}" class="text-[10px] px-2 py-1 rounded bg-slate-800 text-slate-400 font-bold ms-1">指定なし</span>
+        <span>🏁 着順: <input type="text" value="${data.combo}" id="res_combo_${r}" class="w-16 bg-slate-800 border border-indigo-500/50 rounded text-center text-white font-mono font-bold py-0.5"></span>
+        <span>💰 配当: <input type="number" value="${data.payout}" id="res_payout_${r}" class="w-20 bg-slate-800 border border-emerald-500/50 rounded text-right text-white font-mono font-bold py-0.5">円</span>
       </div>
     `;
     container.appendChild(row);
   });
-
-  const saveSec = document.getElementById('batchSaveSection');
-  if (saveSec) saveSec.classList.remove('hidden');
 }
 
-function toggleBatchSite(idx, site) {
-  const item = batchParsedData[idx];
-  const sIdx = item.sites.indexOf(site);
-  if (sIdx >= 0) item.sites.splice(sIdx, 1);
-  else item.sites.push(site);
+// 結果反映と収支適用
+function applyResultsToRaces() {
+  let updatedCount = 0;
+  const rKeys = Object.keys(parsedResultsMap);
 
-  const btn = document.getElementById(`batchBtn_${idx}_${site}`);
-  if (item.sites.includes(site)) {
-    btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg border border-indigo-500 bg-indigo-600 text-white shadow";
-  } else {
-    btn.className = "px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-400";
-  }
+  rKeys.forEach(r => {
+    const combo = document.getElementById(`res_combo_${r}`)?.value || parsedResultsMap[r].combo;
+    const payout = parseInt(document.getElementById(`res_payout_${r}`)?.value) || parsedResultsMap[r].payout;
 
-  const badge = document.getElementById(`batchBadge_${idx}`);
-  const key = getPatternKey(item.sites);
-  if (key === 'NONE') {
-    badge.textContent = '指定なし';
-    badge.className = 'text-[10px] px-2 py-1 rounded bg-slate-800 text-slate-400 font-bold ms-1';
-  } else {
-    const pat = PATTERNS.find(p => p.id === key);
-    badge.textContent = pat.label;
-    badge.className = `text-[10px] px-2 py-1 rounded border font-bold ms-1 ${pat.badgeClass}`;
-  }
-}
-
-function saveAllBatchRaces() {
-  const date = document.getElementById('raceDate').value;
-  const venue = document.getElementById('venue').value || '平塚';
-  let savedCount = 0;
-
-  batchParsedData.forEach(item => {
-    if (item.isCanceled || item.sites.length === 0 || !item.combo) return;
-
-    const ticketCombo = item.combo;
-    const invest = 100;
-    const isHit = true;
-    const returnAmt = (invest / 100) * item.payout;
-
-    races.unshift({
-      id: 'race_' + Date.now() + '_' + item.raceNum,
-      date: date,
-      venue: venue,
-      raceNum: item.raceNum,
-      sites: item.sites,
-      patternKey: getPatternKey(item.sites),
-      roughness: '普通',
-      resultCombo: item.combo,
-      payoutAmount: item.payout,
-      tickets: [{ combo: ticketCombo, amount: invest }],
-      totalInvest: invest,
-      totalReturn: returnAmt,
-      isHit: isHit,
-      createdAt: new Date().toISOString()
-    });
-    savedCount++;
+    const target = races.find(item => item.raceNum == r && (item.status === 'PENDING' || !item.resultCombo));
+    if (target) {
+      target.resultCombo = combo;
+      target.payoutAmount = payout;
+      target.isHit = true;
+      target.totalReturn = (target.totalInvest / 100) * payout;
+      target.status = 'COMPLETED';
+      updatedCount++;
+    }
   });
 
-  if (savedCount > 0) {
-    saveData();
-    closeOcrModal();
-    alert(`${savedCount}件のレースを一括保存・追加しました！`);
-  } else {
-    alert('推奨サイト（B/Y/N）が選択されているレースがありません。該当するレースのB/Y/Nボタンを押してください。');
-  }
+  saveData();
+  closeResultModal();
+  alert(`${updatedCount}件のレースに成績結果を反映しました！`);
 }
 
-function addTicketRow(c='', a=100) {
-  const container = document.getElementById('ticketsContainer');
-  if(!container) return;
-  const id = 't_' + Date.now() + Math.random().toString(36).substr(2,3);
-  container.insertAdjacentHTML('beforeend', `<div id="${id}" class="flex items-center gap-2 bg-slate-900 p-1.5 rounded-lg border border-slate-700"><input type="text" value="${c}" placeholder="5-1-6" class="ticket-combo w-1/2 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono"><input type="number" value="${a}" class="ticket-amount w-1/3 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono text-right"><span class="text-xs text-slate-400">円</span><button type="button" onclick="document.getElementById('${id}').remove()" class="text-slate-500 hover:text-rose-400 px-1"><i class="fa-solid fa-xmark"></i></button></div>`);
-}
-
-function getTicketsFromForm() {
-  const rows = document.querySelectorAll('#ticketsContainer > div');
-  const res = [];
-  rows.forEach(r => {
-    const combo = r.querySelector('.ticket-combo').value.trim();
-    const amount = parseInt(r.querySelector('.ticket-amount').value) || 0;
-    if(combo && amount > 0) res.push({combo, amount});
-  });
-  return res;
-}
-
-function updateOverlapBadge() {
-  const sites = [];
-  if (document.getElementById('siteB')?.checked) sites.push('B');
-  if (document.getElementById('siteY')?.checked) sites.push('Y');
-  if (document.getElementById('siteN')?.checked) sites.push('N');
-  const badge = document.getElementById('overlapDisplayBadge');
-  if (!badge) return;
-  const key = getPatternKey(sites);
-  if (key === 'NONE') { badge.textContent = "選択なし"; badge.className = "text-xs px-2.5 py-1 rounded-full bg-slate-700 text-slate-300 font-bold"; }
-  else { const pat = PATTERNS.find(p => p.id === key); badge.textContent = pat.label; badge.className = `text-xs px-2.5 py-1 rounded-full border font-bold ${pat.badgeClass}`; }
-}
-
-function saveRace(e) {
-  e.preventDefault();
-  const sites = [];
-  if (document.getElementById('siteB').checked) sites.push('B');
-  if (document.getElementById('siteY').checked) sites.push('Y');
-  if (document.getElementById('siteN').checked) sites.push('N');
-  if (sites.length === 0) return alert('推奨サイト（B/Y/N）を選択してください');
-  const tickets = getTicketsFromForm();
-  if (tickets.length === 0) return alert('買い目を入力してください');
-  const resultCombo = document.getElementById('resultCombo').value.trim();
-  const payoutAmount = parseInt(document.getElementById('payoutAmount').value) || 0;
-  let totalInvest = 0, totalReturn = 0, isHit = false;
-  tickets.forEach(t => {
-    totalInvest += t.amount;
-    if (resultCombo && t.combo === resultCombo) { isHit = true; totalReturn += (t.amount / 100) * payoutAmount; }
-  });
-  
-  const drawingData = canvas ? canvas.toDataURL() : '';
-
-  races.unshift({
-    id: document.getElementById('editRaceId').value || 'race_' + Date.now(),
-    date: document.getElementById('raceDate').value,
-    venue: document.getElementById('venue').value || '平塚',
-    raceNum: document.getElementById('raceNum').value || '1',
-    sites: sites, patternKey: getPatternKey(sites),
-    roughness: document.querySelector('input[name="roughness"]:checked')?.value || '普通',
-    resultCombo: resultCombo, payoutAmount: payoutAmount, tickets: tickets,
-    totalInvest: totalInvest, totalReturn: totalReturn, isHit: isHit,
-    drawingData: drawingData,
-    createdAt: new Date().toISOString()
-  });
-  saveData(); resetForm();
-}
-
+// 統計 & 画面描画
 function calculateStats() {
   const stats = {};
   PATTERNS.forEach(p => stats[p.id] = { count: 0, hits: 0, invest: 0, returnAmt: 0, hitRate: 0, roi: 0 });
   races.forEach(r => {
     const s = stats[r.patternKey];
-    if (s) { s.count++; if (r.isHit) s.hits++; s.invest += r.totalInvest; s.returnAmt += r.totalReturn; }
+    if (s && r.resultCombo) {
+      s.count++;
+      if (r.isHit) s.hits++;
+      s.invest += r.totalInvest;
+      s.returnAmt += r.totalReturn;
+    }
   });
   PATTERNS.forEach(p => {
     const s = stats[p.id];
@@ -389,50 +337,19 @@ function renderHistory() {
   const filter = document.getElementById('filterOverlap')?.value || 'ALL';
   const filtered = races.filter(r => filter === 'ALL' || r.patternKey === filter);
   container.innerHTML = '';
-  if (filtered.length === 0) { container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">該当するデータはありません</p>'; return; }
+  if (filtered.length === 0) { container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">登録済みのデータはありません</p>'; return; }
   filtered.forEach(r => {
     const pat = PATTERNS.find(p => p.id === r.patternKey) || { label: '不明', badgeClass: 'bg-slate-700' };
     const net = r.totalReturn - r.totalInvest;
-    container.innerHTML += `<div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2 animate-fade-in"><div class="flex justify-between items-center"><div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded border font-bold ${pat.badgeClass}">${pat.label}</span><span class="text-xs font-bold text-white">${r.venue} ${r.raceNum}R</span><span class="text-[10px] text-slate-400">${r.date}</span></div><span class="text-xs font-bold ${r.isHit?'text-amber-400':'text-slate-400'}">${r.isHit?'🎯的中':'✕外れ'}</span></div><div class="text-xs text-slate-300 flex justify-between bg-slate-950 p-2 rounded border border-slate-800"><span>結果: ${r.resultCombo} (${r.payoutAmount}円)</span><span>純損益: <b class="${net>=0?'text-emerald-400':'text-rose-400'}">${net>0?'+':''}${net.toLocaleString()}円</b></span></div></div>`;
+    container.innerHTML += `<div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2 animate-fade-in"><div class="flex justify-between items-center"><div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded border font-bold ${pat.badgeClass}">${pat.label}</span><span class="text-xs font-bold text-white">${r.venue} ${r.raceNum}R</span><span class="text-[10px] text-slate-400">${r.date}</span></div><span class="text-xs font-bold ${r.resultCombo ? (r.isHit ? 'text-amber-400' : 'text-slate-400') : 'text-indigo-400'}">${r.resultCombo ? (r.isHit ? '🎯的中' : '✕外れ') : '⏳結果待ち'}</span></div><div class="text-xs text-slate-300 flex justify-between bg-slate-950 p-2 rounded border border-slate-800"><span>結果: ${r.resultCombo || '未入力'} (${r.payoutAmount || 0}円)</span><span>損益: <b class="${net>=0?'text-emerald-400':'text-rose-400'}">${net>0?'+':''}${net.toLocaleString()}円</b></span></div></div>`;
   });
 }
 
-function resetForm() {
-  document.getElementById('raceForm').reset();
-  document.getElementById('editRaceId').value = '';
-  document.getElementById('ticketsContainer').innerHTML = '';
-  addTicketRow();
-  updateOverlapBadge();
-  clearCanvas();
-  setDefaultDate();
-}
-
-function initCanvas() {
-  canvas = document.getElementById('handwritingCanvas');
-  if(!canvas) return;
-  ctx = canvas.getContext('2d');
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 3; ctx.lineCap = 'round';
-  const getPos = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  };
-  const start = (e) => { isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
-  const move = (e) => { if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
-  const stop = () => { isDrawing = false; };
-  canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop);
-  canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
-}
-
-function clearCanvas() { if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
 function exportCSV() {
   if (races.length === 0) return alert('データがありません');
-  let csv = 'ID,日付,競輪場,レース,推奨サイト,パターン,荒れ度,結果着順,3連単配当,投資額,払戻額,的中\n';
+  let csv = 'ID,日付,競輪場,レース,推奨サイト,パターン,結果着順,3連単配当,投資額,払戻額,的中\n';
   races.forEach(r => {
-    csv += `"${r.id}","${r.date}","${r.venue}","${r.raceNum}","${r.sites.join('/')}","${r.patternKey}","${r.roughness}","${r.resultCombo}","${r.payoutAmount}","${r.totalInvest}","${r.totalReturn}","${r.isHit ? '1' : '0'}"\n`;
+    csv += `"${r.id}","${r.date}","${r.venue}","${r.raceNum}","${r.sites.join('/')}","${r.patternKey}","${r.resultCombo}","${r.payoutAmount}","${r.totalInvest}","${r.totalReturn}","${r.isHit ? '1' : '0'}"\n`;
   });
   const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
@@ -442,23 +359,14 @@ function exportCSV() {
 
 function loadSampleData() {
   if (confirm('サンプルデータを追加しますか？')) {
-    const samples = [
-      { id: 's1', date: '2026-10-21', venue: '平塚', raceNum: '11', sites: ['B','Y','N'], patternKey: 'B_Y_N', roughness: '荒れ', resultCombo: '5-1-6', payoutAmount: 920, tickets: [{combo: '5-1-6', amount: 1000}], totalInvest: 1000, totalReturn: 9200, isHit: true },
-      { id: 's2', date: '2026-10-21', venue: '立川', raceNum: '10', sites: ['B','Y'], patternKey: 'B_Y', roughness: '普通', resultCombo: '1-3-5', payoutAmount: 1800, tickets: [{combo: '2-4-5', amount: 1000}], totalInvest: 1000, totalReturn: 0, isHit: false }
+    races = [
+      { id: 's1', date: '2026-10-21', venue: '平塚', raceNum: 1, sites: ['B','Y','N'], patternKey: 'B_Y_N', resultCombo: '5-1-6', payoutAmount: 920, totalInvest: 100, totalReturn: 920, isHit: true, status: 'COMPLETED' },
+      { id: 's2', date: '2026-10-21', venue: '平塚', raceNum: 2, sites: ['B','Y'], patternKey: 'B_Y', resultCombo: '2-4-5', payoutAmount: 2050, totalInvest: 100, totalReturn: 0, isHit: false, status: 'COMPLETED' }
     ];
-    races = [...samples, ...races];
     saveData();
   }
 }
 
 function clearAllData() {
   if (confirm('すべてのデータを削除しますか？')) { races = []; saveData(); }
-}
-
-function handleImageUpload(e) { if(e.target.files.length) processImageFiles(e.target.files); }
-function handlePasteImage(e) {
-  const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-  const files = [];
-  for (let item of items) { if (item.type.indexOf('image') !== -1) files.push(item.getAsFile()); }
-  if (files.length) { openOcrModal(); processImageFiles(files); }
 }
