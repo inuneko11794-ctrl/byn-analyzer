@@ -98,16 +98,16 @@
       </div>
     </div>
 
-    <!-- 🌟 入力ワークスペース (モード切替) -->
+    <!-- 🌟 メイン入力エリア (一括読み込み ＆ 単発入力) -->
     <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
       
       <!-- モード切り替えタブ -->
       <div class="flex border-b border-slate-700 pb-2 gap-2">
         <button type="button" id="tabBtnBatch" onclick="switchInputMode('batch')" class="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow">
-          <i class="fa-solid fa-bolt me-1"></i> ① 1日一括設定 ＆ スクショ2枠高速照合
+          <i class="fa-solid fa-bolt me-1"></i> ① 1日一括予想 ＆ スクショ2枠高速合体
         </button>
         <button type="button" id="tabBtnSingle" onclick="switchInputMode('single')" class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600">
-          <i class="fa-solid fa-pen-to-square me-1"></i> ② 詳細・単発登録 (多点買い/手書きメモ)
+          <i class="fa-solid fa-pen-to-square me-1"></i> ② 単発・手書きメモ登録
         </button>
       </div>
 
@@ -116,32 +116,27 @@
         
         <!-- 左：STEP 1 本日の予想重複チェック -->
         <div class="lg:col-span-5 bg-slate-900 border border-indigo-500/30 p-4 rounded-xl space-y-3">
+          <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+            <div>
+              <span class="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 1 (レース前)</span>
+              <h4 class="font-bold text-white text-sm mt-1">📋 本日の推奨サイト重複チェック</h4>
+            </div>
+          </div>
+
           <div>
-            <span class="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 1 (レース前)</span>
-            <h4 class="font-bold text-white text-sm mt-1">📋 本日の推奨サイト重複チェック</h4>
+            <label class="block text-[10px] text-slate-400 mb-0.5">対象日付</label>
+            <input type="date" id="preRaceDate" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white">
           </div>
 
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-[10px] text-slate-400 mb-0.5">日付</label>
-              <input type="date" id="preRaceDate" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white">
-            </div>
-            <div>
-              <label class="block text-[10px] text-slate-400 mb-0.5">競輪場</label>
-              <input type="text" id="preRaceVenue" placeholder="平塚" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white">
-            </div>
-          </div>
-
-          <div class="space-y-1.5 max-h-[320px] overflow-y-auto pr-1">
+          <div class="space-y-1.5 max-h-[340px] overflow-y-auto pr-1">
             <script>
-              // 1R〜12Rの入力行を即時レンダリング
               document.write(Array.from({length: 12}, (_, i) => `
                 <div class="p-1.5 bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-between">
-                  <span class="font-black text-amber-400 text-xs px-1.5 py-0.5 bg-slate-900 rounded border border-slate-700">${i+1}R</span>
-                  <div class="flex items-center gap-1">
-                    <label class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_${i+1}" class="hidden"> B</label>
-                    <label class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_${i+1}" class="hidden"> Y</label>
-                    <label class="px-2 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_${i+1}" class="hidden"> N</label>
+                  <span class="font-black text-amber-400 text-xs px-2 py-0.5 bg-slate-900 rounded border border-slate-700">${i+1}R</span>
+                  <div class="flex items-center gap-1.5">
+                    <label class="px-2.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_${i+1}" class="hidden"> B</label>
+                    <label class="px-2.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_${i+1}" class="hidden"> Y</label>
+                    <label class="px-2.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_${i+1}" class="hidden"> N</label>
                   </div>
                 </div>
               `).join(''));
@@ -156,12 +151,14 @@
         <!-- 右：STEP 2 結果スクショ2枠高速読み取り -->
         <div class="lg:col-span-7 bg-slate-900 border border-emerald-500/30 p-4 rounded-xl space-y-3 flex flex-col justify-between">
           <div class="space-y-3">
-            <div>
+            <div class="border-b border-slate-800 pb-2">
               <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 2 (レース後)</span>
-              <h4 class="font-bold text-white text-sm mt-1">🏆 結果スクショ 2枠高速照合</h4>
+              <h4 class="font-bold text-white text-sm mt-1">🏆 結果スクショ 2枠分離照合</h4>
+              <p class="text-[11px] text-slate-400">片方だけでも残ります。両方貼ると「✨ 合致成功！」になります。</p>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <!-- ① 着順専用貼り付け枠 -->
               <div class="border-2 border-dashed border-indigo-500/60 hover:border-indigo-400 rounded-xl p-3 text-center cursor-pointer bg-indigo-950/20 transition flex flex-col justify-center items-center min-h-[100px]" onclick="document.getElementById('arrivalFileInput').click()">
                 <input type="file" id="arrivalFileInput" accept="image/*" class="hidden" onchange="handleArrivalImageUpload(event)">
                 <i class="fa-solid fa-flag-checkered text-2xl text-indigo-400 mb-1"></i>
@@ -170,6 +167,7 @@
                 <div id="arrivalStatus" class="hidden mt-1 text-[10px] text-amber-400 font-bold"><i class="fa-solid fa-spinner fa-spin me-1"></i> 解析中...</div>
               </div>
 
+              <!-- ② 配当専用貼り付け枠 -->
               <div class="border-2 border-dashed border-emerald-500/60 hover:border-emerald-400 rounded-xl p-3 text-center cursor-pointer bg-emerald-950/20 transition flex flex-col justify-center items-center min-h-[100px]" onclick="document.getElementById('payoutFileInput').click()">
                 <input type="file" id="payoutFileInput" accept="image/*" class="hidden" onchange="handlePayoutImageUpload(event)">
                 <i class="fa-solid fa-sack-dollar text-2xl text-emerald-400 mb-1"></i>
@@ -180,26 +178,23 @@
             </div>
 
             <div class="space-y-1">
-              <span class="text-xs font-bold text-slate-300 block">📊 照合結果の確認・修正</span>
-              <div id="parsedResultContainer" class="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+              <span class="text-xs font-bold text-slate-300 block">📊 照合結果・合致ステータス</span>
+              <div id="parsedResultContainer" class="space-y-2 max-h-[220px] overflow-y-auto pr-1">
                 <p class="text-xs text-slate-500 text-center py-6">上の2つの枠にスクショを貼ると一覧表示されます。</p>
               </div>
             </div>
           </div>
 
-          <button type="button" onclick="applyResultsToRaces()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2 rounded-lg shadow transition">
-            <i class="fa-solid fa-check me-1"></i> 成績計算を反映・確定する
+          <button type="button" onclick="applyResultsToRaces()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 rounded-lg shadow transition">
+            <i class="fa-solid fa-check me-1"></i> 成績計算を確定・保存する
           </button>
         </div>
 
       </div>
 
-      <!-- モード2：詳細・単発入力フォーム (多点買い・手書きメモ対応) -->
+      <!-- モード2：単発・手書き入力フォーム -->
       <div id="modeSingleSection" class="hidden space-y-4">
         <form id="raceForm" onsubmit="saveSingleRace(event)" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <input type="hidden" id="editRaceId">
-
-          <!-- 左側 フォーム入力 -->
           <div class="lg:col-span-7 space-y-4">
             <div class="grid grid-cols-2 gap-3">
               <div>
@@ -207,15 +202,11 @@
                 <input type="date" id="raceDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
               </div>
               <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">競輪場 / レース</label>
-                <div class="flex gap-1">
-                  <input type="text" id="venue" placeholder="平塚" class="w-2/3 bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-white">
-                  <input type="number" id="raceNum" min="1" max="12" placeholder="11" class="w-1/3 bg-slate-900 border border-slate-700 rounded-lg px-2 py-2 text-xs text-white text-center">
-                </div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1">レース番号</label>
+                <input type="number" id="raceNum" min="1" max="12" placeholder="11" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
               </div>
             </div>
 
-            <!-- B/Y/N 選択 -->
             <div>
               <label class="block text-xs font-semibold text-slate-400 mb-1">推奨サイト (重複チェック)</label>
               <div class="grid grid-cols-3 gap-2">
@@ -234,7 +225,6 @@
               </div>
             </div>
 
-            <!-- 結果入力 -->
             <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2">
               <span class="text-xs font-bold text-slate-300 block">🏆 レース結果</span>
               <div class="grid grid-cols-2 gap-2">
@@ -248,22 +238,12 @@
                 </div>
               </div>
             </div>
-
-            <!-- 買い目リスト -->
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <label class="text-xs font-semibold text-slate-400">🎯 購入買い目リスト (多点買い)</label>
-                <button type="button" onclick="addTicketRow()" class="text-[11px] text-indigo-400 font-bold">+ 行追加</button>
-              </div>
-              <div id="ticketsContainer" class="space-y-2 max-h-36 overflow-y-auto pr-1"></div>
-            </div>
           </div>
 
-          <!-- 右側 手書きキャンバス -->
           <div class="lg:col-span-5 space-y-3 flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-center mb-1">
-                <label class="text-xs font-semibold text-slate-400">✍️ 展開・買い目メモ (手書き)</label>
+                <label class="text-xs font-semibold text-slate-400">✍️ 展開メモ (手書き)</label>
                 <button type="button" onclick="clearCanvas()" class="text-[10px] text-slate-400 hover:text-rose-400">クリア</button>
               </div>
               <div class="border border-slate-700 rounded-xl overflow-hidden bg-slate-950">
@@ -273,7 +253,7 @@
 
             <div class="flex gap-2">
               <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-xs">
-                <i class="fa-solid fa-floppy-disk me-1"></i> 詳細レース保存
+                <i class="fa-solid fa-floppy-disk me-1"></i> レース保存
               </button>
               <button type="button" onclick="resetSingleForm()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 py-2.5 px-3 rounded-xl text-xs">
                 リセット
@@ -294,7 +274,7 @@
         
         <div class="flex items-center gap-2">
           <select id="filterOverlap" onchange="renderHistory()" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg px-2 py-1.5">
-            <option value="ALL">全7パターン表示</option>
+            <option value="ALL">全パターン表示</option>
             <option value="B_Y_N">3重: B & Y & N</option>
             <option value="B_Y">2重: B & Y</option>
             <option value="Y_N">2重: Y & N</option>
@@ -302,6 +282,7 @@
             <option value="B">1重: Bのみ</option>
             <option value="Y">1重: Yのみ</option>
             <option value="N">1重: Nのみ</option>
+            <option value="NONE">予想なし (記録のみ)</option>
           </select>
           <button type="button" onclick="exportCSV()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-600">
             <i class="fa-solid fa-download me-1"></i> CSV
