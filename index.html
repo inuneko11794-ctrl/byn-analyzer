@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>BYN Race Analyzer</title>
+  <title>万車ノート - KEIRIN LEDGER</title>
   
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1e293b">
+  <meta name="theme-color" content="#f5f2eb">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="BYN Analyzer">
+  <meta name="apple-mobile-web-app-title" content="万車ノート">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -22,312 +21,124 @@
 
   <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen pb-20 font-sans antialiased">
+<body class="bg-[#f5f2eb] text-[#2c2a29] min-h-screen pb-24 font-sans antialiased selection:bg-[#2c2a29] selection:text-white">
 
   <!-- ヘッダー -->
-  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-30 shadow-lg">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <div class="bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-2 rounded-xl text-white shadow-md">
-          <i class="fa-solid fa-chart-line text-lg"></i>
-        </div>
-        <div>
-          <h1 class="font-black text-xl tracking-wider text-white flex items-center gap-2">
-            BYN <span class="text-xs px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full font-normal">Analyzer</span>
-          </h1>
-          <p class="text-xs text-slate-400">予想サイト重複フィルター検証ツール</p>
-        </div>
+  <header class="bg-[#f5f2eb] border-b border-[#e5dfd3] sticky top-0 z-30 px-5 py-4">
+    <div class="max-w-2xl mx-auto flex justify-between items-start">
+      <div>
+        <p class="text-[10px] tracking-widest text-[#8c857b] font-bold uppercase">KEIRIN LEDGER</p>
+        <h1 class="text-2xl font-black tracking-tight text-[#2c2a29]">万車ノート</h1>
       </div>
-      <div class="flex items-center gap-2">
-        <button type="button" onclick="openPwaGuide()" class="hidden md:flex items-center gap-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1.5 px-3 rounded-lg transition shadow">
-          <i class="fa-solid fa-mobile-screen-button"></i> ホーム追加
-        </button>
-        <button type="button" onclick="loadSampleData()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 py-1.5 px-3 rounded-lg border border-slate-600 transition">
-          <i class="fa-solid fa-flask text-amber-400 me-1"></i> サンプル
+      <div class="text-right">
+        <span class="text-[11px] text-[#8c857b] block font-bold">万車 0/0 0万円以上</span>
+        <button type="button" onclick="loadSampleData()" class="text-xs text-[#2c2a29] underline hover:opacity-70 font-semibold mt-0.5">
+          サンプル挿入
         </button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+  <main class="max-w-2xl mx-auto px-4 py-6 space-y-6">
 
-    <!-- 7パターン別サマリーカード -->
-    <section class="space-y-3">
+    <!-- タイトル説明 -->
+    <div class="space-y-1">
+      <h2 class="text-xl font-bold text-[#2c2a29]">画面を貼る</h2>
+      <p class="text-xs text-[#6e675e] leading-relaxed">
+        着順と払戻を貼ると、選んだ日付に開催を足す。同じ日が何回あっても、そのまま積む。
+      </p>
+    </div>
+
+    <!-- 日付 ＆ 開催日タグ -->
+    <div class="space-y-3 bg-[#ede7dc]/60 p-4 rounded-2xl border border-[#e2d9ca]">
+      <div>
+        <label class="block text-xs font-bold text-[#6e675e] mb-1">日付</label>
+        <input type="date" id="targetDate" class="w-full bg-white border border-[#d8cfc0] rounded-xl px-3 py-2 text-sm text-[#2c2a29] font-bold shadow-sm focus:outline-none focus:border-[#2c2a29]">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-[#6e675e] mb-1">何日目</label>
+        <div class="flex flex-wrap gap-1.5" id="dayPicker">
+          <button type="button" onclick="selectDay(this, '初日')" class="day-btn px-3 py-1.5 rounded-full text-xs font-bold bg-[#2c2a29] text-white transition">初日</button>
+          <button type="button" onclick="selectDay(this, '2日目')" class="day-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white text-[#6e675e] border border-[#d8cfc0] hover:bg-[#e8e2d5] transition">2日目</button>
+          <button type="button" onclick="selectDay(this, '3日目')" class="day-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white text-[#6e675e] border border-[#d8cfc0] hover:bg-[#e8e2d5] transition">3日目</button>
+          <button type="button" onclick="selectDay(this, '4日目')" class="day-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white text-[#6e675e] border border-[#d8cfc0] hover:bg-[#e8e2d5] transition">4日目</button>
+          <button type="button" onclick="selectDay(this, '5日目')" class="day-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white text-[#6e675e] border border-[#d8cfc0] hover:bg-[#e8e2d5] transition">5日目</button>
+          <button type="button" onclick="selectDay(this, '最終日')" class="day-btn px-3 py-1.5 rounded-full text-xs font-bold bg-white text-[#6e675e] border border-[#d8cfc0] hover:bg-[#e8e2d5] transition">最終日</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🌟 万車ノート風 1つのドロップ・貼り付けエリア -->
+    <div class="space-y-3">
+      <div id="dropZone" onclick="document.getElementById('multiFileInput').click()" class="border-2 border-dashed border-[#c8beae] hover:border-[#2c2a29] rounded-2xl p-8 text-center cursor-pointer bg-[#ece5d8]/70 transition-all flex flex-col items-center justify-center min-h-[160px] shadow-sm relative overflow-hidden group">
+        <input type="file" id="multiFileInput" accept="image/*" multiple class="hidden" onchange="handleMultipleImages(event)">
+        
+        <!-- 通常待機画面 -->
+        <div id="dropIdleState" class="space-y-2">
+          <p class="text-base font-black text-[#2c2a29] group-hover:scale-105 transition-transform">ここに貼る</p>
+          <p class="text-xs text-[#7c756a] font-medium">1枚目が着順、2枚目が払戻。逆でも大丈夫。</p>
+        </div>
+
+        <!-- 読み込み中アニメーション -->
+        <div id="dropLoadingState" class="hidden flex-col items-center justify-center space-y-2">
+          <i class="fa-solid fa-spinner fa-spin text-2xl text-[#2c2a29]"></i>
+          <p class="text-sm font-bold text-[#2c2a29]">読んでいます...</p>
+          <p class="text-xs text-[#7c756a]">1枚目が着順、2枚目が払戻。逆でも大丈夫。</p>
+        </div>
+      </div>
+
+      <!-- 解析結果バッジ（例：着順 11  払戻 11） -->
+      <div id="badgeStatusArea" class="hidden flex flex-wrap items-center gap-2 pt-1">
+        <span id="badgeArrival" class="bg-[#1f3a32] text-white text-xs font-bold px-3 py-1 rounded-md shadow-sm">着順 0</span>
+        <span id="badgePayout" class="bg-[#1f3a32] text-white text-xs font-bold px-3 py-1 rounded-md shadow-sm">払戻 0</span>
+        <span id="statusMessageText" class="text-xs font-bold text-[#5c554a] ms-1"></span>
+      </div>
+
+      <!-- 解析結果レースカードリスト（動画同様のデザイン） -->
+      <div id="raceCardList" class="space-y-2.5 pt-1"></div>
+
+      <!-- 「この内容を足す」ボタン -->
+      <button type="button" id="submitBtn" onclick="applyAndSaveRaces()" disabled class="w-full bg-[#1c2e28] hover:bg-[#12201b] disabled:opacity-40 disabled:cursor-not-allowed text-white font-black text-sm py-3.5 rounded-xl shadow-md transition-all">
+        この内容を足す
+      </button>
+    </div>
+
+    <!-- 📊 統合成績カード & 履歴一覧 -->
+    <div class="pt-6 border-t border-[#e2d9ca] space-y-4">
       <div class="flex justify-between items-center">
-        <h2 class="text-sm font-bold text-slate-300 flex items-center gap-2">
-          <i class="fa-solid fa-layer-group text-indigo-400"></i> 重複パターン別成績 (全7パターン)
-        </h2>
-        <span class="text-xs text-slate-400" id="totalRaceCount">全 0 レース</span>
+        <h3 class="font-bold text-[#2c2a29] text-base">📋 記録一覧</h3>
+        <button type="button" onclick="clearAllData()" class="text-xs text-rose-700 hover:underline font-semibold">全データ削除</button>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3" id="patternCardsContainer">
-        <!-- JS動的挿入 -->
-      </div>
-    </section>
-
-    <!-- 比較グラフ & 比較テーブル -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-2 bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
-        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-chart-column text-indigo-400"></i> パターン別 回収率・的中率比較
-        </h3>
-        <div class="relative h-64 w-full">
-          <canvas id="comparisonChart"></canvas>
-        </div>
-      </div>
-
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
-        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-table text-indigo-400"></i> 成績一覧表
-        </h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left text-slate-300">
-            <thead class="bg-slate-700/50 text-slate-400 uppercase border-b border-slate-700">
-              <tr>
-                <th class="py-2 px-1">パターン</th>
-                <th class="py-2 px-1 text-center">件数</th>
-                <th class="py-2 px-1 text-right">的中率</th>
-                <th class="py-2 px-1 text-right">回収率</th>
-              </tr>
-            </thead>
-            <tbody id="patternTableBody" class="divide-y divide-slate-700/50">
-              <!-- JS挿入 -->
-            </tbody>
-          </table>
-        </div>
+      <div id="savedHistoryList" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+        <!-- JS挿入 -->
       </div>
     </div>
 
-    <!-- 🌟 メイン入力エリア (一括読み込み ＆ 単発入力) -->
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-      
-      <!-- モード切り替えタブ -->
-      <div class="flex border-b border-slate-700 pb-2 gap-2">
-        <button type="button" id="tabBtnBatch" onclick="switchInputMode('batch')" class="px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white shadow">
-          <i class="fa-solid fa-bolt me-1"></i> ① 1日一括予想 ＆ スクショ2枠高速合体
-        </button>
-        <button type="button" id="tabBtnSingle" onclick="switchInputMode('single')" class="px-4 py-2 text-xs font-bold rounded-xl bg-slate-700 text-slate-300 hover:bg-slate-600">
-          <i class="fa-solid fa-pen-to-square me-1"></i> ② 単発・手書きメモ登録
-        </button>
-      </div>
-
-      <!-- モード1：一括設定 ＆ スクショ2枠照合 -->
-      <div id="modeBatchSection" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        
-        <!-- 左：STEP 1 本日の予想重複チェック -->
-        <div class="lg:col-span-5 bg-slate-900 border border-indigo-500/30 p-4 rounded-xl space-y-3">
-          <div class="flex justify-between items-center border-b border-slate-800 pb-2">
-            <div>
-              <span class="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 1 (レース前)</span>
-              <h4 class="font-bold text-white text-sm mt-1">📋 本日の推奨サイト重複チェック</h4>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-[10px] text-slate-400 mb-0.5">対象日付</label>
-            <input type="date" id="preRaceDate" class="w-full bg-slate-800 border border-slate-700 rounded px-2.5 py-1.5 text-xs text-white">
-          </div>
-
-          <div class="space-y-1.5 max-h-[340px] overflow-y-auto pr-1">
-            <script>
-              document.write(Array.from({length: 12}, (_, i) => `
-                <div class="p-1.5 bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-between">
-                  <span class="font-black text-amber-400 text-xs px-2 py-0.5 bg-slate-900 rounded border border-slate-700">${i+1}R</span>
-                  <div class="flex items-center gap-1.5">
-                    <label class="px-2.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_${i+1}" class="hidden"> B</label>
-                    <label class="px-2.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_${i+1}" class="hidden"> Y</label>
-                    <label class="px-2.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_${i+1}" class="hidden"> N</label>
-                  </div>
-                </div>
-              `).join(''));
-            </script>
-          </div>
-
-          <button type="button" onclick="savePreRaces()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2 rounded-lg shadow transition">
-            <i class="fa-solid fa-floppy-disk me-1"></i> 予想レース枠を登録する
-          </button>
-        </div>
-
-        <!-- 右：STEP 2 結果スクショ2枠高速読み取り -->
-        <div class="lg:col-span-7 bg-slate-900 border border-emerald-500/30 p-4 rounded-xl space-y-3 flex flex-col justify-between">
-          <div class="space-y-3">
-            <div class="border-b border-slate-800 pb-2">
-              <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 2 (レース後)</span>
-              <h4 class="font-bold text-white text-sm mt-1">🏆 結果スクショ 2枠分離照合</h4>
-              <p class="text-[11px] text-slate-400">片方だけでも残ります。両方貼ると「✨ 合致成功！」になります。</p>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <!-- ① 着順専用貼り付け枠 -->
-              <div class="border-2 border-dashed border-indigo-500/60 hover:border-indigo-400 rounded-xl p-3 text-center cursor-pointer bg-indigo-950/20 transition flex flex-col justify-center items-center min-h-[100px]" onclick="document.getElementById('arrivalFileInput').click()">
-                <input type="file" id="arrivalFileInput" accept="image/*" class="hidden" onchange="handleArrivalImageUpload(event)">
-                <i class="fa-solid fa-flag-checkered text-2xl text-indigo-400 mb-1"></i>
-                <p class="text-xs font-bold text-indigo-200">① 「着順一覧」のスクショ</p>
-                <p class="text-[10px] text-slate-400">タップして選択 または コピペ</p>
-                <div id="arrivalStatus" class="hidden mt-1 text-[10px] text-amber-400 font-bold"><i class="fa-solid fa-spinner fa-spin me-1"></i> 解析中...</div>
-              </div>
-
-              <!-- ② 配当専用貼り付け枠 -->
-              <div class="border-2 border-dashed border-emerald-500/60 hover:border-emerald-400 rounded-xl p-3 text-center cursor-pointer bg-emerald-950/20 transition flex flex-col justify-center items-center min-h-[100px]" onclick="document.getElementById('payoutFileInput').click()">
-                <input type="file" id="payoutFileInput" accept="image/*" class="hidden" onchange="handlePayoutImageUpload(event)">
-                <i class="fa-solid fa-sack-dollar text-2xl text-emerald-400 mb-1"></i>
-                <p class="text-xs font-bold text-emerald-200">② 「配当一覧」のスクショ</p>
-                <p class="text-[10px] text-slate-400">タップして選択 または コピペ</p>
-                <div id="payoutStatus" class="hidden mt-1 text-[10px] text-amber-400 font-bold"><i class="fa-solid fa-spinner fa-spin me-1"></i> 解析中...</div>
-              </div>
-            </div>
-
-            <div class="space-y-1">
-              <span class="text-xs font-bold text-slate-300 block">📊 照合結果・合致ステータス</span>
-              <div id="parsedResultContainer" class="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                <p class="text-xs text-slate-500 text-center py-6">上の2つの枠にスクショを貼ると一覧表示されます。</p>
-              </div>
-            </div>
-          </div>
-
-          <button type="button" onclick="applyResultsToRaces()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 rounded-lg shadow transition">
-            <i class="fa-solid fa-check me-1"></i> 成績計算を確定・保存する
-          </button>
-        </div>
-
-      </div>
-
-      <!-- モード2：単発・手書き入力フォーム -->
-      <div id="modeSingleSection" class="hidden space-y-4">
-        <form id="raceForm" onsubmit="saveSingleRace(event)" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div class="lg:col-span-7 space-y-4">
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">日付</label>
-                <input type="date" id="raceDate" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-400 mb-1">レース番号</label>
-                <input type="number" id="raceNum" min="1" max="12" placeholder="11" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">推奨サイト (重複チェック)</label>
-              <div class="grid grid-cols-3 gap-2">
-                <label class="flex items-center justify-center p-2 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer hover:bg-slate-750 has-[:checked]:border-blue-500 font-bold text-xs">
-                  <input type="checkbox" id="siteB" class="hidden" onchange="updateOverlapBadge()"> Bサイト
-                </label>
-                <label class="flex items-center justify-center p-2 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer hover:bg-slate-750 has-[:checked]:border-amber-500 font-bold text-xs">
-                  <input type="checkbox" id="siteY" class="hidden" onchange="updateOverlapBadge()"> Yサイト
-                </label>
-                <label class="flex items-center justify-center p-2 rounded-lg border border-slate-700 bg-slate-900 cursor-pointer hover:bg-slate-750 has-[:checked]:border-emerald-500 font-bold text-xs">
-                  <input type="checkbox" id="siteN" class="hidden" onchange="updateOverlapBadge()"> Nサイト
-                </label>
-              </div>
-              <div class="mt-1 text-right">
-                <span id="overlapDisplayBadge" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-300 font-bold">選択なし</span>
-              </div>
-            </div>
-
-            <div class="bg-slate-900 p-3 rounded-xl border border-slate-700/80 space-y-2">
-              <span class="text-xs font-bold text-slate-300 block">🏆 レース結果</span>
-              <div class="grid grid-cols-2 gap-2">
-                <div>
-                  <label class="block text-[10px] text-slate-400">決定着順 (例: 5-1-6)</label>
-                  <input type="text" id="resultCombo" placeholder="5-1-6" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white font-mono">
-                </div>
-                <div>
-                  <label class="block text-[10px] text-slate-400">3連単配当 (円)</label>
-                  <input type="number" id="payoutAmount" placeholder="920" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1.5 text-xs text-white font-mono">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="lg:col-span-5 space-y-3 flex flex-col justify-between">
-            <div>
-              <div class="flex justify-between items-center mb-1">
-                <label class="text-xs font-semibold text-slate-400">✍️ 展開メモ (手書き)</label>
-                <button type="button" onclick="clearCanvas()" class="text-[10px] text-slate-400 hover:text-rose-400">クリア</button>
-              </div>
-              <div class="border border-slate-700 rounded-xl overflow-hidden bg-slate-950">
-                <canvas id="handwritingCanvas" width="350" height="150" class="w-full h-36 touch-none cursor-crosshair"></canvas>
-              </div>
-            </div>
-
-            <div class="flex gap-2">
-              <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 px-4 rounded-xl shadow transition text-xs">
-                <i class="fa-solid fa-floppy-disk me-1"></i> レース保存
-              </button>
-              <button type="button" onclick="resetSingleForm()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 py-2.5 px-3 rounded-xl text-xs">
-                リセット
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-    </div>
-
-    <!-- メインデータ履歴一覧 -->
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700 pb-3">
-        <h3 class="font-bold text-white text-base flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-indigo-400"></i> 登録レース一覧・収支履歴
-        </h3>
-        
-        <div class="flex items-center gap-2">
-          <select id="filterOverlap" onchange="renderHistory()" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg px-2 py-1.5">
-            <option value="ALL">全パターン表示</option>
-            <option value="B_Y_N">3重: B & Y & N</option>
-            <option value="B_Y">2重: B & Y</option>
-            <option value="Y_N">2重: Y & N</option>
-            <option value="B_N">2重: B & N</option>
-            <option value="B">1重: Bのみ</option>
-            <option value="Y">1重: Yのみ</option>
-            <option value="N">1重: Nのみ</option>
-            <option value="NONE">予想なし (記録のみ)</option>
-          </select>
-          <button type="button" onclick="exportCSV()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-600">
-            <i class="fa-solid fa-download me-1"></i> CSV
-          </button>
-        </div>
-      </div>
-
-      <div id="historyList" class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-        <!-- JS動的挿入 -->
-      </div>
-
-      <div class="pt-3 border-t border-slate-700 flex justify-between items-center text-xs text-slate-400">
-        <span>※データはブラウザ内部に自動保存されます</span>
-        <button type="button" onclick="clearAllData()" class="text-rose-400 hover:underline">全データ削除</button>
-      </div>
-    </div>
   </main>
 
-  <!-- PWA 追加案内モーダル -->
-  <div id="pwaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 text-slate-200">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-        <h3 class="font-bold text-white text-base">📱 ホーム画面への追加方法</h3>
-        <button type="button" onclick="closePwaGuide()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="space-y-3 text-xs leading-relaxed">
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700 space-y-1">
-          <p class="font-bold text-indigo-400">🍎 iPhone (Safari) の場合</p>
-          <ol class="list-decimal list-inside space-y-1 text-slate-300">
-            <li>下部の共有ボタン <i class="fa-solid fa-share-nodes"></i> をタップ</li>
-            <li>「ホーム画面に追加」を選択</li>
-            <li>右上の「追加」をタップ</li>
-          </ol>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700 space-y-1">
-          <p class="font-bold text-emerald-400">🤖 Android (Chrome) の場合</p>
-          <ol class="list-decimal list-inside space-y-1 text-slate-300">
-            <li>右上のメニューボタン <i class="fa-solid fa-ellipsis-vertical"></i> をタップ</li>
-            <li>「ホーム画面に追加」をタップ</li>
-          </ol>
-        </div>
-      </div>
-      <button type="button" onclick="closePwaGuide()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs">閉じる</button>
+  <!-- ボトムナビゲーション (動画再現) -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-[#242220] border-t border-[#383532] text-[#8c857b] px-6 py-2.5 z-40">
+    <div class="max-w-md mx-auto flex justify-between items-center text-center">
+      <button class="flex flex-col items-center gap-1 text-xs hover:text-white transition">
+        <i class="fa-solid fa-graduation-cap text-base"></i>
+        <span class="text-[10px]">学習</span>
+      </button>
+      <button class="flex flex-col items-center gap-1 text-xs hover:text-white transition">
+        <i class="fa-solid fa-square-poll-vertical text-base"></i>
+        <span class="text-[10px]">結果</span>
+      </button>
+      <button class="flex flex-col items-center gap-1 text-xs text-white font-bold">
+        <i class="fa-solid fa-pen-to-square text-base"></i>
+        <span class="text-[10px]">記録</span>
+      </button>
+      <button class="flex flex-col items-center gap-1 text-xs hover:text-white transition">
+        <i class="fa-solid fa-bullseye text-base"></i>
+        <span class="text-[10px]">焦点</span>
+      </button>
     </div>
-  </div>
+  </nav>
 
   <script src="app.js"></script>
 </body>
