@@ -31,7 +31,7 @@
     <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
       <div class="flex items-center space-x-3">
         <div class="bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 p-2 rounded-xl text-white shadow-md">
-          <i class="fa-solid me-1 fa-chart-line text-lg"></i>
+          <i class="fa-solid fa-chart-line text-lg"></i>
         </div>
         <div>
           <h1 class="font-black text-xl tracking-wider text-white flex items-center gap-2">
@@ -53,7 +53,7 @@
 
   <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-    <!-- ホーム追加（PWA）案内バナー (スマホ表示時) -->
+    <!-- ホーム追加（PWA）案内バナー -->
     <div id="pwaBanner" class="bg-gradient-to-r from-indigo-900/80 to-purple-900/80 border border-indigo-500/40 rounded-xl p-3 flex items-center justify-between text-xs shadow-md">
       <div class="flex items-center gap-3">
         <div class="bg-indigo-500 text-white p-2 rounded-lg text-lg">📱</div>
@@ -77,7 +77,7 @@
       </div>
 
       <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3" id="patternCardsContainer">
-        <!-- JSでカードが自動挿入されます -->
+        <!-- JSで動的生成 -->
       </div>
     </section>
 
@@ -127,7 +127,7 @@
             <i class="fa-solid fa-pen-to-square text-indigo-400"></i> レース・買い目登録
           </h3>
           <button onclick="openOcrModal()" class="text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold py-1.5 px-3 rounded-lg shadow flex items-center gap-1.5 transition">
-            <i class="fa-solid fa-camera"></i> 📸 画像自動入力(OCR)
+            <i class="fa-solid fa-camera"></i> 📸 スクショ一括読み込み
           </button>
         </div>
 
@@ -279,695 +279,87 @@
     </div>
   </main>
 
-  <!-- 📸 画像読み込み & 手動可変修正 モーダル -->
+  <!-- 📸 スクショ一括解析 ＆ サイト重複設定 モーダル -->
   <div id="ocrModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
     <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
       <!-- モーダルヘッダー -->
       <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-850">
         <h3 class="font-bold text-white text-base flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-indigo-400"></i> 画像読み込み ＆ 手動修正ワークスペース
+          <i class="fa-solid fa-sliders text-indigo-400"></i> 画像一括解析 ＆ サイト重複設定
         </h3>
         <button onclick="closeOcrModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <!-- モーダルボディ (2カラム: 左=画像プレビュー, 右=可変調整) -->
-      <div class="p-4 overflow-y-auto flex-1 grid grid-cols-1 md:grid-cols-12 gap-4">
+      <!-- モーダルボディ -->
+      <div class="p-4 overflow-y-auto flex-1 space-y-4">
         
-        <!-- 左側: 画像アップロード ＆ プレビュー (5列) -->
-        <div class="md:col-span-5 space-y-3 flex flex-col">
-          <div class="border-2 border-dashed border-slate-600 hover:border-indigo-500 rounded-xl p-4 text-center cursor-pointer bg-slate-900 transition" onclick="document.getElementById('ocrFileInput').click()">
-            <input type="file" id="ocrFileInput" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)">
-            <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-400 mb-2"></i>
-            <p class="text-xs font-bold text-slate-200">出走表/着順/配当の画像をアップロード</p>
-            <p class="text-[10px] text-slate-400 mt-1">タップして選択 または コピペ(Ctrl+V)</p>
-          </div>
-
-          <!-- ステータス表示 -->
-          <div id="ocrStatus" class="hidden text-xs text-amber-400 bg-amber-950/40 p-2 rounded-lg border border-amber-800/50 flex items-center gap-2">
-            <i class="fa-solid fa-spinner fa-spin"></i> AI/OCR解析中...
-          </div>
-
-          <!-- 画像プレビュー枠 -->
-          <div class="flex-1 bg-slate-950 border border-slate-700 rounded-xl p-2 min-h-[220px] flex items-center justify-center relative overflow-hidden">
-            <img id="ocrPreviewImage" class="max-h-64 object-contain rounded hidden" alt="解析対象画像">
-            <span id="ocrPlaceholder" class="text-xs text-slate-500">ここに画像が表示されます</span>
-          </div>
+        <!-- 画像アップロード枠 -->
+        <div class="border-2 border-dashed border-slate-600 hover:border-indigo-500 rounded-xl p-4 text-center cursor-pointer bg-slate-900 transition" onclick="document.getElementById('ocrFileInput').click()">
+          <input type="file" id="ocrFileInput" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)">
+          <i class="fa-solid fa-cloud-arrow-up text-3xl text-indigo-400 mb-2"></i>
+          <p class="text-xs font-bold text-slate-200">着順一覧 ＆ 配当一覧のスクショ（複数可）を選択</p>
+          <p class="text-[10px] text-slate-400 mt-1">タップして選択 または クリップボードから貼り付け (Ctrl+V)</p>
         </div>
 
-        <!-- 右側: 読み取り結果 ＆ 可変入力コントローラー (7列) -->
-        <div class="md:col-span-7 bg-slate-900 p-4 rounded-xl border border-slate-700 space-y-4">
-          <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-            <span class="text-xs font-bold text-indigo-300">✏️ 画像を見ながらデータを手動補正</span>
-            <span class="text-[10px] text-slate-400">不正確な部分はワンタップ修正</span>
-          </div>
+        <!-- ステータス表示 -->
+        <div id="ocrStatus" class="hidden text-xs text-amber-400 bg-amber-950/40 p-2.5 rounded-lg border border-amber-800/50 flex items-center gap-2">
+          <i class="fa-solid fa-spinner fa-spin"></i> AI/OCRで全レース情報を自動解析中...
+        </div>
 
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1">対象レース</label>
-              <div class="flex items-center gap-1">
-                <input type="number" id="modalRaceNum" value="1" min="1" max="12" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white text-center font-bold">
-                <span class="text-xs text-slate-300">R</span>
-              </div>
-            </div>
-            <div>
-              <label class="block text-[11px] font-semibold text-slate-400 mb-1">荒れ度設定</label>
-              <select id="modalRoughness" class="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1.5 text-xs text-white">
-                <option value="荒れ">💥 荒れ</option>
-                <option value="普通" selected>⚖️ 普通</option>
-                <option value="固い">🔒 固い</option>
-              </select>
-            </div>
-          </div>
+        <!-- 1日分全レースの動的重複設定テーブル -->
+        <div id="batchRaceListContainer" class="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+          <!-- JSで全レース(7R, 9R, 12R等)が自動挿入されます -->
+        </div>
 
-          <!-- 推奨サイト選択 -->
-          <div>
-            <label class="block text-[11px] font-semibold text-slate-400 mb-1">推奨サイトの該当チェック</label>
-            <div class="grid grid-cols-3 gap-2">
-              <button type="button" id="modalBtnB" onclick="toggleModalSite('B')" class="py-1.5 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-400">Bサイト</button>
-              <button type="button" id="modalBtnY" onclick="toggleModalSite('Y')" class="py-1.5 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-400">Yサイト</button>
-              <button type="button" id="modalBtnN" onclick="toggleModalSite('N')" class="py-1.5 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-400">Nサイト</button>
-            </div>
-          </div>
+        <div id="batchSaveSection" class="hidden mt-4 pt-3 border-t border-slate-700 flex justify-end">
+          <button onclick="saveAllBatchRaces()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs px-6 py-2.5 rounded-xl shadow-lg transition">
+            <i class="fa-solid fa-cloud-arrow-up me-1.5"></i> 選択した全レースを一括保存・分析する
+          </button>
+        </div>
 
-          <!-- 決定着順 (1着 - 2着 - 3着 の手動可変パッド) -->
-          <div class="space-y-1">
-            <label class="block text-[11px] font-semibold text-slate-400">🏆 決定着順 (タップで車番変更)</label>
-            <div class="grid grid-cols-3 gap-2">
-              <div>
-                <span class="text-[10px] text-amber-400 font-bold block mb-1">1着</span>
-                <input type="number" id="rank1" min="1" max="9" class="w-full bg-slate-800 border border-amber-500/50 rounded text-center text-sm font-bold text-white py-1" oninput="updateModalComboText()">
-              </div>
-              <div>
-                <span class="text-[10px] text-slate-300 font-bold block mb-1">2着</span>
-    /* スクロールバーのカスタマイズ */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
+      </div>
 
-/* アニメーション */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+      <!-- モーダルフッター -->
+      <div class="p-3 border-t border-slate-700 bg-slate-850 flex justify-end">
+        <button onclick="closeOcrModal()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs px-4 py-2 rounded-xl">閉じる</button>
+      </div>
+    </div>
+  </div>
 
-.animate-fade-in {
-  animation: fadeIn 0.25s ease-out forwards;
-}
+  <!-- PWA 追加案内モーダル -->
+  <div id="pwaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 text-slate-200">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+        <h3 class="font-bold text-white text-base">📱 ホーム画面への追加方法</h3>
+        <button onclick="closePwaGuide()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      
+      <div class="space-y-3 text-xs leading-relaxed">
+        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700 space-y-1">
+          <p class="font-bold text-indigo-400">🍎 iPhone (Safari) の場合</p>
+          <ol class="list-decimal list-inside space-y-1 text-slate-300">
+            <li>下部の共有ボタン <i class="fa-solid fa-share-nodes"></i> をタップ</li>
+            <li>「ホーム画面に追加」を選択</li>
+            <li>右上の「追加」をタップ</li>
+          </ol>
+        </div>
 
-/* タッチ操作キャンバスの最適化 */
-canvas {
-  touch-action: none;
-}
-// アプリケーションState
-let races = [];
-let chartInstance = null;
-let canvas, ctx;
-let isDrawing = false;
-let currentModalSites = { B: false, Y: false, N: false };
-let currentActiveRankInput = 'rank1';
+        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700 space-y-1">
+          <p class="font-bold text-emerald-400">🤖 Android (Chrome) の場合</p>
+          <ol class="list-decimal list-inside space-y-1 text-slate-300">
+            <li>右上のメニューボタン <i class="fa-solid fa-ellipsis-vertical"></i> をタップ</li>
+            <li>「ホーム画面に追加」または「アプリをインストール」をタップ</li>
+          </ol>
+        </div>
+      </div>
 
-// 初期化処理
-document.addEventListener('DOMContentLoaded', () => {
-  initCanvas();
-  loadData();
-  setDefaultDate();
-  addTicketRow(); // 初期行
-  renderAll();
-
-  // クリップボードからの画像貼り付け対応
-  window.addEventListener('paste', handlePasteImage);
-});
-
-function setDefaultDate() {
-  const today = new Date().toISOString().split('T')[0];
-  document.getElementById('raceDate').value = today;
-}
-
-// 7パターン生成定義
-const PATTERNS = [
-  { id: 'B_Y_N', label: 'B & Y & N (3重複)', color: 'from-purple-600 to-indigo-600', badgeClass: 'bg-purple-900/60 text-purple-200 border-purple-500/40' },
-  { id: 'B_Y', label: 'B & Y (2重複)', color: 'from-blue-600 to-cyan-600', badgeClass: 'bg-blue-900/60 text-blue-200 border-blue-500/40' },
-  { id: 'Y_N', label: 'Y & N (2重複)', color: 'from-emerald-600 to-teal-600', badgeClass: 'bg-emerald-900/60 text-emerald-200 border-emerald-500/40' },
-  { id: 'B_N', label: 'B & N (2重複)', color: 'from-teal-600 to-indigo-600', badgeClass: 'bg-teal-900/60 text-teal-200 border-teal-500/40' },
-  { id: 'B', label: 'B のみ (1重)', color: 'from-sky-700 to-blue-800', badgeClass: 'bg-sky-900/60 text-sky-200 border-sky-500/40' },
-  { id: 'Y', label: 'Y のみ (1重)', color: 'from-amber-700 to-orange-800', badgeClass: 'bg-amber-900/60 text-amber-200 border-amber-500/40' },
-  { id: 'N', label: 'N のみ (1重)', color: 'from-emerald-700 to-green-800', badgeClass: 'bg-emerald-900/60 text-emerald-200 border-emerald-500/40' }
-];
-
-// 重複判定関数
-function getPatternKey(sites) {
-  const hasB = sites.includes('B');
-  const hasY = sites.includes('Y');
-  const hasN = sites.includes('N');
-
-  if (hasB && hasY && hasN) return 'B_Y_N';
-  if (hasB && hasY) return 'B_Y';
-  if (hasY && hasN) return 'Y_N';
-  if (hasB && hasN) return 'B_N';
-  if (hasB) return 'B';
-  if (hasY) return 'Y';
-  if (hasN) return 'N';
-  return 'NONE';
-}
-
-// データ読み込み & 保存
-function loadData() {
-  const saved = localStorage.getItem('BYN_RACES_DATA_V2');
-  if (saved) {
-    try {
-      races = JSON.parse(saved);
-    } catch(e) {
-      races = [];
-    }
-  }
-}
-
-function saveData() {
-  localStorage.setItem('BYN_RACES_DATA_V2', JSON.stringify(races));
-  renderAll();
-}
-
-// 買い目行追加
-function addTicketRow(combo = '', amount = 100) {
-  const container = document.getElementById('ticketsContainer');
-  const rowId = 'ticket_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-
-  const html = `
-    <div id="${rowId}" class="flex items-center gap-2 bg-slate-900 p-1.5 rounded-lg border border-slate-700">
-      <input type="text" placeholder="買い目 (例: 5-1-6)" value="${combo}" class="ticket-combo w-1/2 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono">
-      <input type="number" placeholder="金額" value="${amount}" step="100" class="ticket-amount w-1/3 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono text-right">
-      <span class="text-xs text-slate-400">円</span>
-      <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-slate-500 hover:text-rose-400 px-1">
-        <i class="fa-solid fa-xmark"></i>
+      <button onclick="closePwaGuide()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs">
+        閉じる
       </button>
     </div>
-  `;
-  container.insertAdjacentHTML('beforeend', html);
-}
-
-// フォームから買い目収集
-function getTicketsFromForm() {
-  const rows = document.querySelectorAll('#ticketsContainer > div');
-  const tickets = [];
-  rows.forEach(row => {
-    const combo = row.querySelector('.ticket-combo').value.trim();
-    const amount = parseInt(row.querySelector('.ticket-amount').value) || 0;
-    if (combo && amount > 0) {
-      tickets.push({ combo, amount });
-    }
-  });
-  return tickets;
-}
-
-// フォームの推奨サイト選択バッジ更新
-function updateOverlapBadge() {
-  const sites = [];
-  if (document.getElementById('siteB').checked) sites.push('B');
-  if (document.getElementById('siteY').checked) sites.push('Y');
-  if (document.getElementById('siteN').checked) sites.push('N');
-
-  const key = getPatternKey(sites);
-  const badge = document.getElementById('overlapDisplayBadge');
-
-  if (key === 'NONE') {
-    badge.className = "text-xs px-2.5 py-1 rounded-full bg-slate-700 text-slate-300 font-bold";
-    badge.textContent = "選択なし";
-  } else {
-    const pat = PATTERNS.find(p => p.id === key);
-    badge.className = `text-xs px-2.5 py-1 rounded-full border font-bold ${pat.badgeClass}`;
-    badge.textContent = pat.label;
-  }
-}
-
-// レース保存
-function saveRace(e) {
-  e.preventDefault();
-
-  const sites = [];
-  if (document.getElementById('siteB').checked) sites.push('B');
-  if (document.getElementById('siteY').checked) sites.push('Y');
-  if (document.getElementById('siteN').checked) sites.push('N');
-
-  if (sites.length === 0) {
-    alert('推奨サイト（B, Y, N）を少なくとも1つ選択してください。');
-    return;
-  }
-
-  const tickets = getTicketsFromForm();
-  if (tickets.length === 0) {
-    alert('買い目を少なくとも1つ入力してください。');
-    return;
-  }
-
-  const resultCombo = document.getElementById('resultCombo').value.trim();
-  const payoutAmount = parseInt(document.getElementById('payoutAmount').value) || 0;
-
-  // 的中判定 & 収支計算
-  let totalInvest = 0;
-  let totalReturn = 0;
-  let isHit = false;
-
-  tickets.forEach(t => {
-    totalInvest += t.amount;
-    if (resultCombo && t.combo === resultCombo) {
-      isHit = true;
-      totalReturn += (t.amount / 100) * payoutAmount;
-    }
-  });
-
-  const drawingData = canvas.toDataURL();
-
-  const raceData = {
-    id: document.getElementById('editRaceId').value || 'race_' + Date.now(),
-    date: document.getElementById('raceDate').value,
-    venue: document.getElementById('venue').value || '未定',
-    raceNum: document.getElementById('raceNum').value || '1',
-    sites: sites,
-    patternKey: getPatternKey(sites),
-    roughness: document.querySelector('input[name="roughness"]:checked').value,
-    resultCombo: resultCombo,
-    payoutAmount: payoutAmount,
-    tickets: tickets,
-    totalInvest: totalInvest,
-    totalReturn: totalReturn,
-    isHit: isHit,
-    drawingData: drawingData,
-    createdAt: new Date().toISOString()
-  };
-
-  const existingIdx = races.findIndex(r => r.id === raceData.id);
-  if (existingIdx >= 0) {
-    races[existingIdx] = raceData;
-  } else {
-    races.unshift(raceData);
-  }
-
-  saveData();
-  resetForm();
-}
-
-// 全描画更新
-function renderAll() {
-  const stats = calculateStats();
-  renderCards(stats);
-  renderTable(stats);
-  renderChart(stats);
-  renderHistory();
-}
-
-// 統計計算
-function calculateStats() {
-  const stats = {};
-  PATTERNS.forEach(p => {
-    stats[p.id] = { count: 0, hits: 0, invest: 0, returnAmt: 0, hitRate: 0, roi: 0 };
-  });
-
-  races.forEach(r => {
-    const pKey = r.patternKey;
-    if (stats[pKey]) {
-      stats[pKey].count++;
-      if (r.isHit) stats[pKey].hits++;
-      stats[pKey].invest += r.totalInvest;
-      stats[pKey].returnAmt += r.totalReturn;
-    }
-  });
-
-  PATTERNS.forEach(p => {
-    const s = stats[p.id];
-    s.hitRate = s.count > 0 ? ((s.hits / s.count) * 100).toFixed(1) : 0;
-    s.roi = s.invest > 0 ? ((s.returnAmt / s.invest) * 100).toFixed(1) : 0;
-  });
-
-  return stats;
-}
-
-// カード描画
-function renderCards(stats) {
-  const container = document.getElementById('patternCardsContainer');
-  container.innerHTML = '';
-
-  document.getElementById('totalRaceCount').textContent = `全 ${races.length} レース`;
-
-  PATTERNS.forEach(p => {
-    const s = stats[p.id];
-    const card = document.createElement('div');
-    card.className = `bg-gradient-to-br ${p.color} p-3 rounded-2xl border border-white/10 shadow-lg text-white flex flex-col justify-between`;
-
-    card.innerHTML = `
-      <div>
-        <div class="text-[10px] font-bold opacity-80 uppercase tracking-wider mb-1">${p.label}</div>
-        <div class="text-xl font-black">${s.roi}% <span class="text-[10px] font-normal opacity-75">回収</span></div>
-      </div>
-      <div class="mt-2 pt-2 border-t border-white/20 text-[10px] flex justify-between items-center opacity-90">
-        <span>的中: ${s.hitRate}%</span>
-        <span>(${s.hits}/${s.count}件)</span>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-// テーブル描画
-function renderTable(stats) {
-  const tbody = document.getElementById('patternTableBody');
-  tbody.innerHTML = '';
-
-  PATTERNS.forEach(p => {
-    const s = stats[p.id];
-    const tr = document.createElement('tr');
-    tr.className = "hover:bg-slate-750/50 transition";
-    tr.innerHTML = `
-      <td class="py-2 px-1 font-semibold">${p.label}</td>
-      <td class="py-2 px-1 text-center">${s.count}</td>
-      <td class="py-2 px-1 text-right text-emerald-400 font-mono">${s.hitRate}%</td>
-      <td class="py-2 px-1 text-right font-bold font-mono ${parseFloat(s.roi) >= 100 ? 'text-amber-400' : 'text-slate-300'}">${s.roi}%</td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-// Chart.js グラフ描画
-function renderChart(stats) {
-  const ctxChart = document.getElementById('comparisonChart').getContext('2d');
-
-  const labels = PATTERNS.map(p => p.label);
-  const roiData = PATTERNS.map(p => stats[p.id].roi);
-  const hitData = PATTERNS.map(p => stats[p.id].hitRate);
-
-  if (chartInstance) chartInstance.destroy();
-
-  chartInstance = new Chart(ctxChart, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        {
-          label: '回収率 (ROI %)',
-          data: roiData,
-          backgroundColor: 'rgba(99, 102, 241, 0.8)',
-          borderColor: 'rgba(99, 102, 241, 1)',
-          borderWidth: 1,
-          borderRadius: 6
-        },
-        {
-          label: '的中率 (%)',
-          data: hitData,
-          backgroundColor: 'rgba(16, 185, 129, 0.6)',
-          borderColor: 'rgba(16, 185, 129, 1)',
-          borderWidth: 1,
-          borderRadius: 6
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#94a3b8' }
-        },
-        x: {
-          grid: { display: false },
-          ticks: { color: '#94a3b8', font: { size: 10 } }
-        }
-      },
-      plugins: {
-        legend: { labels: { color: '#e2e8f0', font: { size: 11 } } }
-      }
-    }
-  });
-}
-
-// 履歴描画
-function renderHistory() {
-  const container = document.getElementById('historyList');
-  const filter = document.getElementById('filterOverlap').value;
-
-  const filtered = races.filter(r => filter === 'ALL' || r.patternKey === filter);
-  container.innerHTML = '';
-
-  if (filtered.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-8">該当するレースデータはありません。</p>';
-    return;
-  }
-
-  filtered.forEach(r => {
-    const pat = PATTERNS.find(p => p.id === r.patternKey) || { label: '不明', badgeClass: 'bg-slate-700' };
-    const net = r.totalReturn - r.totalInvest;
-
-    const item = document.createElement('div');
-    item.className = "bg-slate-900 border border-slate-700/80 rounded-xl p-3 space-y-2 animate-fade-in";
-
-    item.innerHTML = `
-      <div class="flex justify-between items-start">
-        <div class="flex items-center gap-2">
-          <span class="text-xs px-2 py-0.5 rounded-full border font-bold ${pat.badgeClass}">${pat.label}</span>
-          <span class="text-xs font-bold text-white">${r.venue} ${r.raceNum}R</span>
-          <span class="text-[10px] text-slate-400">${r.date}</span>
-        </div>
-        <div class="text-right">
-          <span class="text-xs font-bold font-mono ${r.isHit ? 'text-amber-400' : 'text-slate-400'}">${r.isHit ? '🎯 的中' : '✕ 不的中'}</span>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-slate-950/60 p-2 rounded-lg border border-slate-800">
-        <div><span class="text-[10px] text-slate-500 block">結果:</span> <span class="font-mono text-slate-200">${r.resultCombo || '-'}</span></div>
-        <div><span class="text-[10px] text-slate-500 block">投資額:</span> <span class="font-mono text-slate-200">${r.totalInvest.toLocaleString()}円</span></div>
-        <div><span class="text-[10px] text-slate-500 block">払戻額:</span> <span class="font-mono text-slate-200">${r.totalReturn.toLocaleString()}円</span></div>
-        <div><span class="text-[10px] text-slate-500 block">純損益:</span> <span class="font-mono font-bold ${net >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${net > 0 ? '+' : ''}${net.toLocaleString()}円</span></div>
-      </div>
-
-      <div class="flex justify-between items-center text-[10px] text-slate-400 pt-1">
-        <span>買い目 (${r.tickets.length}点): ${r.tickets.map(t => t.combo).join(', ')}</span>
-        <div class="flex gap-2">
-          <button onclick="editRace('${r.id}')" class="text-indigo-400 hover:underline">編集</button>
-          <button onclick="deleteRace('${r.id}')" class="text-rose-400 hover:underline">削除</button>
-        </div>
-      </div>
-    `;
-    container.appendChild(item);
-  });
-}
-
-// フォームクリア
-function resetForm() {
-  document.getElementById('raceForm').reset();
-  document.getElementById('editRaceId').value = '';
-  document.getElementById('ticketsContainer').innerHTML = '';
-  addTicketRow();
-  updateOverlapBadge();
-  clearCanvas();
-  setDefaultDate();
-}
-
-// 削除
-function deleteRace(id) {
-  if (confirm('このレース記録を削除しますか？')) {
-    races = races.filter(r => r.id !== id);
-    saveData();
-  }
-}
-
-// 編集
-function editRace(id) {
-  const r = races.find(item => item.id === id);
-  if (!r) return;
-
-  document.getElementById('editRaceId').value = r.id;
-  document.getElementById('raceDate').value = r.date;
-  document.getElementById('venue').value = r.venue;
-  document.getElementById('raceNum').value = r.raceNum;
-
-  document.getElementById('siteB').checked = r.sites.includes('B');
-  document.getElementById('siteY').checked = r.sites.includes('Y');
-  document.getElementById('siteN').checked = r.sites.includes('N');
-
-  const roughRadio = document.querySelector(`input[name="roughness"][value="${r.roughness}"]`);
-  if (roughRadio) roughRadio.checked = true;
-
-  document.getElementById('resultCombo').value = r.resultCombo;
-  document.getElementById('payoutAmount').value = r.payoutAmount;
-
-  document.getElementById('ticketsContainer').innerHTML = '';
-  r.tickets.forEach(t => addTicketRow(t.combo, t.amount));
-
-  if (r.drawingData) {
-    const img = new Image();
-    img.onload = () => ctx.drawImage(img, 0, 0);
-    img.src = r.drawingData;
-  }
-
-  updateOverlapBadge();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// 手書きキャンバス処理
-function initCanvas() {
-  canvas = document.getElementById('handwritingCanvas');
-  ctx = canvas.getContext('2d');
-
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-
-  const getPos = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  };
-
-  const start = (e) => { isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
-  const move = (e) => { if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
-  const stop = () => { isDrawing = false; };
-
-  canvas.addEventListener('mousedown', start);
-  canvas.addEventListener('mousemove', move);
-  canvas.addEventListener('mouseup', stop);
-  canvas.addEventListener('touchstart', start);
-  canvas.addEventListener('touchmove', move);
-  canvas.addEventListener('touchend', stop);
-}
-
-function clearCanvas() {
-  if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-// CSV出力
-function exportCSV() {
-  if (races.length === 0) return alert('データがありません');
-
-  let csv = 'ID,日付,競輪場,レース,推奨サイト,パターン,荒れ度,結果着順,3連単配当,投資額,払戻額,的中\n';
-  races.forEach(r => {
-    csv += `"${r.id}","${r.date}","${r.venue}","${r.raceNum}","${r.sites.join('/')}","${r.patternKey}","${r.roughness}","${r.resultCombo}","${r.payoutAmount}","${r.totalInvest}","${r.totalReturn}","${r.isHit ? '1' : '0'}"\n`;
-  });
-
-  const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `byn_analyzer_${new Date().toISOString().split('T')[0]}.csv`;
-  link.click();
-}
-
-// サンプルデータ投入
-function loadSampleData() {
-  if (confirm('サンプルデータを投入しますか？（現在のデータに追加されます）')) {
-    const samples = [
-      { id: 's1', date: '2026-10-20', venue: '平塚', raceNum: '11', sites: ['B','Y','N'], patternKey: 'B_Y_N', roughness: '荒れ', resultCombo: '5-1-6', payoutAmount: 920, tickets: [{combo: '5-1-6', amount: 1000}], totalInvest: 1000, totalReturn: 9200, isHit: true },
-      { id: 's2', date: '2026-10-20', venue: '立川', raceNum: '10', sites: ['B','Y'], patternKey: 'B_Y', roughness: '普通', resultCombo: '1-3-5', payoutAmount: 1800, tickets: [{combo: '2-4-5', amount: 1000}], totalInvest: 1000, totalReturn: 0, isHit: false },
-      { id: 's3', date: '2026-10-21', venue: '取手', raceNum: '12', sites: ['B','Y','N'], patternKey: 'B_Y_N', roughness: '荒れ', resultCombo: '3-7-2', payoutAmount: 4500, tickets: [{combo: '3-7-2', amount: 500}], totalInvest: 500, totalReturn: 22500, isHit: true },
-      { id: 's4', date: '2026-10-21', venue: '松戸', raceNum: '9', sites: ['N'], patternKey: 'N', roughness: '固い', resultCombo: '1-2-3', payoutAmount: 300, tickets: [{combo: '1-2-4', amount: 1000}], totalInvest: 1000, totalReturn: 0, isHit: false }
-    ];
-    races = [...samples, ...races];
-    saveData();
-  }
-}
-
-function clearAllData() {
-  if (confirm('本当にすべてのデータを削除しますか？この操作は取り消せません。')) {
-    races = [];
-    saveData();
-  }
-}
-
-// 📸 OCR & 画像解析モーダル処理
-function openOcrModal() {
-  document.getElementById('ocrModal').classList.remove('hidden');
-}
-
-function closeOcrModal() {
-  document.getElementById('ocrModal').classList.add('hidden');
-}
-
-function handleImageUpload(e) {
-  const files = e.target.files;
-  if (files && files.length > 0) {
-    processImageFiles(files);
-  }
-}
-
-function handlePasteImage(e) {
-  const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-  const files = [];
-  for (let item of items) {
-    if (item.type.indexOf('image') !== -1) {
-      files.push(item.getAsFile());
-    }
-  }
-  if (files.length > 0) {
-    openOcrModal();
-    processImageFiles(files);
-  }
-}
-
-function processImageFiles(files) {
-  const status = document.getElementById('ocrStatus');
-  const preview = document.getElementById('ocrPreviewImage');
-  const placeholder = document.getElementById('ocrPlaceholder');
-
-  status.classList.remove('hidden');
-  
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    preview.src = e.target.result;
-    preview.classList.remove('hidden');
-    placeholder.classList.add('hidden');
-
-    // Tesseract.js 解析
-    Tesseract.recognize(e.target.result, 'jpn+eng', { logger: m => console.log(m) })
-      .then(({ data: { text } }) => {
-        status.classList.add('hidden');
-        parseOcrText(text);
-      })
-      .catch(err => {
-        status.classList.add('hidden');
-        console.error(err);
-      });
-  };
-  reader.readAsDataURL(files[0]);
-}
-
-// OCRテキスト解析ロジック
-function parseOcrText(text) {
-  // レース番号抽出 (例: 1R)
-  const rMatch = text.match(/([1-9]|1[0-2])\s*R/i);
-  if (rMatch) {
-    document.getElementById('modalRaceNum').value = rMatch[1];
-  }
-
-  // 決定着順 (例: 5-1-6 や 5 1 6)
-  const comboMatch = text.match(/([1-9])\s*[-ー‐]?\s*([1-9])\s*[-ー‐]?\s*([1-9])/);
-  if (comboMatch) {
-    document.getElementById('rank1').value = comboMatch[1];
-    document.getElementById('rank2').value = comboMatch[2];
-    document.getElementById('rank3').value = comboMatch[3];
-  }
-
-  // 配当金抽出 (例: 920円)
-  const payoutMatch = text.match(/([0-9,]+)\s*円/);
-  if (payoutMatch) {
-    const amt = payoutMatch[1].replace(/,/g, '');
-    document.getElementById('modalPayout').value = amt;
-  }
-}
-
-function quickSetRank(num) {
-  const targetInput = document.getElementById(currentActiveRankInput);
-  if (targetInput) {
-    targetInput.value = num;
-    if (currentActiveRankInput === 'rank1') currentActiveRankInput = 'rank2';
-    else if (currentActiveRankInput === 'rank2') currentActiveRankInput = 'rank3';
-    els
+  </div>
+
+  <!-- 外部JavaScriptの読み込み -->
+  <script src="app.js"></script>
+</body>
+</html>
