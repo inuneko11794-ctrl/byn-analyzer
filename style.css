@@ -1,13 +1,13 @@
-/* 車番カラーバッジ定義 (競輪標準色) */
+/* 競輪標準 車番カラーバッジ */
 .num-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   border-radius: 4px;
   font-weight: 900;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1;
 }
 
@@ -23,12 +23,25 @@
 
 /* スクロールバーのカスタマイズ */
 ::-webkit-scrollbar {
-  width: 5px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f5f2eb;
+  background: #0f172a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c8beae;
-  border-radius: 10px;
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
 }
