@@ -108,7 +108,114 @@ function savePreRaces() {
 
 // 🏁 ① 着順スクショ解析
 function handleArrivalImage(e) {
-  if (e.target.
+  if (e.target.files.length) processArrivalFile(e.target.files[0]);
+}
+
+async function processArrivalFile(file) {
+  const idle = document.getElementById('arrIdleUI');
+  const loading = document.getElementById('arrLoadingUI');
+  const preview = document.getElementById('arrPreviewUI');
+  const imgTag = document.getElementById('arrImgTag');
+
+  idle.classList.add('hidden');
+  loading.classList.remove('hidden');
+
+  const reader = new FileReader();
+  reader.onload = (e) => { imgTag.src = e.target.result; };
+  reader.readAsDataURL(file);
+
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'jpn+eng');
+    const lines = text.split('\n');
+    let currentR = 1;
+
+    arrivalMap = {};
+    lines.forEach(line => {
+      if (line.includes('中止')) {
+        arrivalMap[currentR] = '中止';
+        currentR++;
+        return;
+      }
+      const cMatch = line.match(/([1-9])\s*[-ー‐]?\s*([1-9])\s*[-ー‐]?\s*([1-9])/);
+      if (cMatch && currentR <= 12) {
+        arrivalMap[currentR] = `${cMatch[1]}-${cMatch[2]}-${cMatch[3]}`;
+        currentR++;
+      }
+    });
+
+    loading.classList.add('hidden');
+    preview.classList.remove('hidden');
+    updateResultTable();
+  } catch(err) {
+    console.error(err);
+    loading.classList.add('hidden');
+    idle.classList.remove('hidden');
+  }
+}
+
+function clearArrivalImg() {
+  arrivalMap = {};
+  document.getElementById('arrPreviewUI').classList.add('hidden');
+  document.getElementById('arrIdleUI').classList.remove('hidden');
+  document.getElementById('arrivalFileInput').value = '';
+  updateResultTable();
+}
+
+// 💰 ② 配当スクショ解析
+function handlePayoutImage(e) {
+  if (e.target.files.length) processPayoutFile(e.target.files[0]);
+}
+
+async function processPayoutFile(file) {
+  const idle = document.getElementById('payIdleUI');
+  const loading = document.getElementById('payLoadingUI');
+  const preview = document.getElementById('payPreviewUI');
+  const imgTag = document.getElementById('payImgTag');
+
+  idle.classList.add('hidden');
+  loading.classList.remove('hidden');
+
+  const reader = new FileReader();
+  reader.onload = (e) => { imgTag.src = e.target.result; };
+  reader.readAsDataURL(file);
+
+  try {
+    const { data: { text } } = await Tesseract.recognize(file, 'jpn+eng');
+    const lines = text.split('\n');
+    let currentR = 1;
+
+    payoutMap = {};
+    lines.forEach(line => {
+      if (line.includes('全返還') || line.includes('中止')) {
+        payoutMap[currentR] = 0;
+        currentR++;
+        return;
+      }
+      const pMatches = line.match(/([0-9,]+)\s*円/g);
+      if (pMatches && pMatches.length > 0 && currentR <= 12) {
+        const val = parseInt(pMatches[pMatches.length - 1].replace(/[^0-9]/g, '')) || 0;
+        payoutMap[currentR] = val;
+        currentR++;
+      }
+    });
+
+    loading.classList.add('hidden');
+    preview.classList.remove('hidden');
+    updateResultTable();
+  } catch(err) {
+    console.error(err);
+    loading.classList.add('hidden');
+    idle.classList.remove('hidden');
+  }
+}
+
+function clearPayoutImg() {
+  payoutMap = {};
+  document.getElementById('payPreviewUI').classList.add('hidden');
+  document.getElementById('payIdleUI').classList.remove('hidden');
+  document.getElementById('payoutFileInput').value = '';
+  updateResultTable();
+}
 // 📊 照合結果表示（数値プレビュー・手修正対応）
 function updateResultTable() {
   const container = document.getElementById('parsedResultContainer');
