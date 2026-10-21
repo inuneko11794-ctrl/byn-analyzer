@@ -24,7 +24,7 @@
   animation: fadeIn 0.25s ease-out forwards;
 }
 
-/* タッチ操作キャンバスの最適化 */
+/* タッチ操作の最適化 */
 canvas {
   touch-action: none;
 }
