@@ -222,11 +222,10 @@ function renderResultTable() {
     const isMatched = !!matchedRace;
 
     const row = document.createElement('div');
-    row.className = `p-2 bg-slate-800 border ${isMatched ? 'border-emerald-500/50' : 'border-slate-700'} rounded-xl flex items-center justify-between text-xs animate-fade-in`;
+    row.className = `p-2 bg-slate-800 border ${isMatched ? 'border-emerald-500/50' : 'border-amber-500/30'} rounded-xl flex items-center justify-between text-xs animate-fade-in`;
     row.innerHTML = `
       <div class="flex items-center gap-1.5">
-        <span class="font-black text-amber-400 text-sm bg-slate-900 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
-        ${isMatched ? '<span class="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded font-bold">合致</span>' : '<span class="text-[9px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">未登録</span>'}
+        <span class="font-black text-amber-400 text-sm bg-slate-900 px-2 py-0.5 rounded border border-slate-700">${r}R</span>${isMatched ? '<span class="text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1.5 py-0.5 rounded font-bold">予想合致</span>' : '<span class="text-[9px] bg-amber-950 text-amber-300 border border-amber-800 px-1.5 py-0.5 rounded font-bold">予想なし(別枠保存)</span>'}
       </div>
       <div class="flex items-center gap-2">
         <span>🏁 <input type="text" value="${data.combo}" id="res_combo_${r}" class="w-16 bg-slate-900 border border-indigo-500/50 rounded text-center text-white font-mono font-bold py-0.5"></span>
@@ -237,31 +236,53 @@ function renderResultTable() {
   });
 }
 
+// 🎯 未登録レースも「予想なし」として自動保存する強力機能
 function applyResultsToRaces() {
   let updatedCount = 0;
   const rKeys = Object.keys(parsedResultsMap);
+  const date = document.getElementById('preRaceDate')?.value || new Date().toISOString().split('T')[0];
+  const venue = document.getElementById('preRaceVenue')?.value || '平塚';
 
   rKeys.forEach(r => {
     const combo = document.getElementById(`res_combo_${r}`)?.value || parsedResultsMap[r].combo;
     const payout = parseInt(document.getElementById(`res_payout_${r}`)?.value) || parsedResultsMap[r].payout;
 
-    races.forEach(target => {
-      if (target.raceNum == r) {
-        target.resultCombo = combo;
-        target.payoutAmount = payout;
-        target.isHit = true;
-        target.totalReturn = (target.totalInvest / 100) * payout;
-        target.status = 'COMPLETED';
-        updatedCount++;
-      }
-    });
+    if (!combo) return;
+
+    let target = races.find(item => item.raceNum == r && item.date == date);
+    
+    // もし事前にSTEP 1で予想が登録されていなければ「予想なし（NONE）」として新規作成！
+    if (!target) {
+      target = {
+        id: `race_${date}_${r}`,
+        date: date,
+        venue: venue,
+        raceNum: parseInt(r),
+        sites: [],
+        patternKey: 'NONE',
+        resultCombo: '',
+        payoutAmount: 0,
+        totalInvest: 100,
+        totalReturn: 0,
+        isHit: false,
+        status: 'PENDING'
+      };
+      races.unshift(target);
+    }
+
+    target.resultCombo = combo;
+    target.payoutAmount = payout;
+    target.isHit = true;
+    target.totalReturn = (target.totalInvest / 100) * payout;
+    target.status = 'COMPLETED';
+    updatedCount++;
   });
 
   if (updatedCount > 0) {
     saveData();
-    alert(`${updatedCount}件の予想レースに結果が合致・反映されました！`);
+    alert(`${updatedCount}件のレース結果（予想なし枠含む）を反映・確定しました！`);
   } else {
-    alert('合致する予想レース（STEP 1）がありませんでした。');
+    alert('反映する結果データがありません。スクショを貼ってください。');
   }
 }
 
@@ -270,190 +291,4 @@ function addTicketRow(c='', a=100) {
   const container = document.getElementById('ticketsContainer');
   if(!container) return;
   const id = 't_' + Date.now() + Math.random().toString(36).substr(2,3);
-  container.insertAdjacentHTML('beforeend', `<div id="${id}" class="flex items-center gap-2 bg-slate-900 p-1 rounded-lg border border-slate-700"><input type="text" value="${c}" placeholder="5-1-6" class="ticket-combo w-1/2 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono"><input type="number" value="${a}" class="ticket-amount w-1/3 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-white font-mono text-right"><span class="text-xs text-slate-400">円</span><button type="button" onclick="document.getElementById('${id}').remove()" class="text-slate-500 hover:text-rose-400 px-1"><i class="fa-solid fa-xmark"></i></button></div>`);
-}
-
-function updateOverlapBadge() {
-  const sites = [];
-  if (document.getElementById('siteB')?.checked) sites.push('B');
-  if (document.getElementById('siteY')?.checked) sites.push('Y');
-  if (document.getElementById('siteN')?.checked) sites.push('N');
-  const badge = document.getElementById('overlapDisplayBadge');
-  if (!badge) return;
-  const key = getPatternKey(sites);
-  if (key === 'NONE') { badge.textContent = "選択なし"; badge.className = "text-xs px-2.5 py-0.5 rounded-full bg-slate-700 text-slate-300 font-bold"; }
-  else { const pat = PATTERNS.find(p => p.id === key); badge.textContent = pat.label; badge.className = `text-xs px-2.5 py-0.5 rounded-full border font-bold ${pat.badgeClass}`; }
-}
-
-function saveSingleRace(e) {
-  e.preventDefault();
-  const sites = [];
-  if (document.getElementById('siteB').checked) sites.push('B');
-  if (document.getElementById('siteY').checked) sites.push('Y');
-  if (document.getElementById('siteN').checked) sites.push('N');
-  if (sites.length === 0) return alert('推奨サイトを選択してください');
-
-  const resultCombo = document.getElementById('resultCombo').value.trim();
-  const payoutAmount = parseInt(document.getElementById('payoutAmount').value) || 0;
-  
-  const drawingData = canvas ? canvas.toDataURL() : '';
-
-  races.unshift({
-    id: 'race_' + Date.now(),
-    date: document.getElementById('raceDate').value,
-    venue: document.getElementById('venue').value || '平塚',
-    raceNum: parseInt(document.getElementById('raceNum').value || '1'),
-    sites: sites,
-    patternKey: getPatternKey(sites),
-    resultCombo: resultCombo,
-    payoutAmount: payoutAmount,
-    totalInvest: 100,
-    totalReturn: resultCombo ? payoutAmount : 0,
-    isHit: !!resultCombo,
-    drawingData: drawingData,
-    status: resultCombo ? 'COMPLETED' : 'PENDING'
-  });
-
-  saveData();
-  resetSingleForm();
-  alert('詳細レースを保存しました！');
-}
-
-function resetSingleForm() {
-  document.getElementById('raceForm').reset();
-  document.getElementById('ticketsContainer').innerHTML = '';
-  addTicketRow();
-  updateOverlapBadge();
-  clearCanvas();
-}
-
-function initCanvas() {
-  canvas = document.getElementById('handwritingCanvas');
-  if(!canvas) return;
-  ctx = canvas.getContext('2d');
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 3; ctx.lineCap = 'round';
-  const getPos = (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  };
-  const start = (e) => { isDrawing = true; const p = getPos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y); };
-  const move = (e) => { if (!isDrawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); };
-  const stop = () => { isDrawing = false; };
-  canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop);
-  canvas.addEventListener('touchstart', start); canvas.addEventListener('touchmove', move); canvas.addEventListener('touchend', stop);
-}
-
-function clearCanvas() { if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-function calculateStats() {
-  const stats = {};
-  PATTERNS.forEach(p => stats[p.id] = { count: 0, hits: 0, invest: 0, returnAmt: 0, hitRate: 0, roi: 0 });
-  races.forEach(r => {
-    const s = stats[r.patternKey];
-    if (s && r.resultCombo) {
-      s.count++;
-      if (r.isHit) s.hits++;
-      s.invest += r.totalInvest;
-      s.returnAmt += r.totalReturn;
-    }
-  });
-  PATTERNS.forEach(p => {
-    const s = stats[p.id];
-    s.hitRate = s.count > 0 ? ((s.hits / s.count) * 100).toFixed(1) : 0;
-    s.roi = s.invest > 0 ? ((s.returnAmt / s.invest) * 100).toFixed(1) : 0;
-  });
-  return stats;
-}
-
-function renderAll() {
-  const stats = calculateStats();
-  renderCards(stats); renderTable(stats); renderChart(stats); renderHistory();
-}
-
-function renderCards(stats) {
-  const container = document.getElementById('patternCardsContainer');
-  if(!container) return; container.innerHTML = '';
-  document.getElementById('totalRaceCount').textContent = `全 ${races.length} レース`;
-  PATTERNS.forEach(p => {
-    const s = stats[p.id];
-    container.innerHTML += `<div class="bg-gradient-to-br ${p.color} p-3 rounded-2xl text-white shadow-lg flex flex-col justify-between"><div><div class="text-[10px] opacity-80 font-bold">${p.label}</div><div class="text-xl font-black">${s.roi}%</div></div><div class="text-[10px] border-t border-white/20 mt-2 pt-1 flex justify-between"><span>的中: ${s.hitRate}%</span><span>(${s.hits}/${s.count})</span></div></div>`;
-  });
-}
-
-function renderTable(stats) {
-  const tbody = document.getElementById('patternTableBody');
-  if(!tbody) return; tbody.innerHTML = '';
-  PATTERNS.forEach(p => {
-    const s = stats[p.id];
-    tbody.innerHTML += `<tr class="border-b border-slate-700/50"><td class="py-2 px-1 font-semibold">${p.label}</td><td class="text-center">${s.count}</td><td class="text-right text-emerald-400 font-mono">${s.hitRate}%</td><td class="text-right font-bold font-mono ${parseFloat(s.roi)>=100?'text-amber-400':'text-slate-300'}">${s.roi}%</td></tr>`;
-  });
-}
-
-function renderChart(stats) {
-  const canvasEl = document.getElementById('comparisonChart');
-  if(!canvasEl) return;
-  const ctxChart = canvasEl.getContext('2d');
-  if (chartInstance) chartInstance.destroy();
-  chartInstance = new Chart(ctxChart, {
-    type: 'bar',
-    data: {
-      labels: PATTERNS.map(p => p.label),
-      datasets: [
-        { label: '回収率 (ROI %)', data: PATTERNS.map(p => stats[p.id].roi), backgroundColor: 'rgba(99, 102, 241, 0.8)', borderRadius: 6 },
-        { label: '的中率 (%)', data: PATTERNS.map(p => stats[p.id].hitRate), backgroundColor: 'rgba(16, 185, 129, 0.6)', borderRadius: 6 }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: { beginAtZero: true, grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
-        x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } }
-      },
-      plugins: { legend: { labels: { color: '#e2e8f0', font: { size: 11 } } } }
-    }
-  });
-}
-
-function renderHistory() {
-  const container = document.getElementById('historyList');
-  if(!container) return;
-  const filter = document.getElementById('filterOverlap')?.value || 'ALL';
-  const filtered = races.filter(r => filter === 'ALL' || r.patternKey === filter);
-  container.innerHTML = '';
-  if (filtered.length === 0) { container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">登録済みのデータはありません</p>'; return; }
-  filtered.forEach(r => {
-    const pat = PATTERNS.find(p => p.id === r.patternKey) || { label: '不明', badgeClass: 'bg-slate-700' };
-    const net = r.totalReturn - r.totalInvest;
-    container.innerHTML += `<div class="bg-slate-900 p-3 rounded-xl border border-slate-700 space-y-2 animate-fade-in"><div class="flex justify-between items-center"><div class="flex items-center gap-2"><span class="text-xs px-2 py-0.5 rounded border font-bold ${pat.badgeClass}">${pat.label}</span><span class="text-xs font-bold text-white">${r.venue} ${r.raceNum}R</span><span class="text-[10px] text-slate-400">${r.date}</span></div><span class="text-xs font-bold ${r.resultCombo ? (r.isHit ? 'text-amber-400' : 'text-slate-400') : 'text-indigo-400'}">${r.resultCombo ? (r.isHit ? '🎯的中' : '✕外れ') : '⏳結果待ち'}</span></div><div class="text-xs text-slate-300 flex justify-between bg-slate-950 p-2 rounded border border-slate-800"><span>結果: ${r.resultCombo || '未入力'} (${r.payoutAmount || 0}円)</span><span>損益: <b class="${net>=0?'text-emerald-400':'text-rose-400'}">${net>0?'+':''}${net.toLocaleString()}円</b></span></div></div>`;
-  });
-}
-
-function exportCSV() {
-  if (races.length === 0) return alert('データがありません');
-  let csv = 'ID,日付,競輪場,レース,推奨サイト,パターン,結果着順,3連単配当,投資額,払戻額,的中\n';
-  races.forEach(r => {
-    csv += `"${r.id}","${r.date}","${r.venue}","${r.raceNum}","${r.sites.join('/')}","${r.patternKey}","${r.resultCombo}","${r.payoutAmount}","${r.totalInvest}","${r.totalReturn}","${r.isHit ? '1' : '0'}"\n`;
-  });
-  const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a'); link.href = URL.createObjectURL(blob);
-  link.download = `byn_analyzer_${new Date().toISOString().split('T')[0]}.csv`;
-  link.click();
-}
-
-function loadSampleData() {
-  if (confirm('サンプルデータを追加しますか？')) {
-    races = [
-      { id: 's1', date: '2026-10-21', venue: '平塚', raceNum: 1, sites: ['B','Y','N'], patternKey: 'B_Y_N', resultCombo: '5-1-6', payoutAmount: 920, totalInvest: 100, totalReturn: 920, isHit: true, status: 'COMPLETED' },
-      { id: 's2', date: '2026-10-21', venue: '平塚', raceNum: 2, sites: ['B','Y'], patternKey: 'B_Y', resultCombo: '2-4-5', payoutAmount: 2050, totalInvest: 100, totalReturn: 0, isHit: false, status: 'COMPLETED' }
-    ];
-    saveData();
-  }
-}
-
-function clearAllData() {
-  if (confirm('すべてのデータを削除しますか？')) { races = []; saveData(); }
-}
+  container.insertAdjacentHTML('beforeend', `<div id="${id}" class="flex items
