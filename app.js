@@ -1,9 +1,29 @@
-// BYN Race Analyzer - Complete Logic
+// モーダル表示切替関数（グローバル定義）
+window.openOcrModal = function() {
+  const modal = document.getElementById('ocrModal');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.closeOcrModal = function() {
+  const modal = document.getElementById('ocrModal');
+  if (modal) modal.classList.add('hidden');
+};
+
+window.openPwaGuide = function() {
+  const modal = document.getElementById('pwaModal');
+  if (modal) modal.classList.remove('hidden');
+};
+
+window.closePwaGuide = function() {
+  const modal = document.getElementById('pwaModal');
+  if (modal) modal.classList.add('hidden');
+};
+
 let races = [];
 let chartInstance = null;
 let canvas, ctx;
 let isDrawing = false;
-let batchParsedData = []; // 動的一括解析用データ保持
+let batchParsedData = [];
 
 document.addEventListener('DOMContentLoaded', () => {
   initCanvas();
@@ -56,7 +76,6 @@ function saveData() {
   renderAll();
 }
 
-// 📸 1日分スクショ画像の一括OCR処理
 function processImageFiles(files) {
   const status = document.getElementById('ocrStatus');
   if (status) {
@@ -88,24 +107,20 @@ function processImageFiles(files) {
   });
 }
 
-// 動的レース数対応（7R・9R・12Rなど自動判定）の一括テキスト解析
 function parseBatchOcrText(text) {
   batchParsedData = [];
   const lines = text.split('\n');
 
-  // 1. 画像から「数字 + R」を動的に抽出
   const detectedRaces = new Set();
   const raceMatches = text.matchAll(/([1-9]|1[0-2])\s*R/gi);
   for (const match of raceMatches) {
     detectedRaces.add(parseInt(match[1]));
   }
 
-  // レース番号配列（未検出時は1〜12フォールバック）
   const raceNumbers = detectedRaces.size > 0 
     ? Array.from(detectedRaces).sort((a, b) => a - b) 
     : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
-  // 2. 抽出された各レースの着順・配当を解析
   raceNumbers.forEach(r => {
     let combo = "";
     let payout = 0;
@@ -120,11 +135,9 @@ function parseBatchOcrText(text) {
       if (searchBlock.includes('中止') || searchBlock.includes('全返還')) {
         isCanceled = true;
       } else {
-        // 決定着順抽出 (例: 5-1-6)
         const cMatch = searchBlock.match(/([1-9])\s*[-ー‐]\s*([1-9])\s*[-ー‐]\s*([1-9])/);
         if (cMatch) combo = `${cMatch[1]}-${cMatch[2]}-${cMatch[3]}`;
 
-        // 配当抽出 (3連単)
         const pMatches = searchBlock.match(/([0-9,]+)\s*円/g);
         if (pMatches && pMatches.length > 0) {
           const lastPayout = pMatches[pMatches.length - 1].replace(/[^0-9]/g, '');
@@ -141,7 +154,6 @@ function parseBatchOcrText(text) {
   renderBatchTable();
 }
 
-// 一括重複設定テーブルの動的描画
 function renderBatchTable() {
   const container = document.getElementById('batchRaceListContainer');
   if (!container) return;
@@ -161,7 +173,6 @@ function renderBatchTable() {
         </div>
       </div>
 
-      <!-- サイト重複選択ボタン -->
       <div class="flex items-center gap-2">
         <span class="text-[11px] text-slate-400 me-1">推奨サイト:</span>
         <button type="button" onclick="toggleBatchSite(${idx}, 'B')" id="batchBtn_${idx}_B" class="px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-700 bg-slate-800 text-slate-400">B</button>
@@ -177,7 +188,6 @@ function renderBatchTable() {
   if (saveSec) saveSec.classList.remove('hidden');
 }
 
-// ボタンタップで B / Y / N 切り替え
 function toggleBatchSite(idx, site) {
   const item = batchParsedData[idx];
   const sIdx = item.sites.indexOf(site);
@@ -203,7 +213,6 @@ function toggleBatchSite(idx, site) {
   }
 }
 
-// 選択した全レースを一括保存
 function saveAllBatchRaces() {
   const date = document.getElementById('raceDate').value;
   const venue = document.getElementById('venue').value || '平塚';
@@ -245,7 +254,6 @@ function saveAllBatchRaces() {
   }
 }
 
-// 単発買い目行追加
 function addTicketRow(c='', a=100) {
   const container = document.getElementById('ticketsContainer');
   if(!container) return;
@@ -447,8 +455,10 @@ function clearAllData() {
   if (confirm('すべてのデータを削除しますか？')) { races = []; saveData(); }
 }
 
-function openOcrModal() { document.getElementById('ocrModal').classList.remove('hidden'); }
-function closeOcrModal() { document.getElementById('ocrModal').classList.add('hidden'); }
 function handleImageUpload(e) { if(e.target.files.length) processImageFiles(e.target.files); }
 function handlePasteImage(e) {
-  const 
+  const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+  const files = [];
+  for (let item of items) { if (item.type.indexOf('image') !== -1) files.push(item.getAsFile()); }
+  if (files.length) { openOcrModal(); processImageFiles(files); }
+}
