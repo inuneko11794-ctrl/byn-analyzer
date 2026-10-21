@@ -1,36 +1,19 @@
-// BYN Analyzer - 2枠セパレート高速認識 Logic
-
-window.openPreRaceModal = function() {
-  document.getElementById('preRaceModal').classList.remove('hidden');
-  renderPreRaceForm();
-};
-window.closePreRaceModal = function() {
-  document.getElementById('preRaceModal').classList.add('hidden');
-};
-
-window.openResultModal = function() {
-  document.getElementById('resultModal').classList.remove('hidden');
-};
-window.closeResultModal = function() {
-  document.getElementById('resultModal').classList.add('hidden');
-};
-
 window.openPwaGuide = function() { document.getElementById('pwaModal').classList.remove('hidden'); };
 window.closePwaGuide = function() { document.getElementById('pwaModal').classList.add('hidden'); };
 
 let races = [];
 let chartInstance = null;
-
-// 着順と配当の読み取り結果保持オブジェクト
-let parsedResultsMap = {}; // { 1: { combo: '5-1-6', payout: 920 }, 2: ... }
+let parsedResultsMap = {}; // { 1: { combo: '5-1-6', payout: 920 }, ... }
 
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
+  renderPreRaceForm();
   renderAll();
   const today = new Date().toISOString().split('T')[0];
   if (document.getElementById('preRaceDate')) {
     document.getElementById('preRaceDate').value = today;
   }
+  window.addEventListener('paste', handlePasteImage);
 });
 
 const PATTERNS = [
@@ -77,9 +60,9 @@ function renderPreRaceForm() {
 
   for (let r = 1; r <= 12; r++) {
     const row = document.createElement('div');
-    row.className = "p-2.5 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2";
+    row.className = "p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2";
     row.innerHTML = `
-      <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-1 rounded border border-slate-700">${r}R</span>
+      <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
       <div class="flex items-center gap-1.5">
         <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold">
           <input type="checkbox" id="pre_b_${r}" class="hidden"> B
@@ -128,27 +111,26 @@ function savePreRaces() {
 
   if (addedCount > 0) {
     saveData();
-    closePreRaceModal();
-    alert(`${addedCount}件の予想レースを登録しました！`);
+    alert(`${addedCount}件の予想レース枠を登録しました！`);
   } else {
     alert('推奨サイト（B/Y/N）を選択してください。');
   }
 }
 
-// 🏁 ① 着順スクショの専用高速解析
+// 🏁 ① 着順スクショの専用解析
 function handleArrivalImageUpload(e) {
   if (!e.target.files.length) return;
   const status = document.getElementById('arrivalStatus');
-  status.classList.remove('hidden');
+  if(status) status.classList.remove('hidden');
 
   const reader = new FileReader();
   reader.onload = (event) => {
     Tesseract.recognize(event.target.result, 'jpn+eng')
       .then(({ data: { text } }) => {
-        status.classList.add('hidden');
+        if(status) status.classList.add('hidden');
         parseArrivalText(text);
       })
-      .catch(err => { status.classList.add('hidden'); console.error(err); });
+      .catch(err => { if(status) status.classList.add('hidden'); console.error(err); });
   };
   reader.readAsDataURL(e.target.files[0]);
 }
@@ -171,20 +153,20 @@ function parseArrivalText(text) {
   renderResultTable();
 }
 
-// 💰 ② 配当スクショの専用高速解析
+// 💰 ② 配当スクショの専用解析
 function handlePayoutImageUpload(e) {
   if (!e.target.files.length) return;
   const status = document.getElementById('payoutStatus');
-  status.classList.remove('hidden');
+  if(status) status.classList.remove('hidden');
 
   const reader = new FileReader();
   reader.onload = (event) => {
     Tesseract.recognize(event.target.result, 'jpn+eng')
       .then(({ data: { text } }) => {
-        status.classList.add('hidden');
+        if(status) status.classList.add('hidden');
         parsePayoutText(text);
       })
-      .catch(err => { status.classList.add('hidden'); console.error(err); });
+      .catch(err => { if(status) status.classList.add('hidden'); console.error(err); });
   };
   reader.readAsDataURL(e.target.files[0]);
 }
@@ -208,7 +190,21 @@ function parsePayoutText(text) {
   renderResultTable();
 }
 
-// 両方の結果をテーブルに即時反映
+function handlePasteImage(e) {
+  const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+  for (let item of items) {
+    if (item.type.indexOf('image') !== -1) {
+      const file = item.getAsFile();
+      // デフォルトで着順から解析
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      handleArrivalImageUpload({ target: { files: dt.files } });
+      break;
+    }
+  }
+}
+
+// テーブル表示
 function renderResultTable() {
   const container = document.getElementById('parsedResultContainer');
   if (!container) return;
@@ -216,26 +212,25 @@ function renderResultTable() {
 
   const rKeys = Object.keys(parsedResultsMap).sort((a, b) => a - b);
   if (rKeys.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の2つの枠にそれぞれのスクショを貼ってください。</p>';
+    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の2つの枠にそれぞれのスクショを貼ると、ここに一覧表示されます。</p>';
     return;
   }
 
   rKeys.forEach(r => {
     const data = parsedResultsMap[r];
     const row = document.createElement('div');
-    row.className = "p-2.5 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between text-xs animate-fade-in";
+    row.className = "p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between text-xs animate-fade-in";
     row.innerHTML = `
       <span class="font-black text-amber-400 text-sm bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
       <div class="flex items-center gap-2">
-        <span>🏁 着順: <input type="text" value="${data.combo}" id="res_combo_${r}" class="w-16 bg-slate-800 border border-indigo-500/50 rounded text-center text-white font-mono font-bold py-0.5"></span>
-        <span>💰 配当: <input type="number" value="${data.payout}" id="res_payout_${r}" class="w-20 bg-slate-800 border border-emerald-500/50 rounded text-right text-white font-mono font-bold py-0.5">円</span>
+        <span>🏁 <input type="text" value="${data.combo}" id="res_combo_${r}" class="w-16 bg-slate-800 border border-indigo-500/50 rounded text-center text-white font-mono font-bold py-0.5"></span>
+        <span>💰 <input type="number" value="${data.payout}" id="res_payout_${r}" class="w-20 bg-slate-800 border border-emerald-500/50 rounded text-right text-white font-mono font-bold py-0.5">円</span>
       </div>
     `;
     container.appendChild(row);
   });
 }
 
-// 結果反映と収支適用
 function applyResultsToRaces() {
   let updatedCount = 0;
   const rKeys = Object.keys(parsedResultsMap);
@@ -256,11 +251,9 @@ function applyResultsToRaces() {
   });
 
   saveData();
-  closeResultModal();
   alert(`${updatedCount}件のレースに成績結果を反映しました！`);
 }
 
-// 統計 & 画面描画
 function calculateStats() {
   const stats = {};
   PATTERNS.forEach(p => stats[p.id] = { count: 0, hits: 0, invest: 0, returnAmt: 0, hitRate: 0, roi: 0 });
