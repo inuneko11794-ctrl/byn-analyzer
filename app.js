@@ -1,8 +1,11 @@
-// BYN Analyzer - 1枠動画風OCR自動合体 Logic
+// BYN Analyzer - 保持＆合体 OCR Logic
 
 let races = [];
 let chartInstance = null;
-let parsedResultsMap = {}; // { 1: { combo: [5,1,6], payout: 920 }, ... }
+
+// 🌟 いつ画像を貼っても合致するまでデータを残しておくグローバル変数
+let currentArrivals = {}; // { 1: [5,1,6], 2: [2,5,7], ... }
+let currentPayouts = {};  // { 1: 920, 2: 2050, ... }
 
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
@@ -10,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
   if (document.getElementById('preRaceDate')) document.getElementById('preRaceDate').value = today;
 
-  // ドラッグ＆ドロップ対応
+  // ドロップ対応
   const dropZone = document.getElementById('dropZone');
   if (dropZone) {
     dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-emerald-400'); });
@@ -18,18 +21,18 @@ document.addEventListener('DOMContentLoaded', () => {
     dropZone.addEventListener('drop', (e) => {
       e.preventDefault();
       dropZone.classList.remove('border-emerald-400');
-      if (e.dataTransfer.files.length) handleMultipleFiles(Array.from(e.dataTransfer.files));
+      if (e.dataTransfer.files.length) processFiles(Array.from(e.dataTransfer.files));
     });
   }
 
-  // クリップボード貼り付け対応
+  // コピペ対応
   window.addEventListener('paste', (e) => {
     const items = (e.clipboardData || e.originalEvent.clipboardData).items;
     const files = [];
     for (let item of items) {
       if (item.type.indexOf('image') !== -1) files.push(item.getAsFile());
     }
-    if (files.length) handleMultipleFiles(files);
+    if (files.length) processFiles(files);
   });
 });
 
@@ -69,7 +72,6 @@ function saveData() {
   renderAll();
 }
 
-// STEP 1: 予想枠の一括登録
 function savePreRaces() {
   const date = document.getElementById('preRaceDate').value;
   let addedCount = 0;
@@ -110,45 +112,41 @@ function savePreRaces() {
   }
 }
 
-// 🌟 動画風 1枠複数ファイル一括処理
-function handleMultipleImages(e) {
-  if (e.target.files.length) handleMultipleFiles(Array.from(e.target.files));
+function handleFileInput(e) {
+  if (e.target.files.length) processFiles(Array.from(e.target.files));
 }
 
-async function handleMultipleFiles(files) {
+// 🌟 画像を順番に読み取り、既存のデータに追加・上書き保持するコア関数
+async function processFiles(files) {
   const idleState = document.getElementById('dropIdleState');
   const loadingState = document.getElementById('dropLoadingState');
   if(idleState) idleState.classList.add('hidden');
   if(loadingState) loadingState.classList.remove('hidden');
-
-  let arrCount = 0;
-  let payCount = 0;
 
   for (let file of files) {
     try {
       const { data: { text } } = await Tesseract.recognize(file, 'jpn+eng');
       const lines = text.split('\n');
 
-      const isArrival = lines.some(l => l.includes('着順') || l.includes('決まり手') || l.includes('逃') || l.includes('差') || l.includes('マ'));
+      // 配当画像かどうかの自動判定（「円」が含まれていれば配当画像）
+      const isPayout = lines.some(l => l.includes('円'));
 
       let currentR = 1;
       lines.forEach(line => {
-        if (isArrival) {
-          const cMatch = line.match(/([1-9])\s*[-ー‐]?\s*([1-9])\s*[-ー‐]?\s*([1-9])/);
-          if (cMatch && currentR <= 12) {
-            if (!parsedResultsMap[currentR]) parsedResultsMap[currentR] = { combo: [], payout: 0 };
-            parsedResultsMap[currentR].combo = [parseInt(cMatch[1]), parseInt(cMatch[2]), parseInt(cMatch[3])];
-            currentR++;
-            arrCount++;
-          }
-        } else {
+        if (isPayout) {
+          // 配当抽出
           const pMatches = line.match(/([0-9,]+)\s*円/g);
           if (pMatches && pMatches.length > 0 && currentR <= 12) {
             const val = parseInt(pMatches[pMatches.length - 1].replace(/[^0-9]/g, '')) || 0;
-            if (!parsedResultsMap[currentR]) parsedResultsMap[currentR] = { combo: [], payout: 0 };
-            parsedResultsMap[currentR].payout = val;
+            currentPayouts[currentR] = val;
             currentR++;
-            payCount++;
+          }
+        } else {
+          // 着順抽出 (例: 5 - 1 - 6)
+          const cMatch = line.match(/([1-9])\s*[-ー‐]?\s*([1-9])\s*[-ー‐]?\s*([1-9])/);
+          if (cMatch && currentR <= 12) {
+            currentArrivals[currentR] = [parseInt(cMatch[1]), parseInt(cMatch[2]), parseInt(cMatch[3])];
+            currentR++;
           }
         }
       });
@@ -160,48 +158,76 @@ async function handleMultipleFiles(files) {
   if(loadingState) loadingState.classList.add('hidden');
   if(idleState) idleState.classList.remove('hidden');
 
-  renderParsedRacesUI(arrCount, payCount);
+  updatePreviewUI();
 }
 
-// プレビュー描画 (車番カラーバッジ付き)
-function renderParsedRacesUI(arrCount, payCount) {
-  const badgeArea = document.getElementById('badgeStatusArea');
+// 📊 リアルタイムプレビュー＆ステータス更新
+function updatePreviewUI() {
   const badgeArr = document.getElementById('badgeArrival');
   const badgePay = document.getElementById('badgePayout');
   const msgText = document.getElementById('statusMessageText');
   const container = document.getElementById('parsedResultContainer');
   const submitBtn = document.getElementById('submitBtn');
 
-  if(badgeArea) badgeArea.classList.remove('hidden');
-  if(badgeArr) badgeArr.textContent = `着順 ${arrCount || Object.keys(parsedResultsMap).length}`;
-  if(badgePay) badgePay.textContent = `払戻 ${payCount || Object.keys(parsedResultsMap).length}`;
-  if(msgText) msgText.textContent = `着順 ${arrCount}件、払戻 ${payCount}件を合体`;
+  const arrRaces = Object.keys(currentArrivals).map(Number);
+  const payRaces = Object.keys(currentPayouts).map(Number);
+  const allRaces = Array.from(new Set([...arrRaces, ...payRaces])).sort((a,b) => a - b);
+
+  if (badgeArr) {
+    badgeArr.textContent = `着順 ${arrRaces.length}`;
+    badgeArr.className = arrRaces.length > 0 
+      ? "bg-indigo-900 text-indigo-200 border border-indigo-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full" 
+      : "bg-slate-700 text-slate-300 border border-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full";
+  }
+
+  if (badgePay) {
+    badgePay.textContent = `配当 ${payRaces.length}`;
+    badgePay.className = payRaces.length > 0 
+      ? "bg-emerald-900 text-emerald-200 border border-emerald-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full" 
+      : "bg-slate-700 text-slate-300 border border-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full";
+  }
+
+  if (msgText) {
+    if (allRaces.length === 0) msgText.textContent = "画像を貼ってください";
+    else msgText.textContent = `着順 ${arrRaces.length}件 / 配当 ${payRaces.length}件 保持中`;
+  }
 
   if (!container) return;
   container.innerHTML = '';
 
-  const rKeys = Object.keys(parsedResultsMap).map(Number).sort((a,b) => a - b);
-
-  if (rKeys.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の枠にスクショを貼ると一覧表示されます。</p>';
+  if (allRaces.length === 0) {
+    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の枠にスクショを貼ると、ここにリアルタイム表示されます。</p>';
     if(submitBtn) submitBtn.disabled = true;
     return;
   }
 
-  rKeys.forEach(r => {
-    const item = parsedResultsMap[r];
-    const c = item.combo || [];
-    const p = item.payout || 0;
+  allRaces.forEach(r => {
+    const c = currentArrivals[r] || [];
+    const p = currentPayouts[r] !== undefined ? currentPayouts[r] : null;
+
+    const hasC = c.length > 0;
+    const hasP = p !== null;
+    const isMatched = hasC && hasP;
+
+    let tagHtml = '';
+    if (isMatched) {
+      tagHtml = '<span class="text-[9px] bg-emerald-500 text-white font-black px-2 py-0.5 rounded-full animate-pulse">✨ 合致成功！</span>';
+    } else if (hasC) {
+      tagHtml = '<span class="text-[9px] bg-indigo-950 text-indigo-300 border border-indigo-700 px-1.5 py-0.5 rounded font-bold">🏁 着順保持 (配当待ち)</span>';
+    } else {
+      tagHtml = '<span class="text-[9px] bg-teal-950 text-teal-300 border border-teal-700 px-1.5 py-0.5 rounded font-bold">💰 配当保持 (着順待ち)</span>';
+    }
 
     const num1Html = c[0] ? `<span class="num-badge car-${c[0]}">${c[0]}</span>` : '-';
     const num2Html = c[1] ? `<span class="num-badge car-${c[1]}">${c[1]}</span>` : '-';
     const num3Html = c[2] ? `<span class="num-badge car-${c[2]}">${c[2]}</span>` : '-';
 
     container.innerHTML += `
-      <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between text-xs animate-fade-in">
+      <div class="p-2 bg-slate-900 border ${isMatched ? 'border-emerald-500' : 'border-slate-700'} rounded-xl flex items-center justify-between text-xs animate-fade-in">
         <div class="flex items-center gap-2">
           <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
-          <div class="flex items-center gap-1">
+          ${tagHtml}
+          <div class="flex items-center gap-1 ms-1">
             ${num1Html}
             <span class="text-[10px] text-slate-500 font-bold">-</span>
             ${num2Html}
@@ -209,8 +235,8 @@ function renderParsedRacesUI(arrCount, payCount) {
             ${num3Html}
           </div>
         </div>
-        <div class="font-mono font-bold text-emerald-400">
-          ${p ? p.toLocaleString() + '円' : '-'}
+        <div class="font-mono font-bold ${hasP ? 'text-emerald-400' : 'text-slate-500'}">
+          ${hasP ? p.toLocaleString() + '円' : '未読み取り'}
         </div>
       </div>
     `;
@@ -219,16 +245,22 @@ function renderParsedRacesUI(arrCount, payCount) {
   if(submitBtn) submitBtn.disabled = false;
 }
 
+function clearOcrData() {
+  currentArrivals = {};
+  currentPayouts = {};
+  updatePreviewUI();
+}
+
 // 🎯 成績確定・反映
 function applyResultsToRaces() {
   let updatedCount = 0;
   const date = document.getElementById('preRaceDate')?.value || new Date().toISOString().split('T')[0];
-  const rKeys = Object.keys(parsedResultsMap);
+  const allRaces = Array.from(new Set([...Object.keys(currentArrivals), ...Object.keys(currentPayouts)]));
 
-  rKeys.forEach(r => {
-    const item = parsedResultsMap[r];
-    const comboStr = item.combo.length ? item.combo.join('-') : '';
-    const payout = item.payout || 0;
+  allRaces.forEach(r => {
+    const c = currentArrivals[r] || [];
+    const p = currentPayouts[r] || 0;
+    const comboStr = c.length ? c.join('-') : '';
 
     if (!comboStr) return;
 
@@ -252,15 +284,16 @@ function applyResultsToRaces() {
     }
 
     target.resultCombo = comboStr;
-    target.payoutAmount = payout;
+    target.payoutAmount = p;
     target.isHit = true;
-    target.totalReturn = (target.totalInvest / 100) * payout;
+    target.totalReturn = (target.totalInvest / 100) * p;
     target.status = 'COMPLETED';
     updatedCount++;
   });
 
   if (updatedCount > 0) {
     saveData();
+    clearOcrData();
     alert(`${updatedCount}件のレース結果を確定・計算しました！`);
   } else {
     alert('反映する結果データがありません。');
