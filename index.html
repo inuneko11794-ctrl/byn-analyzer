@@ -51,31 +51,89 @@
 
   <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
 
-    <!-- 🌟 2ステップナビゲーション -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <!-- ① レース前：出走・予想登録 -->
-      <div class="bg-gradient-to-br from-indigo-900/60 to-slate-800 border border-indigo-500/40 rounded-2xl p-4 flex items-center justify-between shadow-lg">
-        <div class="space-y-1">
-          <span class="text-[10px] bg-indigo-500 text-white font-bold px-2 py-0.5 rounded-full">STEP 1 (レース前)</span>
-          <h3 class="font-bold text-white text-sm">📋 出走表・推奨サイト登録</h3>
-          <p class="text-xs text-slate-300">B・Y・Nの被りレースをチェック</p>
+    <!-- 🌟 メイン操作：ステップ分離エリア -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- 左側：STEP 1 (本日の予想サイト重複設定) -->
+      <div class="lg:col-span-5 bg-slate-800 border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="border-b border-slate-700 pb-2 flex justify-between items-center">
+          <div>
+            <span class="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 1 (レース前)</span>
+            <h3 class="font-bold text-white text-base mt-1">📋 本日の推奨サイト重複チェック</h3>
+          </div>
         </div>
-        <button type="button" onclick="openPreRaceModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition whitespace-nowrap">
-          <i class="fa-solid fa-list-check me-1"></i> 予想登録
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">日付</label>
+            <input type="date" id="preRaceDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-[11px] text-slate-400 mb-1">競輪場</label>
+            <input type="text" id="preRaceVenue" placeholder="平塚" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white">
+          </div>
+        </div>
+
+        <!-- 1R〜12R 重複チェック表 -->
+        <div id="preRaceContainer" class="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+          <!-- JS動的挿入 -->
+        </div>
+
+        <button type="button" onclick="savePreRaces()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 rounded-xl shadow-lg transition">
+          <i class="fa-solid fa-floppy-disk me-1"></i> 予想レース枠を登録する
         </button>
       </div>
 
-      <!-- ② レース後：結果・配当読み込み -->
-      <div class="bg-gradient-to-br from-emerald-900/60 to-slate-800 border border-emerald-500/40 rounded-2xl p-4 flex items-center justify-between shadow-lg">
-        <div class="space-y-1">
-          <span class="text-[10px] bg-emerald-500 text-white font-bold px-2 py-0.5 rounded-full">STEP 2 (レース後)</span>
-          <h3 class="font-bold text-white text-sm">🏆 結果スクショ高速自動読み込み</h3>
-          <p class="text-xs text-slate-300">「着順」と「配当」を別々に瞬時解析</p>
+      <!-- 右側：STEP 2 (結果スクショ 2枠直貼り付けエリア) -->
+      <div class="lg:col-span-7 bg-slate-800 border border-emerald-500/30 rounded-2xl p-5 shadow-xl space-y-4 flex flex-col justify-between">
+        <div class="space-y-3">
+          <div class="border-b border-slate-700 pb-2">
+            <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 2 (レース後)</span>
+            <h3 class="font-bold text-white text-base mt-1">🏆 結果スクショ 2枠高速読み取り</h3>
+            <p class="text-xs text-slate-400">それぞれの枠にスクショを貼ると、一瞬で結果が読み合わさります</p>
+          </div>
+
+          <!-- 💡 直感的に貼れる2箇所の枠 -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            
+            <!-- ① 着順専用貼り付け枠 -->
+            <div class="border-2 border-dashed border-indigo-500/60 hover:border-indigo-400 rounded-xl p-4 text-center cursor-pointer bg-indigo-950/20 transition flex flex-col justify-center items-center min-h-[120px]" onclick="document.getElementById('arrivalFileInput').click()">
+              <input type="file" id="arrivalFileInput" accept="image/*" class="hidden" onchange="handleArrivalImageUpload(event)">
+              <i class="fa-solid fa-flag-checkered text-3xl text-indigo-400 mb-2"></i>
+              <p class="text-xs font-bold text-indigo-200">① 「着順一覧」のスクショ</p>
+              <p class="text-[10px] text-slate-400 mt-1">タップして選択 または コピペ</p>
+              <div id="arrivalStatus" class="hidden mt-2 text-[11px] text-amber-400 font-bold">
+                <i class="fa-solid fa-spinner fa-spin me-1"></i> 着順解析中...
+              </div>
+            </div>
+
+            <!-- ② 配当専用貼り付け枠 -->
+            <div class="border-2 border-dashed border-emerald-500/60 hover:border-emerald-400 rounded-xl p-4 text-center cursor-pointer bg-emerald-950/20 transition flex flex-col justify-center items-center min-h-[120px]" onclick="document.getElementById('payoutFileInput').click()">
+              <input type="file" id="payoutFileInput" accept="image/*" class="hidden" onchange="handlePayoutImageUpload(event)">
+              <i class="fa-solid fa-sack-dollar text-3xl text-emerald-400 mb-2"></i>
+              <p class="text-xs font-bold text-emerald-200">② 「配当一覧」のスクショ</p>
+              <p class="text-[10px] text-slate-400 mt-1">タップして選択 または コピペ</p>
+              <div id="payoutStatus" class="hidden mt-2 text-[11px] text-amber-400 font-bold">
+                <i class="fa-solid fa-spinner fa-spin me-1"></i> 配当解析中...
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 照合・修正テーブル -->
+          <div class="space-y-1">
+            <span class="text-xs font-bold text-slate-300 block">📊 照合結果の確認・修正</span>
+            <div id="parsedResultContainer" class="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+              <p class="text-xs text-slate-500 text-center py-6">上の2つの枠にそれぞれのスクショを貼ると、ここに一覧表示されます。</p>
+            </div>
+          </div>
         </div>
-        <button type="button" onclick="openResultModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow transition whitespace-nowrap">
-          <i class="fa-solid fa-bolt me-1"></i> 高速結果読込
+
+        <button type="button" onclick="applyResultsToRaces()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-2.5 rounded-xl shadow-lg transition">
+          <i class="fa-solid fa-check me-1"></i> 成績計算を反映・確定する
         </button>
       </div>
+
     </div>
 
     <!-- 7パターン別サマリーカード -->
@@ -159,103 +217,6 @@
       </div>
     </div>
   </main>
-
-  <!-- 📋 STEP 1: レース前「予想・出走表登録」モーダル -->
-  <div id="preRaceModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-850">
-        <h3 class="font-bold text-white text-base flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-indigo-400"></i> STEP 1: 本日の予想・重複レース設定
-        </h3>
-        <button type="button" onclick="closePreRaceModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="p-4 overflow-y-auto flex-1 space-y-4">
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">日付</label>
-            <input type="date" id="preRaceDate" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">競輪場</label>
-            <input type="text" id="preRaceVenue" placeholder="平塚" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
-          </div>
-        </div>
-
-        <p class="text-xs text-slate-300">各レースの推奨サイト（B / Y / N）にチェックを入れてください：</p>
-
-        <!-- 1R〜12Rの重複チェック表 -->
-        <div id="preRaceContainer" class="space-y-2 max-h-[380px] overflow-y-auto pr-1">
-          <!-- JS動的挿入 -->
-        </div>
-      </div>
-
-      <div class="p-3 border-t border-slate-700 bg-slate-850 flex justify-between items-center">
-        <span class="text-xs text-slate-400">チェックを入れたレースのみ登録されます</span>
-        <button type="button" onclick="savePreRaces()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg">
-          <i class="fa-solid fa-floppy-disk me-1"></i> 予想レースを登録する
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 🏆 STEP 2: レース後「着順 ＆ 配当 2枠分割読み込み」モーダル -->
-  <div id="resultModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
-      <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-850">
-        <h3 class="font-bold text-white text-base flex items-center gap-2">
-          <i class="fa-solid fa-bolt text-emerald-400"></i> STEP 2: 着順 ＆ 配当 セパレート高速読み込み
-        </h3>
-        <button type="button" onclick="closeResultModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="p-4 overflow-y-auto flex-1 space-y-4">
-        
-        <!-- 💡 2つの役割別アップロード枠 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          
-          <!-- 左枠：着順専用枠 -->
-          <div class="border-2 border-dashed border-indigo-500/60 hover:border-indigo-400 rounded-xl p-4 text-center cursor-pointer bg-indigo-950/20 transition" onclick="document.getElementById('arrivalFileInput').click()">
-            <input type="file" id="arrivalFileInput" accept="image/*" class="hidden" onchange="handleArrivalImageUpload(event)">
-            <i class="fa-solid fa-flag-checkered text-2xl text-indigo-400 mb-1"></i>
-            <p class="text-xs font-bold text-indigo-200">① 着順一覧スクショを貼る</p>
-            <p class="text-[10px] text-slate-400 mt-1">「5 蔣野 - 1 松下 - 6 藤井」の画像</p>
-            <div id="arrivalStatus" class="hidden mt-2 text-[10px] text-amber-400 font-bold">
-              <i class="fa-solid fa-spinner fa-spin me-1"></i> 着順解析中...
-            </div>
-          </div>
-
-          <!-- 右枠：配当専用枠 -->
-          <div class="border-2 border-dashed border-emerald-500/60 hover:border-emerald-400 rounded-xl p-4 text-center cursor-pointer bg-emerald-950/20 transition" onclick="document.getElementById('payoutFileInput').click()">
-            <input type="file" id="payoutFileInput" accept="image/*" class="hidden" onchange="handlePayoutImageUpload(event)">
-            <i class="fa-solid fa-sack-dollar text-2xl text-emerald-400 mb-1"></i>
-            <p class="text-xs font-bold text-emerald-200">② 配当一覧スクショを貼る</p>
-            <p class="text-[10px] text-slate-400 mt-1">「3連単 920円 / 2,050円」の画像</p>
-            <div id="payoutStatus" class="hidden mt-2 text-[10px] text-amber-400 font-bold">
-              <i class="fa-solid fa-spinner fa-spin me-1"></i> 配当解析中...
-            </div>
-          </div>
-
-        </div>
-
-        <!-- 自動合体解析テーブル -->
-        <div class="space-y-1">
-          <span class="text-xs font-bold text-slate-300 block">📊 認識結果の確認・修正 (自動照合)</span>
-          <div id="parsedResultContainer" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-            <p class="text-xs text-slate-500 text-center py-6">上の2つの枠にそれぞれのスクショを貼ってください。</p>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="p-3 border-t border-slate-700 bg-slate-850 flex justify-between items-center">
-        <span class="text-xs text-slate-400">登録済み予想レースと自動で合体・集計します</span>
-        <button type="button" onclick="applyResultsToRaces()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-lg">
-          <i class="fa-solid fa-check me-1"></i> 成績計算を確定する
-        </button>
-      </div>
-    </div>
-  </div>
 
   <!-- PWA 追加案内モーダル -->
   <div id="pwaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
