@@ -1,11 +1,11 @@
-// BYN Analyzer - 保持＆合体 OCR Logic
+// BYN Analyzer - 2枠プレビュー保持＆自動照合 Logic
 
 let races = [];
 let chartInstance = null;
 
-// 🌟 いつ画像を貼っても合致するまでデータを残しておくグローバル変数
-let currentArrivals = {}; // { 1: [5,1,6], 2: [2,5,7], ... }
-let currentPayouts = {};  // { 1: 920, 2: 2050, ... }
+// 画像解析データを保持するオブジェクト
+let arrivalMap = {}; // { 1: '5-1-6', 2: '2-5-7', ... }
+let payoutMap = {};  // { 1: 920, 2: 2050, ... }
 
 document.addEventListener('DOMContentLoaded', () => {
   loadData();
@@ -13,26 +13,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const today = new Date().toISOString().split('T')[0];
   if (document.getElementById('preRaceDate')) document.getElementById('preRaceDate').value = today;
 
-  // ドロップ対応
-  const dropZone = document.getElementById('dropZone');
-  if (dropZone) {
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-emerald-400'); });
-    dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-emerald-400'); });
-    dropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropZone.classList.remove('border-emerald-400');
-      if (e.dataTransfer.files.length) processFiles(Array.from(e.dataTransfer.files));
-    });
-  }
-
-  // コピペ対応
+  // クリップボードからのコピペ貼り付け対応
   window.addEventListener('paste', (e) => {
     const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-    const files = [];
     for (let item of items) {
-      if (item.type.indexOf('image') !== -1) files.push(item.getAsFile());
+      if (item.type.indexOf('image') !== -1) {
+        const file = item.getAsFile();
+        if (Object.keys(arrivalMap).length === 0) {
+          processArrivalFile(file);
+        } else {
+          processPayoutFile(file);
+        }
+        break;
+      }
     }
-    if (files.length) processFiles(files);
   });
 });
 
@@ -112,160 +106,73 @@ function savePreRaces() {
   }
 }
 
-function handleFileInput(e) {
-  if (e.target.files.length) processFiles(Array.from(e.target.files));
-}
-
-// 🌟 画像を順番に読み取り、既存のデータに追加・上書き保持するコア関数
-async function processFiles(files) {
-  const idleState = document.getElementById('dropIdleState');
-  const loadingState = document.getElementById('dropLoadingState');
-  if(idleState) idleState.classList.add('hidden');
-  if(loadingState) loadingState.classList.remove('hidden');
-
-  for (let file of files) {
-    try {
-      const { data: { text } } = await Tesseract.recognize(file, 'jpn+eng');
-      const lines = text.split('\n');
-
-      // 配当画像かどうかの自動判定（「円」が含まれていれば配当画像）
-      const isPayout = lines.some(l => l.includes('円'));
-
-      let currentR = 1;
-      lines.forEach(line => {
-        if (isPayout) {
-          // 配当抽出
-          const pMatches = line.match(/([0-9,]+)\s*円/g);
-          if (pMatches && pMatches.length > 0 && currentR <= 12) {
-            const val = parseInt(pMatches[pMatches.length - 1].replace(/[^0-9]/g, '')) || 0;
-            currentPayouts[currentR] = val;
-            currentR++;
-          }
-        } else {
-          // 着順抽出 (例: 5 - 1 - 6)
-          const cMatch = line.match(/([1-9])\s*[-ー‐]?\s*([1-9])\s*[-ー‐]?\s*([1-9])/);
-          if (cMatch && currentR <= 12) {
-            currentArrivals[currentR] = [parseInt(cMatch[1]), parseInt(cMatch[2]), parseInt(cMatch[3])];
-            currentR++;
-          }
-        }
-      });
-    } catch (err) {
-      console.error(err);
-    }
-  }
-
-  if(loadingState) loadingState.classList.add('hidden');
-  if(idleState) idleState.classList.remove('hidden');
-
-  updatePreviewUI();
-}
-
-// 📊 リアルタイムプレビュー＆ステータス更新
-function updatePreviewUI() {
-  const badgeArr = document.getElementById('badgeArrival');
-  const badgePay = document.getElementById('badgePayout');
-  const msgText = document.getElementById('statusMessageText');
+// 🏁 ① 着順スクショ解析
+function handleArrivalImage(e) {
+  if (e.target.
+// 📊 照合結果表示（数値プレビュー・手修正対応）
+function updateResultTable() {
   const container = document.getElementById('parsedResultContainer');
   const submitBtn = document.getElementById('submitBtn');
-
-  const arrRaces = Object.keys(currentArrivals).map(Number);
-  const payRaces = Object.keys(currentPayouts).map(Number);
-  const allRaces = Array.from(new Set([...arrRaces, ...payRaces])).sort((a,b) => a - b);
-
-  if (badgeArr) {
-    badgeArr.textContent = `着順 ${arrRaces.length}`;
-    badgeArr.className = arrRaces.length > 0 
-      ? "bg-indigo-900 text-indigo-200 border border-indigo-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full" 
-      : "bg-slate-700 text-slate-300 border border-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full";
-  }
-
-  if (badgePay) {
-    badgePay.textContent = `配当 ${payRaces.length}`;
-    badgePay.className = payRaces.length > 0 
-      ? "bg-emerald-900 text-emerald-200 border border-emerald-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full" 
-      : "bg-slate-700 text-slate-300 border border-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full";
-  }
-
-  if (msgText) {
-    if (allRaces.length === 0) msgText.textContent = "画像を貼ってください";
-    else msgText.textContent = `着順 ${arrRaces.length}件 / 配当 ${payRaces.length}件 保持中`;
-  }
-
   if (!container) return;
+
+  const rSet = Array.from(new Set([...Object.keys(arrivalMap), ...Object.keys(payoutMap)]))
+                    .map(Number).sort((a,b) => a - b);
+
   container.innerHTML = '';
 
-  if (allRaces.length === 0) {
-    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の枠にスクショを貼ると、ここにリアルタイム表示されます。</p>';
-    if(submitBtn) submitBtn.disabled = true;
+  if (rSet.length === 0) {
+    container.innerHTML = '<p class="text-xs text-slate-500 text-center py-6">上の2つの枠にスクショを貼ると、読み取った結果が表示されます。</p>';
+    if (submitBtn) submitBtn.disabled = true;
     return;
   }
 
-  allRaces.forEach(r => {
-    const c = currentArrivals[r] || [];
-    const p = currentPayouts[r] !== undefined ? currentPayouts[r] : null;
+  rSet.forEach(r => {
+    const combo = arrivalMap[r] || '';
+    const payout = payoutMap[r] !== undefined ? payoutMap[r] : '';
 
-    const hasC = c.length > 0;
-    const hasP = p !== null;
+    const hasC = combo !== '';
+    const hasP = payout !== '';
     const isMatched = hasC && hasP;
 
-    let tagHtml = '';
+    let statusTag = '';
     if (isMatched) {
-      tagHtml = '<span class="text-[9px] bg-emerald-500 text-white font-black px-2 py-0.5 rounded-full animate-pulse">✨ 合致成功！</span>';
+      statusTag = '<span class="text-[10px] bg-emerald-500 text-white font-black px-2 py-0.5 rounded-full shadow animate-pulse">✨ 合致成功！</span>';
     } else if (hasC) {
-      tagHtml = '<span class="text-[9px] bg-indigo-950 text-indigo-300 border border-indigo-700 px-1.5 py-0.5 rounded font-bold">🏁 着順保持 (配当待ち)</span>';
+      statusTag = '<span class="text-[9px] bg-indigo-900 text-indigo-200 border border-indigo-700 px-1.5 py-0.5 rounded font-bold">🏁 着順保持 (配当待ち)</span>';
     } else {
-      tagHtml = '<span class="text-[9px] bg-teal-950 text-teal-300 border border-teal-700 px-1.5 py-0.5 rounded font-bold">💰 配当保持 (着順待ち)</span>';
+      statusTag = '<span class="text-[9px] bg-teal-900 text-teal-200 border border-teal-700 px-1.5 py-0.5 rounded font-bold">💰 配当保持 (着順待ち)</span>';
     }
 
-    const num1Html = c[0] ? `<span class="num-badge car-${c[0]}">${c[0]}</span>` : '-';
-    const num2Html = c[1] ? `<span class="num-badge car-${c[1]}">${c[1]}</span>` : '-';
-    const num3Html = c[2] ? `<span class="num-badge car-${c[2]}">${c[2]}</span>` : '-';
-
     container.innerHTML += `
-      <div class="p-2 bg-slate-900 border ${isMatched ? 'border-emerald-500' : 'border-slate-700'} rounded-xl flex items-center justify-between text-xs animate-fade-in">
+      <div class="p-2 bg-slate-900 border ${isMatched ? 'border-emerald-500' : 'border-slate-700'} rounded-xl flex justify-between items-center text-xs animate-fade-in">
         <div class="flex items-center gap-2">
-          <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
-          ${tagHtml}
-          <div class="flex items-center gap-1 ms-1">
-            ${num1Html}
-            <span class="text-[10px] text-slate-500 font-bold">-</span>
-            ${num2Html}
-            <span class="text-[10px] text-slate-500 font-bold">-</span>
-            ${num3Html}
-          </div>
+          <span class="font-black text-amber-400 bg-slate-800 px-2 py-0.5 rounded border border-slate-700">${r}R</span>
+          ${statusTag}
         </div>
-        <div class="font-mono font-bold ${hasP ? 'text-emerald-400' : 'text-slate-500'}">
-          ${hasP ? p.toLocaleString() + '円' : '未読み取り'}
+        <div class="flex items-center gap-2">
+          <span>🏁 <input type="text" value="${combo}" id="c_${r}" class="w-16 bg-slate-800 border border-indigo-500/50 rounded text-center text-white font-mono font-bold py-0.5"></span>
+          <span>💰 <input type="number" value="${payout}" id="p_${r}" class="w-20 bg-slate-800 border border-emerald-500/50 rounded text-right text-white font-mono font-bold py-0.5">円</span>
         </div>
       </div>
     `;
   });
 
-  if(submitBtn) submitBtn.disabled = false;
-}
-
-function clearOcrData() {
-  currentArrivals = {};
-  currentPayouts = {};
-  updatePreviewUI();
+  if (submitBtn) submitBtn.disabled = false;
 }
 
 // 🎯 成績確定・反映
 function applyResultsToRaces() {
-  let updatedCount = 0;
   const date = document.getElementById('preRaceDate')?.value || new Date().toISOString().split('T')[0];
-  const allRaces = Array.from(new Set([...Object.keys(currentArrivals), ...Object.keys(currentPayouts)]));
+  const rSet = Array.from(new Set([...Object.keys(arrivalMap), ...Object.keys(payoutMap)]));
+  let count = 0;
 
-  allRaces.forEach(r => {
-    const c = currentArrivals[r] || [];
-    const p = currentPayouts[r] || 0;
-    const comboStr = c.length ? c.join('-') : '';
+  rSet.forEach(r => {
+    const combo = document.getElementById(`c_${r}`)?.value || arrivalMap[r] || '';
+    const payout = parseInt(document.getElementById(`p_${r}`)?.value || payoutMap[r] || 0);
 
-    if (!comboStr) return;
+    if (!combo) return;
 
     let target = races.find(x => x.raceNum == r && x.date == date);
-    
     if (!target) {
       target = {
         id: `race_${date}_${r}`,
@@ -283,18 +190,19 @@ function applyResultsToRaces() {
       races.unshift(target);
     }
 
-    target.resultCombo = comboStr;
-    target.payoutAmount = p;
-    target.isHit = true;
-    target.totalReturn = (target.totalInvest / 100) * p;
+    target.resultCombo = combo;
+    target.payoutAmount = payout;
+    target.isHit = combo !== '中止';
+    target.totalReturn = combo === '中止' ? 100 : (target.totalInvest / 100) * payout;
     target.status = 'COMPLETED';
-    updatedCount++;
+    count++;
   });
 
-  if (updatedCount > 0) {
+  if (count > 0) {
     saveData();
-    clearOcrData();
-    alert(`${updatedCount}件のレース結果を確定・計算しました！`);
+    clearArrivalImg();
+    clearPayoutImg();
+    alert(`${count}件のレース結果を確定計算しました！`);
   } else {
     alert('反映する結果データがありません。');
   }
