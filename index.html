@@ -130,43 +130,48 @@
         </button>
       </div>
 
-      <!-- 右側：STEP 2 (1枠スクショ動画風ドロップ・合体エリア) -->
+      <!-- 右側：STEP 2 (1枠スクショドロップ＆自動保持エリア) -->
       <div class="lg:col-span-7 bg-slate-800 border border-emerald-500/30 rounded-2xl p-5 shadow-xl space-y-4 flex flex-col justify-between">
         <div class="space-y-3">
-          <div class="border-b border-slate-700 pb-2">
-            <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 2 (レース後)</span>
-            <h3 class="font-bold text-white text-base mt-1">🏆 結果スクショ 1枠高速自動解析</h3>
+          <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+            <div>
+              <span class="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 2 (レース後)</span>
+              <h3 class="font-bold text-white text-base mt-1">🏆 結果スクショ 1枠自動合体</h3>
+            </div>
+            <button type="button" onclick="clearOcrData()" class="text-[11px] text-rose-400 hover:underline">
+              <i class="fa-solid fa-rotate-left me-1"></i> 読み取りクリア
+            </button>
           </div>
 
-          <!-- 動画風 1つのドロップ枠 -->
-          <div id="dropZone" onclick="document.getElementById('multiFileInput').click()" class="border-2 border-dashed border-emerald-500/60 hover:border-emerald-400 rounded-xl p-6 text-center cursor-pointer bg-emerald-950/20 transition flex flex-col justify-center items-center min-h-[140px] relative">
-            <input type="file" id="multiFileInput" accept="image/*" multiple class="hidden" onchange="handleMultipleImages(event)">
+          <!-- ドロップ＆貼り付け枠 -->
+          <div id="dropZone" onclick="document.getElementById('multiFileInput').click()" class="border-2 border-dashed border-emerald-500/60 hover:border-emerald-400 rounded-xl p-6 text-center cursor-pointer bg-emerald-950/20 transition flex flex-col justify-center items-center min-h-[130px] relative">
+            <input type="file" id="multiFileInput" accept="image/*" multiple class="hidden" onchange="handleFileInput(event)">
             
             <div id="dropIdleState" class="space-y-1">
               <i class="fa-solid fa-cloud-arrow-up text-3xl text-emerald-400 mb-1"></i>
-              <p class="text-xs font-bold text-emerald-200">ここに貼る (2枚まとめて選択OK)</p>
-              <p class="text-[10px] text-slate-400">1枚目が着順、2枚目が払戻。逆でも大丈夫です。</p>
+              <p class="text-xs font-bold text-emerald-200">ここにスクショを貼る（2枚同時・別々どちらもOK）</p>
+              <p class="text-[10px] text-slate-400">着順と配当は別々のタイミングで貼っても自動で合体・保持されます</p>
             </div>
 
             <div id="dropLoadingState" class="hidden flex-col items-center justify-center space-y-2">
               <i class="fa-solid fa-spinner fa-spin text-2xl text-amber-400"></i>
               <p class="text-xs font-bold text-amber-300">読んでいます...</p>
-              <p class="text-[10px] text-slate-400">着順と払戻を自動で判定・照合中</p>
+              <p class="text-[10px] text-slate-400">着順・配当を自動解析中</p>
             </div>
           </div>
 
-          <!-- バッジ表示（例: 着順 11  払戻 11） -->
-          <div id="badgeStatusArea" class="hidden flex items-center gap-2 pt-1">
-            <span id="badgeArrival" class="bg-indigo-900 text-indigo-200 border border-indigo-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">着順 0</span>
-            <span id="badgePayout" class="bg-emerald-900 text-emerald-200 border border-emerald-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">払戻 0</span>
-            <span id="statusMessageText" class="text-xs text-slate-300 font-bold ms-1"></span>
+          <!-- バッジ表示（保持状態ステータス） -->
+          <div id="badgeStatusArea" class="flex flex-wrap items-center gap-2 pt-1">
+            <span id="badgeArrival" class="bg-slate-700 text-slate-300 border border-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full">着順 0</span>
+            <span id="badgePayout" class="bg-slate-700 text-slate-300 border border-slate-600 text-[11px] font-bold px-2.5 py-0.5 rounded-full">配当 0</span>
+            <span id="statusMessageText" class="text-xs text-slate-400 font-bold ms-1">画像を貼ってください</span>
           </div>
 
-          <!-- プレビューリスト（車番カラー付き） -->
+          <!-- リアルタイム解析プレビュー（車番カラー付き） -->
           <div class="space-y-1">
-            <span class="text-xs font-bold text-slate-300 block">📊 解析プレビュー</span>
+            <span class="text-xs font-bold text-slate-300 block">📊 照合プレビュー</span>
             <div id="parsedResultContainer" class="space-y-2 max-h-[200px] overflow-y-auto pr-1">
-              <p class="text-xs text-slate-500 text-center py-6">上の枠にスクショを貼ると、ここに一覧表示されます。</p>
+              <p class="text-xs text-slate-500 text-center py-6">上の枠にスクショを貼ると、ここにリアルタイム表示されます。</p>
             </div>
           </div>
         </div>
