@@ -56,11 +56,9 @@
 
       <!-- 左側：STEP 1 (本日の予想サイト重複設定) -->
       <div class="lg:col-span-5 bg-slate-800 border border-indigo-500/30 rounded-2xl p-5 shadow-xl space-y-4">
-        <div class="border-b border-slate-700 pb-2 flex justify-between items-center">
-          <div>
-            <span class="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 1 (レース前)</span>
-            <h3 class="font-bold text-white text-base mt-1">📋 本日の推奨サイト重複チェック</h3>
-          </div>
+        <div class="border-b border-slate-700 pb-2">
+          <span class="text-[10px] bg-indigo-600 text-white font-bold px-2 py-0.5 rounded-full">STEP 1 (レース前)</span>
+          <h3 class="font-bold text-white text-base mt-1">📋 本日の推奨サイト重複チェック</h3>
         </div>
 
         <div class="grid grid-cols-2 gap-2">
@@ -74,9 +72,116 @@
           </div>
         </div>
 
-        <!-- 1R〜12R 重複チェック表 -->
-        <div id="preRaceContainer" class="space-y-2 max-h-[360px] overflow-y-auto pr-1">
-          <!-- JS動的挿入 -->
+        <!-- 1R〜12R 直固定表示チェックリスト -->
+        <div class="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+          <!-- 1R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">1R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_1" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_1" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_1" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 2R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">2R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_2" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_2" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_2" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 3R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">3R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_3" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_3" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_3" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 4R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">4R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_4" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_4" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_4" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 5R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">5R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_5" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_5" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_5" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 6R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">6R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_6" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_6" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_6" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 7R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">7R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_7" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_7" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_7" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 8R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">8R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_8" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_8" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_8" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 9R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">9R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_9" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_9" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_9" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 10R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">10R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_10" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_10" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_10" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 11R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">11R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_11" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_11" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_11" class="hidden"> N</label>
+            </div>
+          </div>
+          <!-- 12R -->
+          <div class="p-2 bg-slate-900 border border-slate-700 rounded-xl flex items-center justify-between gap-2">
+            <span class="font-black text-amber-400 text-xs bg-slate-800 px-2 py-0.5 rounded border border-slate-700">12R</span>
+            <div class="flex items-center gap-1.5">
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_b_12" class="hidden"> B</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_y_12" class="hidden"> Y</label>
+              <label class="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded text-xs cursor-pointer has-[:checked]:bg-indigo-600 has-[:checked]:text-white font-bold"><input type="checkbox" id="pre_n_12" class="hidden"> N</label>
+            </div>
+          </div>
         </div>
 
         <button type="button" onclick="savePreRaces()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 rounded-xl shadow-lg transition">
@@ -137,115 +242,4 @@
     </div>
 
     <!-- 7パターン別サマリーカード -->
-    <section class="space-y-3">
-      <div class="flex justify-between items-center">
-        <h2 class="text-sm font-bold text-slate-300 flex items-center gap-2">
-          <i class="fa-solid fa-layer-group text-indigo-400"></i> 重複パターン別成績 (全7パターン)
-        </h2>
-        <span class="text-xs text-slate-400" id="totalRaceCount">全 0 レース</span>
-      </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3" id="patternCardsContainer">
-        <!-- JS動的挿入 -->
-      </div>
-    </section>
-
-    <!-- 比較グラフ & 比較テーブル -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div class="lg:col-span-2 bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
-        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-chart-column text-indigo-400"></i> パターン別 回収率・的中率比較
-        </h3>
-        <div class="relative h-64 w-full">
-          <canvas id="comparisonChart"></canvas>
-        </div>
-      </div>
-
-      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
-        <h3 class="text-sm font-bold text-slate-200 mb-3 flex items-center gap-2">
-          <i class="fa-solid fa-table text-indigo-400"></i> 成績一覧表
-        </h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left text-slate-300">
-            <thead class="bg-slate-700/50 text-slate-400 uppercase border-b border-slate-700">
-              <tr>
-                <th class="py-2 px-1">パターン</th>
-                <th class="py-2 px-1 text-center">件数</th>
-                <th class="py-2 px-1 text-right">的中率</th>
-                <th class="py-2 px-1 text-right">回収率</th>
-              </tr>
-            </thead>
-            <tbody id="patternTableBody" class="divide-y divide-slate-700/50">
-              <!-- JS挿入 -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- メインデータ履歴一覧 -->
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl space-y-4">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-700 pb-3">
-        <h3 class="font-bold text-white text-base flex items-center gap-2">
-          <i class="fa-solid fa-list-check text-indigo-400"></i> 登録レース一覧・収支履歴
-        </h3>
-        
-        <div class="flex items-center gap-2">
-          <select id="filterOverlap" onchange="renderHistory()" class="bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-lg px-2 py-1.5">
-            <option value="ALL">全7パターン表示</option>
-            <option value="B_Y_N">3重: B & Y & N</option>
-            <option value="B_Y">2重: B & Y</option>
-            <option value="Y_N">2重: Y & N</option>
-            <option value="B_N">2重: B & N</option>
-            <option value="B">1重: Bのみ</option>
-            <option value="Y">1重: Yのみ</option>
-            <option value="N">1重: Nのみ</option>
-          </select>
-          <button type="button" onclick="exportCSV()" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-600">
-            <i class="fa-solid fa-download me-1"></i> CSV
-          </button>
-        </div>
-      </div>
-
-      <div id="historyList" class="space-y-3 max-h-[600px] overflow-y-auto pr-1">
-        <!-- JS動的挿入 -->
-      </div>
-
-      <div class="pt-3 border-t border-slate-700 flex justify-between items-center text-xs text-slate-400">
-        <span>※データはブラウザ内部に自動保存されます</span>
-        <button type="button" onclick="clearAllData()" class="text-rose-400 hover:underline">全データ削除</button>
-      </div>
-    </div>
-  </main>
-
-  <!-- PWA 追加案内モーダル -->
-  <div id="pwaModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 text-slate-200">
-      <div class="flex justify-between items-center border-b border-slate-700 pb-2">
-        <h3 class="font-bold text-white text-base">📱 ホーム画面への追加方法</h3>
-        <button type="button" onclick="closePwaGuide()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div class="space-y-3 text-xs leading-relaxed">
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700 space-y-1">
-          <p class="font-bold text-indigo-400">🍎 iPhone (Safari) の場合</p>
-          <ol class="list-decimal list-inside space-y-1 text-slate-300">
-            <li>下部の共有ボタン <i class="fa-solid fa-share-nodes"></i> をタップ</li>
-            <li>「ホーム画面に追加」を選択</li>
-            <li>右上の「追加」をタップ</li>
-          </ol>
-        </div>
-        <div class="p-3 bg-slate-900 rounded-xl border border-slate-700 space-y-1">
-          <p class="font-bold text-emerald-400">🤖 Android (Chrome) の場合</p>
-          <ol class="list-decimal list-inside space-y-1 text-slate-300">
-            <li>右上のメニューボタン <i class="fa-solid fa-ellipsis-vertical"></i> をタップ</li>
-            <li>「ホーム画面に追加」をタップ</li>
-          </ol>
-        </div>
-      </div>
-      <button type="button" onclick="closePwaGuide()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs">閉じる</button>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+    <
