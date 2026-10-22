@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BYNアナライザー</title>
+    <title>競輪配当分析プロ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -13,14 +13,13 @@
         th { background-color: #f3f4f6; }
         .site-checkboxes { display: flex; justify-content: center; gap: 10px; }
         .site-checkboxes label { display: flex; align-items: center; gap: 3px; cursor: pointer; }
-        .locked-row { background-color: #e0f2fe; } /* ロックされた行の色 */
+        .locked-row { background-color: #e0f2fe; }
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-2 md:p-4">
     <div class="max-w-6xl mx-auto space-y-4">
-        <h1 class="text-xl md:text-2xl font-bold text-center text-blue-700">🚴‍♂️ BYNアナライザー</h1>
+        <h1 class="text-xl md:text-2xl font-bold text-center text-blue-700">🚴‍♂️ 競輪配当分析プロ</h1>
 
-        <!-- 1. 入力エリア -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">➕ データの読み込み・追加</h2>
             <div class="border-2 border-dashed border-gray-300 p-6 text-center rounded-lg cursor-pointer hover:bg-gray-50 mb-4" onclick="document.getElementById('file-upload').click()">
@@ -35,16 +34,12 @@
                 <input type="number" id="manual-payout2" placeholder="2連単(円)" class="border p-2 rounded w-full">
                 <input type="number" id="manual-payout3" placeholder="3連単(円)" class="border p-2 rounded w-full">
                 <select id="manual-racers" class="border p-2 rounded w-full">
-                    <option value="">車立</option>
-                    <option value="9">9車</option>
-                    <option value="7">7車</option>
-                    <option value="5">5車</option>
+                    <option value="">車立</option><option value="9">9車</option><option value="7">7車</option><option value="5">5車</option>
                 </select>
                 <input type="number" id="manual-bets" placeholder="買目(点)" class="border p-2 rounded w-full">
                 <button class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2 md:col-span-1" onclick="addManualData()">↓ 追加</button>
             </div>
         </div>
-        <!-- 2. 未保存エリア -->
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
                 <h2 class="text-lg font-bold">📝 未保存エリア (<span id="staging-count">0</span>件)</h2>
@@ -67,7 +62,6 @@
             </div>
         </div>
 
-        <!-- 3. ダッシュボード -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">📊 分析ダッシュボード</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
@@ -79,7 +73,6 @@
             <div style="height: 250px;"><canvas id="recoveryChart"></canvas></div>
         </div>
 
-        <!-- 4. 保存済みデータ -->
         <div class="bg-white p-4 rounded-lg shadow mb-10">
             <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
                 <h2 class="text-lg font-bold">📂 保存済みデータ (サイト未選択も記録)</h2>
@@ -109,7 +102,6 @@
         let chartInstance = null;
 
         window.onload = () => { renderStaging(); renderSavedData(); updateDashboard(); };
-
         function saveToLocalStorage() { localStorage.setItem('keirinData', JSON.stringify(savedData)); updateDashboard(); }
 
         function handleImageUpload(event) {
@@ -117,16 +109,33 @@
             if (files.length < 2) return alert("着順と配当の画像を2枚以上選択してください");
             
             setTimeout(() => {
-                // シミュレーション: ズレが「レース番号」で一目でわかるようにデータを生成
-                stagingData = [
-                    createRowData("3R", "3-1-2", "", "", false),
-                    createRowData("4R", "4-5-1", "", "", false),
-                    createRowData("5R", "5-2-3", "800", "4200", true),  // ロック
-                    createRowData("6R", "6-1-4", "1500", "8900", true), // ロック
-                    createRowData("", "", "2100", "12000", false),
-                    createRowData("", "", "900", "3400", false)
+                // レース番号を基準にした自動結合シミュレーション
+                const mockOrders = [
+                    { race: "3R", order: "3-1-2" }, { race: "4R", order: "4-5-1" },
+                    { race: "5R", order: "5-2-3" }, { race: "6R", order: "6-1-4" }
                 ];
-                alert("画像を解析しました。\n「レース」番号と「配当」を見比べて、ズレがある場合は「配当を上へ/下へ」で調整してください。");
+                const mockPayouts = [
+                    { race: "5R", p2: "800", p3: "4200" }, { race: "6R", p2: "1500", p3: "8900" },
+                    { race: "", p2: "2100", p3: "12000" }, { race: "", p2: "900", p3: "3400" }
+                ];
+                
+                stagingData = [];
+                // 1. レース番号が一致するものをロック結合
+                mockOrders.forEach(o => {
+                    const match = mockPayouts.find(p => p.race === o.race && o.race !== "");
+                    if (match) {
+                        stagingData.push(createRowData(o.race, o.order, match.p2, match.p3, true));
+                        match.used = true;
+                    } else {
+                        stagingData.push(createRowData(o.race, o.order, "", "", false));
+                    }
+                });
+                // 2. 余った配当データを下に追加（スライド用）
+                mockPayouts.forEach(p => {
+                    if (!p.used) stagingData.push(createRowData(p.race, "", p.p2, p.p3, false));
+                });
+
+                alert("画像を解析しました。\nレース番号が一致する行をロックしました。ズレがある場合は「配当を上へ/下へ」で調整してください。");
                 event.target.value = ''; renderStaging();
             }, 800);
         }
@@ -140,9 +149,7 @@
             stagingData.forEach((d) => {
                 if (!d.isLocked) {
                     while (unlockedPayouts[payoutIndex] === null) payoutIndex++;
-                    if (unlockedPayouts[payoutIndex]) {
-                        d.payout2 = unlockedPayouts[payoutIndex].p2; d.payout3 = unlockedPayouts[payoutIndex].p3;
-                    }
+                    if (unlockedPayouts[payoutIndex]) { d.payout2 = unlockedPayouts[payoutIndex].p2; d.payout3 = unlockedPayouts[payoutIndex].p3; }
                     payoutIndex++;
                 }
             });
@@ -150,19 +157,15 @@
         }
 
         function addManualData() {
-            const race = document.getElementById('manual-race').value.trim();
-            const order = document.getElementById('manual-order').value.trim(), p2 = document.getElementById('manual-payout2').value.trim(), p3 = document.getElementById('manual-payout3').value.trim();
+            const race = document.getElementById('manual-race').value.trim(), order = document.getElementById('manual-order').value.trim(), p2 = document.getElementById('manual-payout2').value.trim(), p3 = document.getElementById('manual-payout3').value.trim();
             const r = document.getElementById('manual-racers').value, b = document.getElementById('manual-bets').value.trim();
             if(!order && !p2 && !p3) return alert("着順または配当を入力してください");
-            
             let newRow = createRowData(race, order, p2, p3, false);
             newRow.racers = r; newRow.bets = b; stagingData.push(newRow); renderStaging();
             ['manual-race', 'manual-order', 'manual-payout2', 'manual-payout3', 'manual-bets'].forEach(id => document.getElementById(id).value = ''); document.getElementById('manual-race').focus();
         }
+        function createRowData(race, order, p2, p3, isLocked) { return { id: Date.now() + Math.random().toString(36).substr(2, 5), race: race, order: order, payout2: p2, payout3: p3, racers: "9", bets: "10", sites: { B:{bet:false,hit:false}, Y:{bet:false,hit:false}, N:{bet:false,hit:false} }, line: "ライン無し", isLocked: isLocked }; }
 
-        function createRowData(race, order, p2, p3, isLocked) {
-            return { id: Date.now() + Math.random().toString(36).substr(2, 5), race: race, order: order, payout2: p2, payout3: p3, racers: "9", bets: "10", sites: { B:{bet:false,hit:false}, Y:{bet:false,hit:false}, N:{bet:false,hit:false} }, line: "ライン無し", isLocked: isLocked };
-        }
         function renderStaging() { document.getElementById('staging-count').innerText = stagingData.length; document.querySelector('#staging-table tbody').innerHTML = stagingData.map((d, i) => generateRow(d, 'staging', i)).join(''); }
         function renderSavedData() { document.querySelector('#saved-table tbody').innerHTML = savedData.map((d, i) => generateRow(d, 'saved', i)).join(''); }
 
@@ -191,8 +194,7 @@
         function saveAllStaging() {
             const valid = [], invalid = [];
             stagingData.forEach(d => { if(d.order && (d.payout2 || d.payout3)) { if(!d.id) d.id = Date.now().toString(); valid.push(d); } else { invalid.push(d); } });
-            savedData = [...savedData, ...valid]; stagingData = invalid;
-            saveToLocalStorage(); renderStaging(); renderSavedData();
+            savedData = [...savedData, ...valid]; stagingData = invalid; saveToLocalStorage(); renderStaging(); renderSavedData();
         }
 
         function clearAllData() { if(confirm('全て消去しますか？')) { savedData = []; saveToLocalStorage(); renderSavedData(); } }
@@ -209,7 +211,6 @@
             const calc = (i, r) => i > 0 ? Math.round((r/i)*100) : 0;
             const [rB, rY, rN] = [calc(st.B.inv, st.B.ret), calc(st.Y.inv, st.Y.ret), calc(st.N.inv, st.N.ret)];
             document.getElementById('dash-b-recovery').innerText = rB + '%'; document.getElementById('dash-y-recovery').innerText = rY + '%'; document.getElementById('dash-n-recovery').innerText = rN + '%';
-            
             const ctx = document.getElementById('recoveryChart').getContext('2d');
             if(chartInstance) chartInstance.destroy();
             chartInstance = new Chart(ctx, { type: 'bar', data: { labels: ['B', 'Y', 'N'], datasets: [{ label: '回収率(%)', data: [rB, rY, rN], backgroundColor: ['#22c55e', '#f97316', '#ef4444'] }] }, options: { responsive: true, maintainAspectRatio: false } });
