@@ -7,7 +7,7 @@ st.set_page_config(page_title="BYN Race Analyzer", layout="wide", initial_sideba
 # ---------------------------------------------------------
 # 新・爆速OCR ＆ 2画面合体直接保存版 HTMLコード
 # ---------------------------------------------------------
-html_code = """
+html_code = r"""
 <!DOCTYPE html>
 <html lang="ja" class="dark">
 <head>
@@ -428,13 +428,13 @@ html_code = """
         const DIGIT_W = 12, DIGIT_H = 18;
         const DIGIT_BITS = {
             "0": "000011110000001111111100011100001110011000000110110000000011110000000011110000000011110000000011110000000011110000000011110000000011110000000011111000000011011000000110011100000110001111111100000111111000",
-            "1": "000000000111000111111111111111111111111110001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111",
-            "2": "000011100000011111111100011100011100011000001110110000000110110000000110000000001110000000001100000000011100000000011000000000110000000001100000000011000000000110000000011100000000011100000000111111111111111111111111",
-            "3": "000011110000011111111100011100001110011000000110000000000110000000000110000000000110000011111100000011111000000011111100000000000110000000000110000000000011111000000110011000000110011100001110001111111100000011110000",
+            "1": "000000000111000111111111111111111111111110001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111",
+            "2": "0000111000000111111111000111000111000110000011101100000001101100000001100000000011100000000011000000000111000000000110000000001100000000011000000000110000000011100000000011100000000111111111111111111111111",
+            "3": "000011110000011111111100011100001110011000000110000000000110000000000110000000000110000011111100000011111000000011111100000000000110000000000110000000000111110000000110011000000110011100001110001111111100000011110000",
             "4": "000000011000000000111100000000111100000000111100000001001100000011001100000011001100000110001100001100001100011100001100011000001100011000001100111111111111111111111111000000001100000000001100000000001100000000001100",
             "5": "011111111110011111111110011000000000011000000000010000000000010000000000011111111000111100111100000000001110000000000110000000000111000000000011000000000011110000000110110000000110111000001110001111111100000111110000",
             "6": "000000111100000111111000001111000000001110000000011000000000011000000000010001111000111111111100111100001110111000000110110000000011110000000011110000000011111000000011011000000011011100000110001111111100000111111000",
-            "7": "111111111111011111111111000000000110000000000110000000001110000000001100000000001100000000011000000000110000000000110000000000110000000001100000000011000000000110000000001100000000011000000000111000000000110000000",
+            "7": "11111111111101111111111100000000011000000000011000000000111000000000110000000000110000000001100000000011000000000011000000000011000000000110000000001100000000011000000000110000000001100000000011100000000011000000",
             "8": "000011110000011110011100011100001100011000001110011000000110011000000110011100001100011100011100001111111100011110011100011100001110011000000110110000000011110000000011011000000110011100001110011111111100000011100000",
             "9": "000000000000001111111100011100011100011000000110110000000011110000000011110000000011110000000011011000000011011110011111001111111111000111110011000000000010000000000110000000011100000000111100001111111000000111000000"
         };
@@ -510,7 +510,6 @@ html_code = """
             }
             return comps;
         }
-
         function payoutGroups(img, y0, y1) {
             const w = img.width, rh = y1 - y0;
             const comps = components(img, Math.floor(w * 0.1), w - 2, y0 + Math.floor(rh * 0.1), y0 + Math.floor(rh * 0.9), 160).filter(c => c.n > 8 && c.y1 - c.y > rh * 0.1);
@@ -564,7 +563,6 @@ html_code = """
             return { ch: bestCh, dist: bestDist };
         }
 
-        // 配当画像から「2連単」と「3連単」を取得
         function readPayout(img) {
             const rows = [];
             for (const [y0, y1] of rowBands(img)) {
@@ -656,304 +654,3 @@ html_code = """
             else if (payout.length >= 1 && payout[0].sanrentan) kind = "payout";
             return { kind, order, payout };
         }
-        // --- 2分割枠のOCR状態管理変数 ---
-        let currentOrderData = [];
-        let currentPayoutData = [];
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData(); initCanvas(); renderDashboard(); renderRecords(); updateRecordCountBadge();
-            document.getElementById('date').value = new Date().toISOString().split('T')[0];
-            addTicketRow();
-        });
-
-        function openOcrModal() { document.getElementById('ocr-modal').classList.remove('hidden'); }
-        function closeOcrModal() { document.getElementById('ocr-modal').classList.add('hidden'); }
-
-        // 個別ファイル選択（またはペースト）時の処理
-        function handleOcrFileSelection(e, type) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const descEl = document.getElementById(`desc-${type}`);
-            descEl.textContent = "解析中...";
-
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const img = new Image();
-                img.onload = () => {
-                    const cvs = document.createElement('canvas');
-                    cvs.width = img.width; cvs.height = img.height;
-                    const c = cvs.getContext('2d'); c.drawImage(img, 0, 0);
-                    const imgData = c.getImageData(0, 0, cvs.width, cvs.height);
-                    const raster = { width: cvs.width, height: cvs.height, data: imgData.data };
-
-                    const res = ingestShot(raster);
-
-                    if (type === 'order') {
-                        if (res.order && res.order.length > 0) {
-                            currentOrderData = res.order;
-                            descEl.textContent = `${res.order.length}レースの着順を取得`;
-                            document.getElementById('dropzone-order').classList.add('border-purple-500', 'bg-purple-500/10');
-                        } else {
-                            descEl.textContent = "着順が読み取れませんでした";
-                        }
-                    } else if (type === 'payout') {
-                        if (res.payout && res.payout.length > 0) {
-                            currentPayoutData = res.payout;
-                            descEl.textContent = `${res.payout.length}レースの配当を取得`;
-                            document.getElementById('dropzone-payout').classList.add('border-emerald-500', 'bg-emerald-500/10');
-                        } else {
-                            descEl.textContent = "配当が読み取れませんでした";
-                        }
-                    }
-
-                    checkOcrMatch();
-                };
-                img.src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // 両方のデータが揃って行数が一致するかチェック
-        function checkOcrMatch() {
-            const previewContainer = document.getElementById('ocr-preview-container');
-            const statusEl = document.getElementById('ocr-match-status');
-            const saveBtn = document.getElementById('ocr-save-btn');
-
-            if (currentOrderData.length > 0 && currentPayoutData.length > 0) {
-                if (currentOrderData.length === currentPayoutData.length) {
-                    statusEl.textContent = `状態: 準備完了 (${currentOrderData.length}レース一致)`;
-                    statusEl.className = "text-xs text-emerald-400 font-bold";
-                    saveBtn.removeAttribute('disabled');
-
-                    previewContainer.innerHTML = '';
-                    for (let i = 0; i < currentOrderData.length; i++) {
-                        const o = currentOrderData[i];
-                        const p = currentPayoutData[i];
-                        const comboStr = o.cars ? o.cars.join('-') : "";
-                        previewContainer.innerHTML += `
-                            <div class="flex items-center justify-between p-2 bg-slate-800/80 rounded-lg text-xs">
-                                <span class="font-bold text-yellow-400">${i + 1}R</span>
-                                <span class="text-white font-mono">着順: ${comboStr}</span>
-                                <span class="text-emerald-300 font-mono">2連: ¥${p.nirentan || 0} / 3連: ¥${p.sanrentan || 0}</span>
-                            </div>`;
-                    }
-                } else {
-                    statusEl.textContent = `状態: レース数が不一致 (着順:${currentOrderData.length} vs 配当:${currentPayoutData.length})`;
-                    statusEl.className = "text-xs text-rose-400 font-bold";
-                    saveBtn.setAttribute('disabled', 'true');
-                    previewContainer.innerHTML = `<p class="text-xs text-rose-400 text-center py-2">着順と配当のレース数が一致しません</p>`;
-                }
-            } else {
-                statusEl.textContent = "状態: 画像待ち";
-                statusEl.className = "text-xs text-gray-400 font-bold";
-            }
-        }
-
-        function clearOcrBoxes() {
-            currentOrderData = [];
-            currentPayoutData = [];
-            document.getElementById('file-order').value = '';
-            document.getElementById('file-payout').value = '';
-            document.getElementById('desc-order').textContent = "未選択";
-            document.getElementById('desc-payout').textContent = "未選択";
-            document.getElementById('dropzone-order').classList.remove('border-purple-500', 'bg-purple-500/10');
-            document.getElementById('dropzone-payout').classList.remove('border-emerald-500', 'bg-emerald-500/10');
-            document.getElementById('ocr-preview-container').innerHTML = '<p class="text-xs text-gray-600 text-center py-4">両方の画像を読み込むと、ここに1R〜の結びついた結果が表示されます</p>';
-            document.getElementById('ocr-save-btn').setAttribute('disabled', 'true');
-            document.getElementById('ocr-match-status').textContent = "状態: 画像待ち";
-        }
-
-        // 【直接保存の実行】appendManyに渡してリストへ一括追加
-        function executeAppendMany() {
-            if (currentOrderData.length === 0 || currentOrderData.length !== currentPayoutData.length) return;
-
-            const newRecords = [];
-            const today = document.getElementById('date').value || new Date().toISOString().split('T')[0];
-
-            for (let i = 0; i < currentOrderData.length; i++) {
-                const o = currentOrderData[i];
-                const p = currentPayoutData[i];
-                const comboStr = o.cars ? o.cars.join('-') : "";
-
-                newRecords.unshift({
-                    id: 'RACE_' + Date.now() + '_' + i,
-                    date: today,
-                    raceIdStr: `${i + 1}R`,
-                    sites: [],
-                    patternKey: 'NONE',
-                    tickets: [],
-                    totalInvest: 0,
-                    resultCombo: comboStr,
-                    nirentanAmount: p.nirentan || 0,
-                    payoutAmount: p.sanrentan || 0,
-                    isHit: false,
-                    totalReturn: 0,
-                    drawingData: '',
-                    timestamp: Date.now() + i
-                });
-            }
-
-            // 直接履歴リストに結合して保存
-            races = [...newRecords, ...races];
-            saveData();
-            closeOcrModal();
-            clearOcrBoxes();
-            switchTab('records');
-            alert(`${newRecords.length}レース分の結果を履歴に直接追加しました！`);
-        }
-
-        // ---------------------------------------------------
-        // アプリのデータ管理 ＆ その他基本機能
-        // ---------------------------------------------------
-        function loadData() { const d = localStorage.getItem('BYN_RACE_DATA_PRO'); if (d) races = JSON.parse(d); }
-        function saveData() { localStorage.setItem('BYN_RACE_DATA_PRO', JSON.stringify(races)); updateRecordCountBadge(); renderDashboard(); renderRecords(); }
-
-        let races = [];
-        let canvas, ctx, isDrawing = false, currentBrushColor = '#38bdf8';
-
-        function switchTab(tabId) {
-            ['dashboard', 'input', 'records'].forEach(id => {
-                document.getElementById('tab-' + id).classList.add('hidden');
-                const btn = document.getElementById('tab-' + id + '-btn');
-                btn.classList.remove('border-blue-500', 'text-blue-400');
-                btn.classList.add('border-transparent', 'text-gray-400');
-            });
-            document.getElementById('tab-' + tabId).classList.remove('hidden');
-            const actBtn = document.getElementById('tab-' + tabId + '-btn');
-            actBtn.classList.remove('border-transparent', 'text-gray-400'); actBtn.classList.add('border-blue-500', 'text-blue-400');
-            if (tabId === 'dashboard') renderDashboard(); if (tabId === 'records') renderRecords();
-        }
-
-        const PATTERNS = [
-            { id: 'B_Y_N', label: 'B & Y & N', badgeClass: 'bg-amber-500/20 text-amber-400 border-amber-500/50' },
-            { id: 'B_Y', label: 'B & Y', badgeClass: 'bg-blue-500/20 text-blue-400 border-blue-500/50' },
-            { id: 'Y_N', label: 'Y & N', badgeClass: 'bg-amber-500/20 text-amber-400 border-amber-500/50' },
-            { id: 'B_N', label: 'B & N', badgeClass: 'bg-pink-500/20 text-pink-400 border-pink-500/50' },
-            { id: 'B', label: 'B 単独', badgeClass: 'bg-blue-500/10 text-blue-300 border-blue-500/30' },
-            { id: 'Y', label: 'Y 単独', badgeClass: 'bg-amber-500/10 text-amber-300 border-amber-500/30' },
-            { id: 'N', label: 'N 単独', badgeClass: 'bg-pink-500/10 text-pink-300 border-pink-500/30' },
-            { id: 'NONE', label: '未選択/OCR', badgeClass: 'bg-slate-700 text-gray-300 border-slate-600' }
-        ];
-
-        function getSelectedSites() {
-            const s = [];
-            if (document.getElementById('site-B').checked) s.push('B');
-            if (document.getElementById('site-Y').checked) s.push('Y');
-            if (document.getElementById('site-N').checked) s.push('N');
-            return s;
-        }
-
-        function getPatternKey(sites) {
-            if (sites.length === 3) return 'B_Y_N'; if (sites.length === 2) return sites.join('_'); if (sites.length === 1) return sites[0]; return 'NONE';
-        }
-
-        function updateLivePattern() {
-            const sites = getSelectedSites(), badge = document.getElementById('live-pattern-badge');
-            if (sites.length === 0) { badge.textContent = '選択なし'; badge.className = 'text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-gray-400 font-bold border border-slate-700'; return; }
-            const p = PATTERNS.find(x => x.id === getPatternKey(sites));
-            if (p) { badge.textContent = p.label; badge.className = `text-xs px-2.5 py-0.5 rounded-full font-bold border ${p.badgeClass}`; }
-        }
-
-        function addTicketRow(combo = '', amount = 100) {
-            const container = document.getElementById('tickets-container'), rowId = 'ticket-' + Date.now();
-            const div = document.createElement('div'); div.id = rowId; div.className = 'flex gap-2 items-center';
-            div.innerHTML = `
-                <div class="relative flex-1">
-                    <input type="text" value="${combo}" placeholder="例: 1-2-3" class="ticket-combo w-full bg-slate-800 border-none rounded py-1.5 px-2 text-sm font-bold text-white focus:ring-1 focus:ring-blue-500 font-mono">
-                </div>
-                <div class="relative w-24">
-                    <input type="number" min="100" step="100" value="${amount}" oninput="updateTotalInvest()" class="ticket-amount w-full bg-slate-800 border-none rounded py-1.5 px-2 text-sm font-bold text-white focus:ring-1 focus:ring-blue-500 number-font text-right">
-                </div>
-                <button type="button" onclick="removeTicketRow('${rowId}')" class="text-gray-500 hover:text-rose-500 px-2"><i class="fa-solid fa-xmark"></i></button>`;
-            container.appendChild(div); updateTotalInvest();
-        }
-
-        function removeTicketRow(id) { const r = document.getElementById(id); if(r) r.remove(); updateTotalInvest(); if(document.querySelectorAll('.ticket-amount').length===0) addTicketRow(); }
-        function updateTotalInvest() { let t = 0; document.querySelectorAll('.ticket-amount').forEach(i => { t += parseInt(i.value) || 0; }); document.getElementById('live-total-invest').textContent = `¥${t.toLocaleString()}`; }
-        function getTicketsData() { const tkts = []; document.querySelectorAll('#tickets-container > div').forEach(r => { const c = r.querySelector('.ticket-combo').value.trim(), a = parseInt(r.querySelector('.ticket-amount').value) || 0; if (c || a > 0) tkts.push({ combo: c, amount: a }); }); return tkts; }
-
-        function saveRace(e) {
-            e.preventDefault();
-            const sites = getSelectedSites();
-            const tkts = getTicketsData(), totInv = tkts.reduce((s, t) => s + t.amount, 0);
-            const resCombo = document.getElementById('result-combo').value.trim();
-            const nirenAmt = parseInt(document.getElementById('nirentan-amount').value) || 0;
-            const payAmt = parseInt(document.getElementById('payout-amount').value) || 0;
-            let hit = false, totRet = 0;
-            if (resCombo) { const ht = tkts.find(t => t.combo === resCombo); if (ht) { hit = true; totRet = (ht.amount / 100) * payAmt; } }
-            const race = { id: document.getElementById('edit-id').value || 'RACE_'+Date.now(), date: document.getElementById('date').value, raceIdStr: document.getElementById('race-id').value, sites: sites, patternKey: getPatternKey(sites), tickets: tkts, totalInvest: totInv, resultCombo: resCombo, nirentanAmount: nirenAmt, payoutAmount: payAmt, isHit: hit, totalReturn: totRet, drawingData: canvas ? canvas.toDataURL() : '', timestamp: Date.now() };
-            const idx = races.findIndex(r => r.id === race.id); if (idx >= 0) races[idx] = race; else races.unshift(race);
-            saveData(); resetForm(); switchTab('records');
-            alert(hit ? `🎯 的中！ ${totRet.toLocaleString()}円を記録しました` : '保存しました');
-        }
-
-        function resetForm() {
-            document.getElementById('race-form').reset(); document.getElementById('edit-id').value = ''; document.getElementById('save-btn-text').textContent = 'このレースを保存する'; document.getElementById('date').value = new Date().toISOString().split('T')[0]; document.getElementById('tickets-container').innerHTML = ''; addTicketRow(); updateLivePattern(); clearCanvas();
-        }
-
-        function editRace(id) {
-            const race = races.find(r => r.id === id); if (!race) return;
-            resetForm();
-            document.getElementById('edit-id').value = race.id; document.getElementById('date').value = race.date; document.getElementById('race-id').value = race.raceIdStr || '';
-            ['B','Y','N'].forEach(s => document.getElementById(`site-${s}`).checked = race.sites.includes(s)); updateLivePattern();
-            const tc = document.getElementById('tickets-container'); tc.innerHTML = '';
-            if (race.tickets && race.tickets.length > 0) race.tickets.forEach(t => addTicketRow(t.combo, t.amount)); else addTicketRow();
-            document.getElementById('result-combo').value = race.resultCombo || ''; 
-            document.getElementById('nirentan-amount').value = race.nirentanAmount || '';
-            document.getElementById('payout-amount').value = race.payoutAmount || '';
-            if (race.drawingData && ctx) { const img = new Image(); img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); }; img.src = race.drawingData; }
-            document.getElementById('save-btn-text').textContent = '変更を更新する'; switchTab('input');
-        }
-
-        function deleteRace(id) { if (confirm("削除しますか？")) { races = races.filter(r => r.id !== id); saveData(); } }
-
-        function initCanvas() {
-            canvas = document.getElementById('handwriting-canvas'); ctx = canvas.getContext('2d');
-            const rect = canvas.parentElement.getBoundingClientRect(); canvas.width = rect.width; canvas.height = rect.height;
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; updateBrush();
-            const start = (e) => { isDrawing = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); };
-            const move = (e) => { if (!isDrawing) return; e.preventDefault(); const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); };
-            const stop = () => { isDrawing = false; ctx.closePath(); };
-            canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop); canvas.addEventListener('mouseout', stop);
-            canvas.addEventListener('touchstart', start, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); canvas.addEventListener('touchend', stop);
-            const firstColorBtn = document.querySelector('.color-btn');
-            if(firstColorBtn) firstColorBtn.classList.add('ring-2', 'ring-white');
-        }
-        function getPos(e) { const r = canvas.getBoundingClientRect(), cx = e.touches ? e.touches[0].clientX : e.clientX, cy = e.touches ? e.touches[0].clientY : e.clientY; return { x: cx - r.left, y: cy - r.top }; }
-        function setCanvasColor(color, btn) { currentBrushColor = color; updateBrush(); document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('ring-2', 'ring-white')); if(btn) btn.classList.add('ring-2', 'ring-white'); }
-        function updateBrush() { if(ctx) { ctx.strokeStyle = currentBrushColor; ctx.lineWidth = 4; } }
-        function clearCanvas() { if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height); }
-
-        function renderDashboard() {
-            let tInv = 0, tRet = 0, tHit = 0, comp = 0; const pSt = {};
-            PATTERNS.forEach(p => pSt[p.id] = { cnt: 0, comp: 0, hits: 0, inv: 0, ret: 0 });
-            races.forEach(r => {
-                const k = r.patternKey || 'NONE'; if(!pSt[k]) pSt[k] = { cnt: 0, comp: 0, hits: 0, inv: 0, ret: 0 };
-                pSt[k].cnt++;
-                if (r.resultCombo) { comp++; tInv += r.totalInvest; tRet += r.totalReturn; if(r.isHit) tHit++; pSt[k].comp++; pSt[k].inv += r.totalInvest; pSt[k].ret += r.totalReturn; if(r.isHit) pSt[k].hits++; }
-            });
-            document.getElementById('stat-total-races').textContent = races.length; document.getElementById('stat-total-invest').textContent = `¥${tInv.toLocaleString()}`; document.getElementById('stat-total-payout').textContent = `¥${tRet.toLocaleString()}`;
-            const prof = tRet - tInv; document.getElementById('stat-total-profit').textContent = `${prof >= 0 ? '+' : ''}¥${prof.toLocaleString()}`;
-            document.getElementById('stat-total-hitrate').textContent = `的中率 ${comp > 0 ? ((tHit/comp)*100).toFixed(1) : 0}%`;
-            document.getElementById('stat-total-return').textContent = `${tInv > 0 ? ((tRet/tInv)*100).toFixed(1) : 0}%`;
-
-            PATTERNS.forEach(p => {
-                const s = pSt[p.id], elCnt = document.getElementById(`pat-${p.id}-count`);
-                if(elCnt) {
-                    elCnt.textContent = `${s.cnt}件`;
-                    document.getElementById(`pat-${p.id}-return`).textContent = `${s.inv > 0 ? ((s.ret/s.inv)*100).toFixed(1) : 0}%`;
-                    if(document.getElementById(`pat-${p.id}-hit`)) document.getElementById(`pat-${p.id}-hit`).textContent = `${s.comp > 0 ? ((s.hits/s.comp)*100).toFixed(1) : 0}%`;
-                    const pf = s.ret - s.inv; document.getElementById(`pat-${p.id}-profit`).textContent = `${pf >= 0 ? '+' : ''}¥${pf.toLocaleString()}`;
-                }
-            });
-        }
-
-        function updateRecordCountBadge() { document.getElementById('record-count-badge').textContent = races.length; }
-
-        function renderRecords() {
-            const cont = document.getElementById('records-container'), f = document.getElementById('filter-pattern').value;
-            const sorted = [...races].sort((a, b) => new Date(b.date) - new Date(a.date) || (b.timestamp || 0) - (a.timestamp || 0));
-            const filtered = sorted.filter(r => f === 'ALL' || (r.patternKey || 'NONE') === f);
-            cont.innerHTML = '';
-            
