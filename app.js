@@ -5,7 +5,7 @@ import streamlit.components.v1 as components
 st.set_page_config(page_title="BYN Race Analyzer", layout="wide", initial_sidebar_state="collapsed")
 
 # ---------------------------------------------------------
-# 新・爆速OCR ＆ 2画面合体対応版 HTMLコード
+# 新・爆速OCR ＆ 2画面合体直接保存版 HTMLコード
 # ---------------------------------------------------------
 html_code = r"""
 <!DOCTYPE html>
@@ -13,20 +13,17 @@ html_code = r"""
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BYN Race Analyzer - 手書き編集強化＆予想重複分析</title>
+    <title>BYN Race Analyzer - 2画面合体直接保存版</title>
 
     <!-- PWA & Mobile Web App Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="BYN Race">
     <meta name="theme-color" content="#080c14">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Teko:wght@600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 
     <script>
@@ -35,12 +32,7 @@ html_code = r"""
             theme: {
                 extend: {
                     colors: {
-                        byn: {
-                            dark: '#080c14',
-                            card: '#111827',
-                            border: '#1f293d',
-                            accent: '#2563eb',
-                        }
+                        byn: { dark: '#080c14', card: '#111827', border: '#1f293d', accent: '#2563eb' }
                     },
                     fontFamily: {
                         teko: ['Teko', 'sans-serif'],
@@ -51,19 +43,17 @@ html_code = r"""
         }
     </script>
     <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: #080c14;
-            color: #f3f4f6;
-        }
-        .number-font {
-            font-family: 'Teko', sans-serif;
-            letter-spacing: 0.05em;
-        }
+        body { font-family: 'Noto Sans JP', sans-serif; background-color: #080c14; color: #f3f4f6; }
+        .number-font { font-family: 'Teko', sans-serif; letter-spacing: 0.05em; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #080c14; }
         ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 4px; }
         canvas { touch-action: none; }
+        /* 読み込み枠の色分け用 */
+        .dropzone-order { border-color: #8b5cf6; background-color: rgba(139, 92, 246, 0.05); }
+        .dropzone-order:hover { border-color: #a78bfa; background-color: rgba(139, 92, 246, 0.1); }
+        .dropzone-payout { border-color: #10b981; background-color: rgba(16, 185, 129, 0.05); }
+        .dropzone-payout:hover { border-color: #34d399; background-color: rgba(16, 185, 129, 0.1); }
     </style>
 </head>
 <body class="min-h-screen pb-12 flex flex-col">
@@ -79,18 +69,13 @@ html_code = r"""
                 </div>
                 <div>
                     <h1 class="text-base sm:text-lg font-extrabold text-white leading-tight flex items-center gap-2">
-                        RACE ANALYZER <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-blue-500 to-pink-500 text-white shadow">PRO EDIT</span>
+                        RACE ANALYZER <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500 text-white shadow">PRO</span>
                     </h1>
                 </div>
             </div>
-
-            <!-- Header Action Controls -->
             <div class="flex items-center gap-2">
                 <button onclick="openOcrModal()" class="px-2.5 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 text-xs text-white font-extrabold rounded-lg transition flex items-center gap-1.5 shadow-lg">
-                    <i class="fa-solid fa-bolt text-yellow-300"></i><span class="hidden sm:inline">画像読取</span>
-                </button>
-                <button onclick="exportCSV()" class="px-2.5 py-1.5 bg-slate-800 text-xs text-emerald-400 font-semibold rounded-lg transition shadow">
-                    <i class="fa-solid fa-file-csv"></i><span class="hidden sm:inline">CSV</span>
+                    <i class="fa-solid fa-camera"></i><span class="hidden sm:inline">画像読取</span>
                 </button>
             </div>
         </div>
@@ -101,10 +86,10 @@ html_code = r"""
         <!-- Nav Tabs -->
         <div class="flex border-b border-byn-border space-x-2 overflow-x-auto">
             <button id="tab-dashboard-btn" onclick="switchTab('dashboard')" class="tab-btn px-5 py-3 text-sm font-bold border-b-2 border-blue-500 text-blue-400 flex items-center gap-2 transition whitespace-nowrap">
-                <i class="fa-solid fa-chart-pie"></i> ダッシュボード・全7パターン検証
+                <i class="fa-solid fa-chart-pie"></i> ダッシュボード
             </button>
             <button id="tab-input-btn" onclick="switchTab('input')" class="tab-btn px-5 py-3 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition whitespace-nowrap">
-                <i class="fa-solid fa-square-plus"></i> レース＆買い目登録
+                <i class="fa-solid fa-square-plus"></i> 個別入力
             </button>
             <button id="tab-records-btn" onclick="switchTab('records')" class="tab-btn px-5 py-3 text-sm font-bold border-b-2 border-transparent text-gray-400 hover:text-gray-200 flex items-center gap-2 transition whitespace-nowrap">
                 <i class="fa-solid fa-list-ul"></i> レース履歴 (<span id="record-count-badge">0</span>)
@@ -113,7 +98,6 @@ html_code = r"""
 
         <!-- TAB 1: DASHBOARD & PATTERN ANALYSIS -->
         <section id="tab-dashboard" class="space-y-6">
-            
             <!-- Global Summary Cards -->
             <div class="grid grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
                 <div class="bg-byn-card border border-byn-border rounded-xl p-4 shadow-md">
@@ -178,7 +162,6 @@ html_code = r"""
                             <span class="text-gray-400">純損益:</span><span id="pat-B_Y_N-profit" class="font-bold">¥0</span>
                         </div>
                     </div>
-                    
                     <!-- B & Y -->
                     <div class="bg-byn-card border border-blue-500/40 rounded-2xl p-4 shadow-xl">
                         <div class="flex justify-between items-center mb-3">
@@ -202,6 +185,7 @@ html_code = r"""
                         </div>
                         <div class="flex justify-between text-xs pt-1"><span class="text-gray-400">純損益:</span><span id="pat-Y_N-profit">¥0</span></div>
                     </div>
+
                     <!-- B & N -->
                     <div class="bg-byn-card border border-pink-500/40 rounded-2xl p-4 shadow-xl">
                         <div class="flex justify-between items-center mb-3">
@@ -318,10 +302,17 @@ html_code = r"""
                     <!-- Step 5: Result & Payout -->
                     <div class="space-y-4 bg-slate-900 p-4 rounded-xl border border-slate-700/50">
                         <label class="block text-xs font-bold text-gray-400">レース結果 (事後入力)</label>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="space-y-1">
                                 <label class="block text-[11px] text-gray-500">決定着順 (例: 5-1-6)</label>
                                 <input type="text" id="result-combo" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white text-center font-bold focus:border-blue-500 focus:outline-none">
+                            </div>
+                            <div class="space-y-1">
+                                <label class="block text-[11px] text-gray-500">2連単配当 (円)</label>
+                                <div class="relative">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">¥</span>
+                                    <input type="number" id="nirentan-amount" class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-7 pr-3 py-2 text-white text-right number-font font-bold focus:border-blue-500 focus:outline-none">
+                                </div>
                             </div>
                             <div class="space-y-1">
                                 <label class="block text-[11px] text-gray-500">3連単配当 (円)</label>
@@ -366,12 +357,12 @@ html_code = r"""
         </section>
     </main>
 
-    <!-- OCR Modal (2画面合体対応版) -->
+    <!-- OCR Modal (2分割枠・直接保存対応版) -->
     <div id="ocr-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
         <div class="bg-byn-card border border-byn-border rounded-2xl max-w-2xl w-full flex flex-col max-h-[90vh] shadow-2xl">
             <div class="flex justify-between items-center p-4 border-b border-slate-800">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-bolt text-yellow-400"></i> 画像読取 <span class="text-[10px] bg-yellow-600 text-slate-900 px-2 py-0.5 rounded font-black">2画面合体</span>
+                    <i class="fa-solid fa-camera text-emerald-400"></i> 一括画像読取 <span class="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded font-black">2枠合体直接保存</span>
                 </h3>
                 <button onclick="closeOcrModal()" class="text-gray-500 hover:text-white transition">
                     <i class="fa-solid fa-xmark text-xl"></i>
@@ -379,47 +370,149 @@ html_code = r"""
             </div>
             <div class="p-4 sm:p-6 overflow-y-auto space-y-4">
                 <p class="text-xs text-gray-400 leading-relaxed">
-                    「着順の一覧」と「配当の一覧」のスクショを<strong class="text-yellow-400">連続で2回ペースト（または選択）</strong>してください。結果がどんどん下に追加・合体されます！
+                    上側の枠に<strong class="text-purple-400">「着順一覧」</strong>、下側の枠に<strong class="text-emerald-400">「配当一覧」</strong>のスクショをそれぞれ貼り付けてください。レース数が一致すると自動で結ばれ、ボタン一発で履歴に直接保存されます！
                 </p>
                 
-                <!-- 単一のドロップ・ペースト領域 -->
-                <div id="ocr-box-auto" class="border-2 border-dashed border-yellow-500/50 hover:border-yellow-500 rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition bg-yellow-500/5 min-h-[120px] relative" onclick="document.getElementById('ocr-input-auto').click()">
-                    <input type="file" id="ocr-input-auto" accept="image/*" class="hidden" onchange="handleOcrImage(event)">
-                    <div id="ocr-idle-auto" class="space-y-2 pointer-events-none">
-                        <i class="fa-solid fa-images text-3xl text-yellow-400/80"></i>
-                        <div>
-                            <p class="text-sm font-bold text-yellow-200">ここをタップ または コピペ</p>
-                            <p class="text-[10px] text-gray-500 mt-1">何度でも追加で読み込めます</p>
+                <!-- 2つの入力枠 Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- 1. 着順枠 -->
+                    <div id="dropzone-order" class="dropzone-order border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition min-h-[130px] relative" onclick="document.getElementById('file-order').click()">
+                        <input type="file" id="file-order" accept="image/*" class="hidden" onchange="handleOcrFileSelection(event, 'order')">
+                        <div id="status-order" class="space-y-2 pointer-events-none">
+                            <i class="fa-solid fa-list-ol text-2xl text-purple-400"></i>
+                            <div>
+                                <p class="text-xs font-bold text-purple-200">1. 着順のスクショを貼る</p>
+                                <p class="text-[10px] text-gray-500 mt-0.5" id="desc-order">未選択</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 2. 配当枠 -->
+                    <div id="dropzone-payout" class="dropzone-payout border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center text-center cursor-pointer transition min-h-[130px] relative" onclick="document.getElementById('file-payout').click()">
+                        <input type="file" id="file-payout" accept="image/*" class="hidden" onchange="handleOcrFileSelection(event, 'payout')">
+                        <div id="status-payout" class="space-y-2 pointer-events-none">
+                            <i class="fa-solid fa-yen-sign text-2xl text-emerald-400"></i>
+                            <div>
+                                <p class="text-xs font-bold text-emerald-200">2. 配当のスクショを貼る</p>
+                                <p class="text-[10px] text-gray-500 mt-0.5" id="desc-payout">未選択</p>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- 結果表示エリア -->
+                <!-- プレビュー＆合体結果表示エリア -->
                 <div class="bg-slate-900 border border-slate-700 rounded-xl p-3">
                     <div class="flex justify-between items-center mb-2 border-b border-slate-800 pb-2">
-                        <h4 class="text-xs font-bold text-gray-400">抽出結果一覧</h4>
-                        <button type="button" onclick="clearOcrBox()" class="text-[10px] text-rose-400 bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition border border-rose-500/30">
+                        <h4 class="text-xs font-bold text-gray-400">合体プレビュー結果</h4>
+                        <button type="button" onclick="clearOcrBoxes()" class="text-[10px] text-rose-400 bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition border border-rose-500/30">
                             <i class="fa-solid fa-trash-can"></i> リセット
                         </button>
                     </div>
-                    <!-- ここに読み取った結果が「1R」「2R」のようにどんどん追加されていきます -->
-                    <div id="ocr-results-container" class="space-y-2 max-h-[250px] overflow-y-auto pr-1">
-                        <p id="ocr-empty-msg" class="text-xs text-gray-600 text-center py-4">画像を読み込むと、ここに結果が追加されていきます</p>
+                    <div id="ocr-preview-container" class="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                        <p class="text-xs text-gray-600 text-center py-4">両方の画像を読み込むと、ここに1R〜の結びついた結果が表示されます</p>
                     </div>
                 </div>
             </div>
-            <div class="p-4 border-t border-slate-800 flex justify-end gap-2 bg-slate-900/50 rounded-b-2xl">
-                <button type="button" onclick="closeOcrModal()" class="px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg transition border border-slate-700">キャンセル</button>
-                <button type="button" id="ocr-apply-btn" onclick="applyOcrToForm()" disabled class="px-5 py-2 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 disabled:cursor-not-allowed text-slate-900 text-sm font-bold rounded-lg transition flex items-center gap-2 shadow-lg">
-                    <i class="fa-solid fa-check"></i> この結果をフォームへ適用
-                </button>
+            <div class="p-4 border-t border-slate-800 flex justify-between items-center bg-slate-900/50 rounded-b-2xl">
+                <span id="ocr-match-status" class="text-xs text-gray-400 font-bold">状態: 画像待ち</span>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeOcrModal()" class="px-4 py-2 bg-slate-800 text-white text-sm font-bold rounded-lg transition border border-slate-700">キャンセル</button>
+                    <button type="button" id="ocr-save-btn" onclick="executeAppendMany()" disabled class="px-5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold rounded-lg transition flex items-center gap-2 shadow-lg">
+                        <i class="fa-solid fa-cloud-arrow-down"></i> この内容を履歴に直接追加する
+                    </button>
+                </div>
             </div>
         </div>
     </div>
-        // 【緩和済み】配当金額のグループ化と読み取り
+        // --- 爆速OCRエンジン (2連単・3連単・白枠対応) ---
+        const DIGIT_W = 12, DIGIT_H = 18;
+        const DIGIT_BITS = {
+            "0": "000011110000001111111100011100001110011000000110110000000011110000000011110000000011110000000011110000000011110000000011110000000011110000000011111000000011011000000110011100000110001111111100000111111000",
+            "1": "000000000111000111111111111111111111111110001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111000000001111",
+            "2": "000011100000011111111100011100011100011000001110110000000110110000000110000000001110000000001100000000011100000000011000000000110000000001100000000011000000000110000000011100000000011100000000111111111111111111111111",
+            "3": "000011110000011111111100011100001110011000000110000000000110000000000110000000000110000011111100000011111000000011111100000000000110000000000110000000000011111000000110011000000110011100001110001111111100000011110000",
+            "4": "000000011000000000111100000000111100000000111100000001001100000011001100000011001100000110001100001100001100011100001100011000001100011000001100111111111111111111111111000000001100000000001100000000001100000000001100",
+            "5": "011111111110011111111110011000000000011000000000010000000000010000000000011111111000111100111100000000001110000000000110000000000111000000000011000000000011110000000110110000000110111000001110001111111100000111110000",
+            "6": "000000111100000111111000001111000000001110000000011000000000011000000000010001111000111111111100111100001110111000000110110000000011110000000011110000000011111000000011011000000011011100000110001111111100000111111000",
+            "7": "111111111111011111111111000000000110000000000110000000001110000000001100000000001100000000011000000000110000000000110000000000110000000001100000000011000000000110000000001100000000011000000000111000000000110000000",
+            "8": "000011110000011110011100011100001100011000001110011000000110011000000110011100001100011100011100001111111100011110011100011100001110011000000110110000000011110000000011011000000110011100001110011111111100000011100000",
+            "9": "000000000000001111111100011100011100011000000110110000000011110000000011110000000011110000000011011000000011011110011111001111111111000111110011000000000010000000000110000000011100000000111100001111111000000111000000"
+        };
+        function unpack(bits, w, h) {
+            const grid = [];
+            for (let y = 0; y < h; y++) grid.push(bits.slice(y * w, y * w + w).split("").map(c => (c === "1" ? 1 : 0)));
+            return grid;
+        }
+        const DIGIT_TEMPLATES = Object.entries(DIGIT_BITS).map(([ch, bits]) => ({ ch, grid: unpack(bits, DIGIT_W, DIGIT_H) }));
+        function at(img, x, y) { const i = (y * img.width + x) * 4; return [img.data[i] || 0, img.data[i + 1] || 0, img.data[i + 2] || 0]; }
+
+        function rowBands(img) {
+            const w = img.width, h = img.height, ys = [];
+            const step = Math.max(4, Math.floor(w / 140));
+            for (let y = 0; y < h; y++) {
+                let close = 0, sum = 0, n = 0;
+                for (let x = Math.floor(w * 0.08); x < Math.floor(w * 0.92); x += step) {
+                    const [r, g, b] = at(img, x, y);
+                    n++; sum += r;
+                    if (Math.abs(r - g) < 40 && Math.abs(g - b) < 40 && r >= 180) close++;
+                }
+                const avg = sum / Math.max(1, n);
+                if (close > n * 0.70 && avg > 160) ys.push(y);
+            }
+            const groups = [];
+            for (const y of ys) {
+                const last = groups[groups.length - 1];
+                if (last && y - last[last.length - 1] <= Math.max(3, Math.floor(h / 600))) last.push(y);
+                else groups.push([y]);
+            }
+            const lines = groups.filter(g => g[g.length - 1] - g[0] <= 8 && g[0] > h * 0.05).map(g => g[Math.floor(g.length / 2)]);
+            const bands = [];
+            for (let i = 0; i < lines.length - 1; i++) {
+                const gap = lines[i + 1] - lines[i];
+                if (gap > h * 0.02 && gap < h * 0.15) bands.push([lines[i] + 2, lines[i + 1] - 2]);
+            }
+            return bands;
+        }
+
+        function components(img, x0, x1, y0, y1, dark) {
+            const w = x1 - x0, h = y1 - y0;
+            if (w <= 0 || h <= 0) return [];
+            const mask = new Uint8Array(w * h), seen = new Uint8Array(w * h);
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const [r, g, b] = at(img, x0 + x, y0 + y);
+                    if (r < dark && g < dark && b < dark + 15) mask[y * w + x] = 1;
+                }
+            }
+            const comps = [];
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const start = y * w + x;
+                    if (!mask[start] || seen[start]) continue;
+                    const stack = [[x, y]]; seen[start] = 1;
+                    const pts = [];
+                    while (stack.length) {
+                        const [cx, cy] = stack.pop(); pts.push([cx, cy]);
+                        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                            const nx = cx + dx, ny = cy + dy;
+                            if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+                            const ni = ny * w + nx;
+                            if (mask[ni] && !seen[ni]) { seen[ni] = 1; stack.push([nx, ny]); }
+                        }
+                    }
+                    let minX = pts[0][0], maxX = pts[0][0], minY = pts[0][1], maxY = pts[0][1];
+                    for (const [px, py] of pts) {
+                        if (px < minX) minX = px; if (px > maxX) maxX = px;
+                        if (py < minY) minY = py; if (py > maxY) maxY = py;
+                    }
+                    comps.push({ x: minX + x0, y: minY + y0, x1: maxX + x0, y1: maxY + y0, n: pts.length, pts: pts.map(([px, py]) => [px + x0, py + y0]) });
+                }
+            }
+            return comps;
+        }
+
         function payoutGroups(img, y0, y1) {
             const w = img.width, rh = y1 - y0;
-            // 探す範囲を広げる
             const comps = components(img, Math.floor(w * 0.1), w - 2, y0 + Math.floor(rh * 0.1), y0 + Math.floor(rh * 0.9), 160).filter(c => c.n > 8 && c.y1 - c.y > rh * 0.1);
             if (!comps.length) return [];
             const heights = comps.map(c => c.y1 - c.y).sort((a, b) => a - b);
@@ -450,32 +543,54 @@ html_code = r"""
             return Number.isFinite(value) ? { value, dist } : null;
         }
 
+        function readDigit(c) {
+            let bestCh = "?", bestDist = 1e9;
+            const pts = c.pts; let cx = 0, cy = 0;
+            for (const [px, py] of pts) { cx += px; cy += py; }
+            cx = Math.floor(cx / pts.length); cy = Math.floor(cy / pts.length);
+            const ox = cx - Math.floor(DIGIT_W / 2), oy = cy - Math.floor(DIGIT_H / 2);
+            for (const t of DIGIT_TEMPLATES) {
+                let dist = 0;
+                for (let y = 0; y < DIGIT_H; y++) {
+                    for (let x = 0; x < DIGIT_W; x++) {
+                        const px = ox + x, py = oy + y;
+                        const inBounds = px >= c.x && px <= c.x1 && py >= c.y && py <= c.y1;
+                        const hasPt = inBounds && pts.some(([ppx, ppy]) => ppx === px && ppy === py);
+                        if (t.grid[y][x] !== (hasPt ? 1 : 0)) dist++;
+                    }
+                }
+                if (dist < bestDist) { bestDist = dist; bestCh = t.ch; }
+            }
+            return { ch: bestCh, dist: bestDist };
+        }
+
+        // 配当画像から「2連単」と「3連単」を取得
         function readPayout(img) {
             const rows = [];
             for (const [y0, y1] of rowBands(img)) {
                 const groups = payoutGroups(img, y0, y1);
                 if (groups.length < 1) continue;
-                
-                // 一覧画面の配当の中で、一番金額が大きいものを「3連単」とみなす
-                let maxVal = 0;
+                let vals = [];
                 for(const g of groups) {
                     const val = groupValue(g);
-                    // 判定距離の許容範囲を 150 まで緩和
-                    if(val && val.dist <= 150 && val.value > maxVal && val.value >= 100) maxVal = val.value;
+                    if(val && val.dist <= 150 && val.value >= 100) vals.push(val.value);
                 }
-                if(maxVal >= 100) rows.push({ sanrentan: maxVal });
+                if(vals.length >= 2) {
+                    rows.push({ nirentan: vals[0], sanrentan: vals[vals.length - 1] });
+                } else if(vals.length === 1) {
+                    rows.push({ nirentan: 0, sanrentan: vals[0] });
+                }
             }
             return rows;
         }
 
-        // 【緩和】白背景の判定（248 -> 200 に緩和）
         function isBg(rgb) { return rgb[0] > 200 && rgb[1] > 200 && rgb[2] > 200; }
 
         function plateColor(rgb) {
             const [r, g, b] = rgb, mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx - mn;
-            if (mn > 170 && sat < 40) return 1; // 白(緩和)
+            if (mn > 170 && sat < 40) return 1; // 白枠対応
             if (mx < 120 && sat < 40) return 2; // 黒
-            if (r > 190 && g > 130 && b < 150 && g > b + 30) return 5; // 黄(緩和)
+            if (r > 190 && g > 130 && b < 150 && g > b + 30) return 5; // 黄
             if (g > 120 && g > r + 20 && b < 180) return 6; // 緑
             if (b > 140 && b > r + 20 && b > g) return 4; // 青
             if (r > 170 && g > 70 && b < 150 && r > g + 20) return 7; // 橙
@@ -504,7 +619,6 @@ html_code = r"""
             const cars = [];
             for (const [x0, x1] of runs) {
                 const cx = (x0 + x1) / 2;
-                // 一覧画面用に位置の制約を緩和
                 if (cx <= w * 0.05 || cx >= w * 0.95) continue;
                 const samples = [];
                 const yy0 = band0 + Math.floor((band1 - band0) * 0.2), yy1 = band0 + Math.floor((band1 - band0) * 0.8);
@@ -521,11 +635,10 @@ html_code = r"""
                 const car = plateColor(med);
                 if (car) cars.push(car);
             }
-            // 3車以上見つかれば着順とみなす
             if (cars.length >= 3) return [cars[0], cars[1], cars[2]];
             return null;
         }
-        
+
         function readOrder(img) {
             const rows = [];
             for (const [y0, y1] of rowBands(img)) {
@@ -539,66 +652,33 @@ html_code = r"""
             const order = readOrder(img);
             const payout = readPayout(img);
             let kind = "unknown";
-            // 1行でも見つかれば採用する
-            if (order.length >= 1 && order.length >= payout.length) kind = "order";
-            else if (payout.length >= 1) kind = "payout";
+            if (order.length >= 1 && order[0].cars) kind = "order";
+            else if (payout.length >= 1 && payout[0].sanrentan) kind = "payout";
             return { kind, order, payout };
         }
-        // --- 文字認識（形から数字を判別する処理） ---
-        function readDigit(c) {
-            let bestCh = "?", bestDist = 1e9;
-            const pts = c.pts;
-            let cx = 0, cy = 0;
-            for (const [px, py] of pts) { cx += px; cy += py; }
-            cx = Math.floor(cx / pts.length); cy = Math.floor(cy / pts.length);
-            const ox = cx - Math.floor(DIGIT_W / 2), oy = cy - Math.floor(DIGIT_H / 2);
-            for (const t of DIGIT_TEMPLATES) {
-                let dist = 0;
-                for (let y = 0; y < DIGIT_H; y++) {
-                    for (let x = 0; x < DIGIT_W; x++) {
-                        const px = ox + x, py = oy + y;
-                        const inBounds = px >= c.x && px <= c.x1 && py >= c.y && py <= c.y1;
-                        const hasPt = inBounds && pts.some(([ppx, ppy]) => ppx === px && ppy === py);
-                        if (t.grid[y][x] !== (hasPt ? 1 : 0)) dist++;
-                    }
-                }
-                if (dist < bestDist) { bestDist = dist; bestCh = t.ch; }
-            }
-            return { ch: bestCh, dist: bestDist };
-        }
-
-        // ---------------------------------------------------
-        // 2画面合体対応 UI連携処理
-        // ---------------------------------------------------
-        // 12レース分の空データを用意
-        let ocrMergedData = Array.from({length: 12}, () => ({combo: "", payout: ""}));
+        // --- 2分割枠のOCR状態管理変数 ---
+        let currentOrderData = [];
+        let currentPayoutData = [];
 
         document.addEventListener('DOMContentLoaded', () => {
             loadData(); initCanvas(); renderDashboard(); renderRecords(); updateRecordCountBadge();
             document.getElementById('date').value = new Date().toISOString().split('T')[0];
             addTicketRow();
-            window.addEventListener('paste', handleGlobalPaste);
         });
 
         function openOcrModal() { document.getElementById('ocr-modal').classList.remove('hidden'); }
         function closeOcrModal() { document.getElementById('ocr-modal').classList.add('hidden'); }
-        
-        function handleGlobalPaste(e) {
-            if (!document.getElementById('ocr-modal').classList.contains('hidden')) {
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                for (let item of items) {
-                    if (item.type.indexOf('image') !== -1) { handleOcrFile(item.getAsFile()); break; }
-                }
-            }
-        }
-        function handleOcrImage(e) { if (e.target.files && e.target.files.length > 0) handleOcrFile(e.target.files[0]); }
 
-        function handleOcrFile(file) {
-            const idle = document.getElementById('ocr-idle-auto');
-            document.getElementById('ocr-results-container').innerHTML = '<p class="text-xs text-amber-500 font-bold text-center py-4"><i class="fa-solid fa-spinner fa-spin"></i> 画像を解析中...</p>';
-            
+        // 個別ファイル選択（またはペースト）時の処理
+        function handleOcrFileSelection(e, type) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const descEl = document.getElementById(`desc-${type}`);
+            descEl.textContent = "解析中...";
+
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = (ev) => {
                 const img = new Image();
                 img.onload = () => {
                     const cvs = document.createElement('canvas');
@@ -606,66 +686,132 @@ html_code = r"""
                     const c = cvs.getContext('2d'); c.drawImage(img, 0, 0);
                     const imgData = c.getImageData(0, 0, cvs.width, cvs.height);
                     const raster = { width: cvs.width, height: cvs.height, data: imgData.data };
-                    
-                    // 爆速アルゴリズムを実行
+
                     const res = ingestShot(raster);
-                    
-                    // 【2画面合体処理】見つかったデータを、行ごとに保存
-                    if (res.kind === "order") {
-                        res.order.forEach((r, i) => { if(i < 12 && r.cars) ocrMergedData[i].combo = r.cars.join('-'); });
-                    } else if (res.kind === "payout") {
-                        res.payout.forEach((r, i) => { if(i < 12 && r.sanrentan) ocrMergedData[i].payout = r.sanrentan; });
+
+                    if (type === 'order') {
+                        if (res.order && res.order.length > 0) {
+                            currentOrderData = res.order;
+                            descEl.textContent = `${res.order.length}レースの着順を取得`;
+                            document.getElementById('dropzone-order').classList.add('border-purple-500', 'bg-purple-500/10');
+                        } else {
+                            descEl.textContent = "着順が読み取れませんでした";
+                        }
+                    } else if (type === 'payout') {
+                        if (res.payout && res.payout.length > 0) {
+                            currentPayoutData = res.payout;
+                            descEl.textContent = `${res.payout.length}レースの配当を取得`;
+                            document.getElementById('dropzone-payout').classList.add('border-emerald-500', 'bg-emerald-500/10');
+                        } else {
+                            descEl.textContent = "配当が読み取れませんでした";
+                        }
                     }
-                    
-                    renderOcrResults();
+
+                    checkOcrMatch();
                 };
-                img.src = e.target.result;
+                img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        function clearOcrBox() {
-            ocrMergedData = Array.from({length: 12}, () => ({combo: "", payout: ""}));
-            document.getElementById('ocr-input-auto').value = ''; 
-            document.getElementById('ocr-results-container').innerHTML = '<p class="text-xs text-gray-600 text-center py-4">画像を読み込むと、ここに結果が追加されていきます</p>';
-        }
+        // 両方のデータが揃って行数が一致するかチェック
+        function checkOcrMatch() {
+            const previewContainer = document.getElementById('ocr-preview-container');
+            const statusEl = document.getElementById('ocr-match-status');
+            const saveBtn = document.getElementById('ocr-save-btn');
 
-        function renderOcrResults() {
-            const container = document.getElementById('ocr-results-container');
-            container.innerHTML = '';
-            let hasData = false;
-            
-            ocrMergedData.forEach((data, i) => {
-                if (data.combo || data.payout) {
-                    hasData = true;
-                    container.innerHTML += `
-                    <div class="flex items-center gap-2 p-2 bg-slate-900 border border-slate-700 rounded-lg mb-2">
-                        <span class="w-10 text-center font-bold text-white text-[10px] bg-slate-800 py-1 rounded">${i+1}R</span>
-                        <div class="flex-1 flex gap-2">
-                            <input type="text" id="ocr-merge-c-${i}" value="${data.combo}" class="w-full bg-slate-800 border-none rounded py-1 px-2 text-xs text-white font-mono focus:ring-1" placeholder="着順">
-                            <input type="number" id="ocr-merge-p-${i}" value="${data.payout}" class="w-full bg-slate-800 border-none rounded py-1 px-2 text-xs text-white font-mono text-right focus:ring-1" placeholder="配当">
-                        </div>
-                        <button onclick="applyMergeRow(${i})" class="px-3 py-1 bg-gradient-to-r from-yellow-500 to-amber-600 text-slate-900 text-[10px] font-bold rounded shadow">適用</button>
-                    </div>`;
+            if (currentOrderData.length > 0 && currentPayoutData.length > 0) {
+                if (currentOrderData.length === currentPayoutData.length) {
+                    statusEl.textContent = `状態: 準備完了 (${currentOrderData.length}レース一致)`;
+                    statusEl.className = "text-xs text-emerald-400 font-bold";
+                    saveBtn.removeAttribute('disabled');
+
+                    previewContainer.innerHTML = '';
+                    for (let i = 0; i < currentOrderData.length; i++) {
+                        const o = currentOrderData[i];
+                        const p = currentPayoutData[i];
+                        const comboStr = o.cars ? o.cars.join('-') : "";
+                        previewContainer.innerHTML += `
+                            <div class="flex items-center justify-between p-2 bg-slate-800/80 rounded-lg text-xs">
+                                <span class="font-bold text-yellow-400">${i + 1}R</span>
+                                <span class="text-white font-mono">着順: ${comboStr}</span>
+                                <span class="text-emerald-300 font-mono">2連: ¥${p.nirentan || 0} / 3連: ¥${p.sanrentan || 0}</span>
+                            </div>`;
+                    }
+                } else {
+                    statusEl.textContent = `状態: レース数が不一致 (着順:${currentOrderData.length} vs 配当:${currentPayoutData.length})`;
+                    statusEl.className = "text-xs text-rose-400 font-bold";
+                    saveBtn.setAttribute('disabled', 'true');
+                    previewContainer.innerHTML = `<p class="text-xs text-rose-400 text-center py-2">着順と配当のレース数が一致しません</p>`;
                 }
-            });
-            if (!hasData) container.innerHTML = '<p class="text-xs text-rose-500 font-bold text-center py-4">読み取れるデータが見つかりませんでした</p>';
+            } else {
+                statusEl.textContent = "状態: 画像待ち";
+                statusEl.className = "text-xs text-gray-400 font-bold";
+            }
         }
 
-        function applyMergeRow(i) {
-            const c = document.getElementById(`ocr-merge-c-${i}`).value;
-            const p = document.getElementById(`ocr-merge-p-${i}`).value;
-            if(c) document.getElementById('result-combo').value = c;
-            if(p) document.getElementById('payout-amount').value = p;
+        function clearOcrBoxes() {
+            currentOrderData = [];
+            currentPayoutData = [];
+            document.getElementById('file-order').value = '';
+            document.getElementById('file-payout').value = '';
+            document.getElementById('desc-order').textContent = "未選択";
+            document.getElementById('desc-payout').textContent = "未選択";
+            document.getElementById('dropzone-order').classList.remove('border-purple-500', 'bg-purple-500/10');
+            document.getElementById('dropzone-payout').classList.remove('border-emerald-500', 'bg-emerald-500/10');
+            document.getElementById('ocr-preview-container').innerHTML = '<p class="text-xs text-gray-600 text-center py-4">両方の画像を読み込むと、ここに1R〜の結びついた結果が表示されます</p>';
+            document.getElementById('ocr-save-btn').setAttribute('disabled', 'true');
+            document.getElementById('ocr-match-status').textContent = "状態: 画像待ち";
+        }
+
+        // 【直接保存の実行】appendManyに渡してリストへ一括追加
+        function executeAppendMany() {
+            if (currentOrderData.length === 0 || currentOrderData.length !== currentPayoutData.length) return;
+
+            const newRecords = [];
+            const today = document.getElementById('date').value || new Date().toISOString().split('T')[0];
+
+            for (let i = 0; i < currentOrderData.length; i++) {
+                const o = currentOrderData[i];
+                const p = currentPayoutData[i];
+                const comboStr = o.cars ? o.cars.join('-') : "";
+
+                newRecords.unshift({
+                    id: 'RACE_' + Date.now() + '_' + i,
+                    date: today,
+                    raceIdStr: `${i + 1}R`,
+                    sites: [],
+                    patternKey: 'NONE',
+                    tickets: [],
+                    totalInvest: 0,
+                    resultCombo: comboStr,
+                    nirentanAmount: p.nirentan || 0,
+                    payoutAmount: p.sanrentan || 0,
+                    isHit: false,
+                    totalReturn: 0,
+                    drawingData: '',
+                    timestamp: Date.now() + i
+                });
+            }
+
+            // 直接履歴リストに結合して保存
+            races = [...newRecords, ...races];
+            saveData();
             closeOcrModal();
+            clearOcrBoxes();
+            switchTab('records');
+            alert(`${newRecords.length}レース分の結果を履歴に直接追加しました！`);
         }
 
         // ---------------------------------------------------
-        // アプリのデータ管理 ＆ その他UI機能
+        // アプリのデータ管理 ＆ その他基本機能
         // ---------------------------------------------------
-        function loadData() { const d = localStorage.getItem(STORAGE_KEY); if (d) races = JSON.parse(d); }
-        function saveData() { localStorage.setItem(STORAGE_KEY, JSON.stringify(races)); updateRecordCountBadge(); renderDashboard(); }
-        
+        function loadData() { const d = localStorage.getItem('BYN_RACE_DATA_PRO'); if (d) races = JSON.parse(d); }
+        function saveData() { localStorage.setItem('BYN_RACE_DATA_PRO', JSON.stringify(races)); updateRecordCountBadge(); renderDashboard(); renderRecords(); }
+
+        let races = [];
+        let canvas, ctx, isDrawing = false, currentBrushColor = '#38bdf8';
+
         function switchTab(tabId) {
             ['dashboard', 'input', 'records'].forEach(id => {
                 document.getElementById('tab-' + id).classList.add('hidden');
@@ -686,7 +832,8 @@ html_code = r"""
             { id: 'B_N', label: 'B & N', badgeClass: 'bg-pink-500/20 text-pink-400 border-pink-500/50' },
             { id: 'B', label: 'B 単独', badgeClass: 'bg-blue-500/10 text-blue-300 border-blue-500/30' },
             { id: 'Y', label: 'Y 単独', badgeClass: 'bg-amber-500/10 text-amber-300 border-amber-500/30' },
-            { id: 'N', label: 'N 単独', badgeClass: 'bg-pink-500/10 text-pink-300 border-pink-500/30' }
+            { id: 'N', label: 'N 単独', badgeClass: 'bg-pink-500/10 text-pink-300 border-pink-500/30' },
+            { id: 'NONE', label: '未選択/OCR', badgeClass: 'bg-slate-700 text-gray-300 border-slate-600' }
         ];
 
         function getSelectedSites() {
@@ -728,12 +875,14 @@ html_code = r"""
 
         function saveRace(e) {
             e.preventDefault();
-            const sites = getSelectedSites(); if (sites.length === 0) return alert("推奨サイトを選択してください。");
+            const sites = getSelectedSites();
             const tkts = getTicketsData(), totInv = tkts.reduce((s, t) => s + t.amount, 0);
-            const resCombo = document.getElementById('result-combo').value.trim(), payAmt = parseInt(document.getElementById('payout-amount').value) || 0;
+            const resCombo = document.getElementById('result-combo').value.trim();
+            const nirenAmt = parseInt(document.getElementById('nirentan-amount').value) || 0;
+            const payAmt = parseInt(document.getElementById('payout-amount').value) || 0;
             let hit = false, totRet = 0;
             if (resCombo) { const ht = tkts.find(t => t.combo === resCombo); if (ht) { hit = true; totRet = (ht.amount / 100) * payAmt; } }
-            const race = { id: document.getElementById('edit-id').value || 'RACE_'+Date.now(), date: document.getElementById('date').value, raceIdStr: document.getElementById('race-id').value, sites: sites, patternKey: getPatternKey(sites), tickets: tkts, totalInvest: totInv, resultCombo: resCombo, payoutAmount: payAmt, isHit: hit, totalReturn: totRet, drawingData: canvas ? canvas.toDataURL() : '', timestamp: Date.now() };
+            const race = { id: document.getElementById('edit-id').value || 'RACE_'+Date.now(), date: document.getElementById('date').value, raceIdStr: document.getElementById('race-id').value, sites: sites, patternKey: getPatternKey(sites), tickets: tkts, totalInvest: totInv, resultCombo: resCombo, nirentanAmount: nirenAmt, payoutAmount: payAmt, isHit: hit, totalReturn: totRet, drawingData: canvas ? canvas.toDataURL() : '', timestamp: Date.now() };
             const idx = races.findIndex(r => r.id === race.id); if (idx >= 0) races[idx] = race; else races.unshift(race);
             saveData(); resetForm(); switchTab('records');
             alert(hit ? `🎯 的中！ ${totRet.toLocaleString()}円を記録しました` : '保存しました');
@@ -750,12 +899,14 @@ html_code = r"""
             ['B','Y','N'].forEach(s => document.getElementById(`site-${s}`).checked = race.sites.includes(s)); updateLivePattern();
             const tc = document.getElementById('tickets-container'); tc.innerHTML = '';
             if (race.tickets && race.tickets.length > 0) race.tickets.forEach(t => addTicketRow(t.combo, t.amount)); else addTicketRow();
-            document.getElementById('result-combo').value = race.resultCombo || ''; document.getElementById('payout-amount').value = race.payoutAmount || '';
+            document.getElementById('result-combo').value = race.resultCombo || ''; 
+            document.getElementById('nirentan-amount').value = race.nirentanAmount || '';
+            document.getElementById('payout-amount').value = race.payoutAmount || '';
             if (race.drawingData && ctx) { const img = new Image(); img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); }; img.src = race.drawingData; }
             document.getElementById('save-btn-text').textContent = '変更を更新する'; switchTab('input');
         }
 
-        function deleteRace(id) { if (confirm("削除しますか？")) { races = races.filter(r => r.id !== id); saveData(); renderRecords(); } }
+        function deleteRace(id) { if (confirm("削除しますか？")) { races = races.filter(r => r.id !== id); saveData(); } }
 
         function initCanvas() {
             canvas = document.getElementById('handwriting-canvas'); ctx = canvas.getContext('2d');
@@ -766,7 +917,8 @@ html_code = r"""
             const stop = () => { isDrawing = false; ctx.closePath(); };
             canvas.addEventListener('mousedown', start); canvas.addEventListener('mousemove', move); canvas.addEventListener('mouseup', stop); canvas.addEventListener('mouseout', stop);
             canvas.addEventListener('touchstart', start, {passive: false}); canvas.addEventListener('touchmove', move, {passive: false}); canvas.addEventListener('touchend', stop);
-            document.querySelector('.color-btn').classList.add('ring-2', 'ring-white');
+            const firstColorBtn = document.querySelector('.color-btn');
+            if(firstColorBtn) firstColorBtn.classList.add('ring-2', 'ring-white');
         }
         function getPos(e) { const r = canvas.getBoundingClientRect(), cx = e.touches ? e.touches[0].clientX : e.clientX, cy = e.touches ? e.touches[0].clientY : e.clientY; return { x: cx - r.left, y: cy - r.top }; }
         function setCanvasColor(color, btn) { currentBrushColor = color; updateBrush(); document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('ring-2', 'ring-white')); if(btn) btn.classList.add('ring-2', 'ring-white'); }
@@ -777,7 +929,7 @@ html_code = r"""
             let tInv = 0, tRet = 0, tHit = 0, comp = 0; const pSt = {};
             PATTERNS.forEach(p => pSt[p.id] = { cnt: 0, comp: 0, hits: 0, inv: 0, ret: 0 });
             races.forEach(r => {
-                const k = r.patternKey; if(!pSt[k]) return;
+                const k = r.patternKey || 'NONE'; if(!pSt[k]) pSt[k] = { cnt: 0, comp: 0, hits: 0, inv: 0, ret: 0 };
                 pSt[k].cnt++;
                 if (r.resultCombo) { comp++; tInv += r.totalInvest; tRet += r.totalReturn; if(r.isHit) tHit++; pSt[k].comp++; pSt[k].inv += r.totalInvest; pSt[k].ret += r.totalReturn; if(r.isHit) pSt[k].hits++; }
             });
@@ -802,19 +954,6 @@ html_code = r"""
         function renderRecords() {
             const cont = document.getElementById('records-container'), f = document.getElementById('filter-pattern').value;
             const sorted = [...races].sort((a, b) => new Date(b.date) - new Date(a.date) || (b.timestamp || 0) - (a.timestamp || 0));
-            const filtered = sorted.filter(r => f === 'ALL' || r.patternKey === f);
+            const filtered = sorted.filter(r => f === 'ALL' || (r.patternKey || 'NONE') === f);
             cont.innerHTML = '';
-            if (filtered.length === 0) { cont.innerHTML = `<div class="text-center py-6 text-gray-500">データがありません</div>`; return; }
-            filtered.forEach(r => {
-                const pat = PATTERNS.find(p => p.id === r.patternKey) || { label: '不明', badgeClass: 'bg-slate-700' };
-                const net = r.totalReturn - r.totalInvest;
-                cont.innerHTML += `
-                    <div class="bg-byn-card border border-byn-border rounded-xl p-3 flex flex-col sm:flex-row gap-4 relative">
-                        ${r.isHit ? '<div class="absolute top-0 right-0 w-8 h-8 bg-emerald-500/20 transform rotate-45 translate-x-4 -translate-y-4"></div>' : ''}
-                        <div class="flex-1 flex flex-col justify-between">
-                            <div class="flex justify-between items-start mb-2">
-                                <div><span class="text-[10px] px-2 py-0.5 rounded border font-bold ${pat.badgeClass} mr-2">${pat.label}</span><span class="text-xs text-gray-400">${r.date}</span>
-                                <h4 class="font-bold text-white text-sm mt-1">${r.raceIdStr || '未設定レース'}</h4></div>
-                                <div class="flex items-center gap-1">
-                                    <button onclick="editRace('${r.id}')" class="w-7 h-7 rounded bg-slate-800 text-blue-400"><i class="fa-solid fa-pen text-[10px]"></i></button>
-                                    <button onclick="deleteRace('${r.
+            
