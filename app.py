@@ -7,7 +7,7 @@ st.set_page_config(page_title="BYN Race Analyzer", layout="wide", initial_sideba
 # ---------------------------------------------------------
 # 新・爆速OCR ＆ 2画面合体直接保存版 HTMLコード
 # ---------------------------------------------------------
-html_code = r"""
+html_code = """
 <!DOCTYPE html>
 <html lang="ja" class="dark">
 <head>
