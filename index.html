@@ -11,9 +11,9 @@
         table { width: 100%; min-width: 900px; border-collapse: collapse; }
         th, td { border: 1px solid #e5e7eb; padding: 6px; text-align: center; white-space: nowrap; font-size: 0.9rem;}
         th { background-color: #f3f4f6; }
-        /* チェックボックスを横一列に平行に並べる */
         .site-checkboxes { display: flex; justify-content: center; gap: 10px; }
         .site-checkboxes label { display: flex; align-items: center; gap: 3px; cursor: pointer; }
+        .locked-row { background-color: #e0f2fe; } /* ロックされた行の色 */
     </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-2 md:p-4">
@@ -23,13 +23,11 @@
         <!-- 1. 入力エリア -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">➕ データの読み込み・追加</h2>
-            
             <div class="border-2 border-dashed border-gray-300 p-6 text-center rounded-lg cursor-pointer hover:bg-gray-50 mb-4" onclick="document.getElementById('file-upload').click()">
                 <p class="font-bold text-gray-700">📸 スクショから抽出 (着順・配当画像を複数選択)</p>
-                <p class="text-xs text-gray-500 mt-1">タップして着順と配当の画像を選択</p>
+                <p class="text-xs text-gray-500 mt-1">タップして着順と配当の画像を2枚以上選択</p>
                 <input type="file" id="file-upload" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
             </div>
-
             <h3 class="font-bold text-sm mb-2 text-gray-700">手動で1レース追加</h3>
             <div class="grid grid-cols-2 md:grid-cols-6 gap-2 items-center">
                 <input type="text" id="manual-order" placeholder="着順(例:5-1-6)" class="border p-2 rounded w-full">
@@ -45,33 +43,37 @@
                 <button class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2 md:col-span-1" onclick="addManualData()">↓ 追加</button>
             </div>
         </div>
-
         <!-- 2. 未保存エリア -->
         <div class="bg-white p-4 rounded-lg shadow">
-            <div class="flex justify-between items-center mb-2">
+            <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
                 <h2 class="text-lg font-bold">📝 未保存エリア (<span id="staging-count">0</span>件)</h2>
-                <button class="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600" onclick="saveAllStaging()">💾 全て保存</button>
+                <div class="flex gap-2">
+                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300" onclick="shiftPayouts(-1)">↑ 配当を上へ</button>
+                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm hover:bg-gray-300" onclick="shiftPayouts(1)">↓ 配当を下へ</button>
+                    <button class="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600" onclick="saveAllStaging()">💾 揃った行を保存</button>
+                </div>
             </div>
             <div class="table-wrapper">
                 <table id="staging-table">
                     <thead>
                         <tr>
-                            <th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
-                            <th>B(予/的)</th><th>Y(予/的)</th><th>M(予/的)</th><th>ライン構成</th><th>操作</th>
+                            <th>結合</th><th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
+                            <th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン構成</th><th>操作</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
                 </table>
             </div>
         </div>
-                <!-- 3. ダッシュボード -->
+
+        <!-- 3. ダッシュボード -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">📊 分析ダッシュボード</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
                 <div class="bg-gray-50 border p-3 rounded text-center"><div class="text-xs text-gray-500">保存済レース</div><div class="text-xl font-bold text-blue-600" id="dash-total-races">0</div></div>
                 <div class="bg-green-50 border-green-200 border p-3 rounded text-center"><div class="text-xs text-gray-500">Bサイト回収率</div><div class="text-xl font-bold text-green-700" id="dash-b-recovery">0%</div></div>
                 <div class="bg-orange-50 border-orange-200 border p-3 rounded text-center"><div class="text-xs text-gray-500">Yサイト回収率</div><div class="text-xl font-bold text-orange-600" id="dash-y-recovery">0%</div></div>
-                <div class="bg-red-50 border-red-200 border p-3 rounded text-center"><div class="text-xs text-gray-500">Mサイト回収率</div><div class="text-xl font-bold text-red-600" id="dash-m-recovery">0%</div></div>
+                <div class="bg-red-50 border-red-200 border p-3 rounded text-center"><div class="text-xs text-gray-500">Nサイト回収率</div><div class="text-xl font-bold text-red-600" id="dash-n-recovery">0%</div></div>
             </div>
             <div style="height: 250px;"><canvas id="recoveryChart"></canvas></div>
         </div>
@@ -79,7 +81,7 @@
         <!-- 4. 保存済みデータ -->
         <div class="bg-white p-4 rounded-lg shadow mb-10">
             <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
-                <h2 class="text-lg font-bold">📂 保存済みデータ</h2>
+                <h2 class="text-lg font-bold">📂 保存済みデータ (サイト未選択も記録)</h2>
                 <div class="flex gap-2">
                     <button class="bg-gray-600 text-white px-3 py-1 rounded text-sm" onclick="exportData()">📤 バックアップ</button>
                     <input type="file" id="import-file" style="display: none;" onchange="importData(event)" accept=".json">
@@ -92,7 +94,7 @@
                     <thead>
                         <tr>
                             <th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
-                            <th>B(予/的)</th><th>Y(予/的)</th><th>M(予/的)</th><th>ライン構成</th><th>操作</th>
+                            <th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン構成</th><th>操作</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -100,8 +102,6 @@
             </div>
         </div>
     </div>
-
-    <!-- 5. プログラム動作部分 -->
     <script>
         let stagingData = [];
         let savedData = JSON.parse(localStorage.getItem('keirinData') || '[]');
@@ -109,126 +109,86 @@
 
         window.onload = () => { renderStaging(); renderSavedData(); updateDashboard(); };
 
-        function saveToLocalStorage() {
-            localStorage.setItem('keirinData', JSON.stringify(savedData));
-            updateDashboard();
-        }
+        function saveToLocalStorage() { localStorage.setItem('keirinData', JSON.stringify(savedData)); updateDashboard(); }
 
         function handleImageUpload(event) {
             const files = event.target.files;
-            if (files.length === 0) return;
+            if (files.length < 2) return alert("着順と配当の画像を2枚以上選択してください");
             
             setTimeout(() => {
-                const isMultiple = files.length > 1;
-                const mockCount = Math.floor(Math.random() * 3) + 2; 
-                let added = 0; let skipped = 0;
-
-                for(let i=0; i<mockCount; i++) {
-                    const order = `${Math.floor(Math.random()*9)+1}-${Math.floor(Math.random()*9)+1}-${Math.floor(Math.random()*9)+1}`;
-                    const payout2 = Math.floor(Math.random() * 50) * 100 + 500;
-                    const payout3 = Math.floor(Math.random() * 500) * 100 + 1000;
-                    
-                    const isDuplicate = stagingData.some(d => d.order === order && d.payout3 == payout3) || savedData.some(d => d.order === order && d.payout3 == payout3);
-                    
-                    if(!isDuplicate) {
-                        stagingData.push(createDataRow(order, payout2, payout3, "9", "10"));
-                        added++;
-                    } else { skipped++; }
-                }
-                
-                const msg = isMultiple ? `複数の画像を解析しました。\n着順と配当が合致するデータを統合し、${added}件抽出しました。` : `画像を解析しました。\n${added}件抽出しました。`;
-                alert(msg);
-                event.target.value = '';
-                renderStaging();
+                stagingData = [
+                    createRowData("3-1-2", "", "", false),
+                    createRowData("4-5-1", "", "", false),
+                    createRowData("5-2-3", "800", "4200", true),
+                    createRowData("6-1-4", "1500", "8900", true),
+                    createRowData("", "2100", "12000", false),
+                    createRowData("", "900", "3400", false)
+                ];
+                alert("画像を解析しました。\n番号が一致した2件を基準に結合しました。\nズレがある場合は「配当を上へ/下へ」で調整してください。");
+                event.target.value = ''; renderStaging();
             }, 800);
         }
-        function addManualData() {
-            const order = document.getElementById('manual-order').value.trim();
-            const p2 = document.getElementById('manual-payout2').value.trim();
-            const p3 = document.getElementById('manual-payout3').value.trim();
-            const r = document.getElementById('manual-racers').value;
-            const b = document.getElementById('manual-bets').value.trim();
-            
-            if(!order) return alert("着順を入力してください");
-            if(!p2 && !p3) return alert("2連単か3連単の配当を入力してください");
-            
-            stagingData.push(createDataRow(order, p2, p3, r, b));
+
+        function shiftPayouts(direction) {
+            let unlockedPayouts = stagingData.map(d => d.isLocked ? null : { p2: d.payout2, p3: d.payout3 });
+            if (direction === -1) { unlockedPayouts.shift(); unlockedPayouts.push({ p2: "", p3: "" }); } 
+            else { unlockedPayouts.unshift({ p2: "", p3: "" }); unlockedPayouts.pop(); }
+
+            let payoutIndex = 0;
+            stagingData.forEach((d) => {
+                if (!d.isLocked) {
+                    while (unlockedPayouts[payoutIndex] === null) payoutIndex++;
+                    if (unlockedPayouts[payoutIndex]) {
+                        d.payout2 = unlockedPayouts[payoutIndex].p2; d.payout3 = unlockedPayouts[payoutIndex].p3;
+                    }
+                    payoutIndex++;
+                }
+            });
             renderStaging();
+        }
+
+        function addManualData() {
+            const order = document.getElementById('manual-order').value.trim(), p2 = document.getElementById('manual-payout2').value.trim(), p3 = document.getElementById('manual-payout3').value.trim();
+            const r = document.getElementById('manual-racers').value, b = document.getElementById('manual-bets').value.trim();
+            if(!order && !p2 && !p3) return alert("着順または配当を入力してください");
             
-            document.getElementById('manual-order').value = '';
-            document.getElementById('manual-payout2').value = '';
-            document.getElementById('manual-payout3').value = '';
-            document.getElementById('manual-bets').value = '';
-            document.getElementById('manual-order').focus();
+            let newRow = createRowData(order, p2, p3, false);
+            newRow.racers = r; newRow.bets = b; stagingData.push(newRow); renderStaging();
+            ['manual-order', 'manual-payout2', 'manual-payout3', 'manual-bets'].forEach(id => document.getElementById(id).value = ''); document.getElementById('manual-order').focus();
         }
 
-        function createDataRow(order, p2, p3, racers, bets) {
-            return { id: Date.now() + Math.random().toString(36).substr(2, 5), order, payout2: p2, payout3: p3, racers, bets, sites: { B:{bet:false,hit:false}, Y:{bet:false,hit:false}, M:{bet:false,hit:false} }, line: "ライン無し" };
+        function createRowData(order, p2, p3, isLocked) {
+            return { id: Date.now() + Math.random().toString(36).substr(2, 5), order: order, payout2: p2, payout3: p3, racers: "9", bets: "10", sites: { B:{bet:false,hit:false}, Y:{bet:false,hit:false}, N:{bet:false,hit:false} }, line: "ライン無し", isLocked: isLocked };
         }
-
-        function renderStaging() {
-            document.getElementById('staging-count').innerText = stagingData.length;
-            document.querySelector('#staging-table tbody').innerHTML = stagingData.map((d, i) => generateRow(d, 'staging', i)).join('');
-        }
-        function renderSavedData() {
-            document.querySelector('#saved-table tbody').innerHTML = savedData.map((d, i) => generateRow(d, 'saved', i)).join('');
-        }
+        function renderStaging() { document.getElementById('staging-count').innerText = stagingData.length; document.querySelector('#staging-table tbody').innerHTML = stagingData.map((d, i) => generateRow(d, 'staging', i)).join(''); }
+        function renderSavedData() { document.querySelector('#saved-table tbody').innerHTML = savedData.map((d, i) => generateRow(d, 'saved', i)).join(''); }
 
         function generateRow(d, type, i) {
-            const isStg = type === 'staging';
-            const upd = isStg ? `updateStg(${i},` : `updateSvd('${d.id}',`;
+            const isStg = type === 'staging', upd = isStg ? `updateStg(${i},` : `updateSvd('${d.id}',`;
+            const rowClass = (isStg && d.isLocked) ? 'locked-row' : '', lockIcon = (isStg && d.isLocked) ? '🔒 確定' : (isStg ? '🔓 仮' : '');
             const mkInp = (val, f, w) => isStg ? `<input type="text" value="${val||''}" onchange="${upd}'${f}',this.value)" class="border rounded p-1 text-center w-${w}">` : (val||'-');
-            const siteChk = (site) => `
-                <div class="site-checkboxes">
-                    <label><input type="checkbox" ${d.sites[site].bet?'checked':''} onchange="updateSite('${type}','${d.id||i}','${site}','bet',this.checked)">予</label>
-                    <label><input type="checkbox" ${d.sites[site].hit?'checked':''} onchange="updateSite('${type}','${d.id||i}','${site}','hit',this.checked)">的</label>
-                </div>`;
+            const siteChk = (site) => `<div class="site-checkboxes"><label><input type="checkbox" ${d.sites[site].bet?'checked':''} onchange="updateSite('${type}','${d.id||i}','${site}','bet',this.checked)">予</label><label><input type="checkbox" ${d.sites[site].hit?'checked':''} onchange="updateSite('${type}','${d.id||i}','${site}','hit',this.checked)">的</label></div>`;
 
-            return `<tr>
-                <td>${mkInp(d.order, 'order', '20')}</td>
-                <td>${mkInp(d.payout2, 'payout2', '24')}</td>
-                <td>${mkInp(d.payout3, 'payout3', '24')}</td>
-                <td>
-                    <select onchange="${upd}'racers',this.value)" class="border p-1 rounded">
-                        <option value="" ${d.racers===''?'selected':''}>-</option>
-                        <option value="9" ${d.racers==='9'?'selected':''}>9車</option>
-                        <option value="7" ${d.racers==='7'?'selected':''}>7車</option>
-                        <option value="5" ${d.racers==='5'?'selected':''}>5車</option>
-                    </select>
-                </td>
-                <td>${mkInp(d.bets, 'bets', '16')}</td>
-                <td>${siteChk('B')}</td><td>${siteChk('Y')}</td><td>${siteChk('M')}</td>
-                <td>
-                    <select onchange="${upd}'line',this.value)" class="border p-1 rounded">
-                        ${['ライン無し','ライン①','ライン①②','ライン①②③','ライン①②③④'].map(l=>`<option value="${l}" ${d.line===l?'selected':''}>${l}</option>`).join('')}
-                    </select>
-                </td>
+            return `<tr class="${rowClass}">
+                ${isStg ? `<td class="text-xs text-gray-500 font-bold">${lockIcon}</td>` : ''}
+                <td>${mkInp(d.order, 'order', '20')}</td><td>${mkInp(d.payout2, 'payout2', '24')}</td><td>${mkInp(d.payout3, 'payout3', '24')}</td>
+                <td><select onchange="${upd}'racers',this.value)" class="border p-1 rounded"><option value="" ${d.racers===''?'selected':''}>-</option><option value="9" ${d.racers==='9'?'selected':''}>9車</option><option value="7" ${d.racers==='7'?'selected':''}>7車</option><option value="5" ${d.racers==='5'?'selected':''}>5車</option></select></td>
+                <td>${mkInp(d.bets, 'bets', '16')}</td><td>${siteChk('B')}</td><td>${siteChk('Y')}</td><td>${siteChk('N')}</td>
+                <td><select onchange="${upd}'line',this.value)" class="border p-1 rounded">${['ライン無し','ライン①','ライン①②','ライン①②③','ライン①②③④'].map(l=>`<option value="${l}" ${d.line===l?'selected':''}>${l}</option>`).join('')}</select></td>
                 <td><button class="bg-red-500 text-white px-2 py-1 rounded text-xs" onclick="deleteData('${type}','${d.id||i}')">✖</button></td>
             </tr>`;
         }
+
         function updateStg(i, f, v) { stagingData[i][f] = v; }
         function updateSvd(id, f, v) { const item = savedData.find(x => x.id === id); if(item) { item[f] = v; saveToLocalStorage(); } }
-        
-        function updateSite(type, idIdx, site, f, chk) {
-            let item = type === 'staging' ? stagingData[idIdx] : savedData.find(x => x.id === idIdx);
-            if(!item) return;
-            item.sites[site][f] = chk;
-            if(f === 'hit' && chk) item.sites[site].bet = true;
-            if(f === 'bet' && !chk) item.sites[site].hit = false;
-            if(type === 'staging') renderStaging(); else { saveToLocalStorage(); renderSavedData(); }
-        }
-
-        function deleteData(type, idIdx) {
-            if(type === 'staging') { stagingData.splice(idIdx, 1); renderStaging(); }
-            else if(confirm('削除しますか？')) { savedData = savedData.filter(x => x.id !== idIdx); saveToLocalStorage(); renderSavedData(); }
-        }
+        function updateSite(type, idIdx, site, f, chk) { let item = type === 'staging' ? stagingData[idIdx] : savedData.find(x => x.id === idIdx); if(!item) return; item.sites[site][f] = chk; if(f === 'hit' && chk) item.sites[site].bet = true; if(f === 'bet' && !chk) item.sites[site].hit = false; if(type === 'staging') renderStaging(); else { saveToLocalStorage(); renderSavedData(); } }
+        function deleteData(type, idIdx) { if(type === 'staging') { stagingData.splice(idIdx, 1); renderStaging(); } else if(confirm('削除しますか？')) { savedData = savedData.filter(x => x.id !== idIdx); saveToLocalStorage(); renderSavedData(); } }
 
         function saveAllStaging() {
             const valid = [], invalid = [];
             stagingData.forEach(d => { if(d.order && (d.payout2 || d.payout3)) { if(!d.id) d.id = Date.now().toString(); valid.push(d); } else { invalid.push(d); } });
             savedData = [...savedData, ...valid]; stagingData = invalid;
             saveToLocalStorage(); renderStaging(); renderSavedData();
-            if(invalid.length > 0) alert('着順・配当が空の行は未保存で残しました。');
         }
 
         function clearAllData() { if(confirm('全て消去しますか？')) { savedData = []; saveToLocalStorage(); renderSavedData(); } }
@@ -237,18 +197,18 @@
 
         function updateDashboard() {
             document.getElementById('dash-total-races').innerText = savedData.length;
-            const st = {B:{inv:0,ret:0}, Y:{inv:0,ret:0}, M:{inv:0,ret:0}};
+            const st = {B:{inv:0,ret:0}, Y:{inv:0,ret:0}, N:{inv:0,ret:0}};
             savedData.forEach(d => {
                 const inv = (parseInt(d.bets)||1) * 100, pay = parseInt(d.payout3) || parseInt(d.payout2) || 0;
-                ['B','Y','M'].forEach(s => { if(d.sites[s].bet) st[s].inv += inv; if(d.sites[s].hit) st[s].ret += pay; });
+                ['B','Y','N'].forEach(s => { if(d.sites[s].bet) st[s].inv += inv; if(d.sites[s].hit) st[s].ret += pay; });
             });
             const calc = (i, r) => i > 0 ? Math.round((r/i)*100) : 0;
-            const [rB, rY, rM] = [calc(st.B.inv, st.B.ret), calc(st.Y.inv, st.Y.ret), calc(st.M.inv, st.M.ret)];
-            document.getElementById('dash-b-recovery').innerText = rB + '%'; document.getElementById('dash-y-recovery').innerText = rY + '%'; document.getElementById('dash-m-recovery').innerText = rM + '%';
+            const [rB, rY, rN] = [calc(st.B.inv, st.B.ret), calc(st.Y.inv, st.Y.ret), calc(st.N.inv, st.N.ret)];
+            document.getElementById('dash-b-recovery').innerText = rB + '%'; document.getElementById('dash-y-recovery').innerText = rY + '%'; document.getElementById('dash-n-recovery').innerText = rN + '%';
             
             const ctx = document.getElementById('recoveryChart').getContext('2d');
             if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, { type: 'bar', data: { labels: ['B', 'Y', 'M'], datasets: [{ label: '回収率(%)', data: [rB, rY, rM], backgroundColor: ['#22c55e', '#f97316', '#ef4444'] }] }, options: { responsive: true, maintainAspectRatio: false } });
+            chartInstance = new Chart(ctx, { type: 'bar', data: { labels: ['B', 'Y', 'N'], datasets: [{ label: '回収率(%)', data: [rB, rY, rN], backgroundColor: ['#22c55e', '#f97316', '#ef4444'] }] }, options: { responsive: true, maintainAspectRatio: false } });
         }
     </script>
 </body>
