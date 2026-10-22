@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>競輪配当分析プロ</title>
+    <title>BYNアナライザー</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -18,7 +18,7 @@
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-2 md:p-4">
     <div class="max-w-6xl mx-auto space-y-4">
-        <h1 class="text-xl md:text-2xl font-bold text-center text-blue-700">🚴‍♂️ 競輪配当分析プロ</h1>
+        <h1 class="text-xl md:text-2xl font-bold text-center text-blue-700">🚴‍♂️ BYNアナライザー</h1>
 
         <!-- 1. 入力エリア -->
         <div class="bg-white p-4 rounded-lg shadow">
@@ -29,7 +29,8 @@
                 <input type="file" id="file-upload" accept="image/*" multiple style="display: none;" onchange="handleImageUpload(event)">
             </div>
             <h3 class="font-bold text-sm mb-2 text-gray-700">手動で1レース追加</h3>
-            <div class="grid grid-cols-2 md:grid-cols-6 gap-2 items-center">
+            <div class="grid grid-cols-2 md:grid-cols-7 gap-2 items-center">
+                <input type="text" id="manual-race" placeholder="レース(例:1R)" class="border p-2 rounded w-full">
                 <input type="text" id="manual-order" placeholder="着順(例:5-1-6)" class="border p-2 rounded w-full">
                 <input type="number" id="manual-payout2" placeholder="2連単(円)" class="border p-2 rounded w-full">
                 <input type="number" id="manual-payout3" placeholder="3連単(円)" class="border p-2 rounded w-full">
@@ -57,7 +58,7 @@
                 <table id="staging-table">
                     <thead>
                         <tr>
-                            <th>結合</th><th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
+                            <th>結合</th><th>レース</th><th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
                             <th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン構成</th><th>操作</th>
                         </tr>
                     </thead>
@@ -93,7 +94,7 @@
                 <table id="saved-table">
                     <thead>
                         <tr>
-                            <th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
+                            <th>レース</th><th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
                             <th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン構成</th><th>操作</th>
                         </tr>
                     </thead>
@@ -116,15 +117,16 @@
             if (files.length < 2) return alert("着順と配当の画像を2枚以上選択してください");
             
             setTimeout(() => {
+                // シミュレーション: ズレが「レース番号」で一目でわかるようにデータを生成
                 stagingData = [
-                    createRowData("3-1-2", "", "", false),
-                    createRowData("4-5-1", "", "", false),
-                    createRowData("5-2-3", "800", "4200", true),
-                    createRowData("6-1-4", "1500", "8900", true),
-                    createRowData("", "2100", "12000", false),
-                    createRowData("", "900", "3400", false)
+                    createRowData("3R", "3-1-2", "", "", false),
+                    createRowData("4R", "4-5-1", "", "", false),
+                    createRowData("5R", "5-2-3", "800", "4200", true),  // ロック
+                    createRowData("6R", "6-1-4", "1500", "8900", true), // ロック
+                    createRowData("", "", "2100", "12000", false),
+                    createRowData("", "", "900", "3400", false)
                 ];
-                alert("画像を解析しました。\n番号が一致した2件を基準に結合しました。\nズレがある場合は「配当を上へ/下へ」で調整してください。");
+                alert("画像を解析しました。\n「レース」番号と「配当」を見比べて、ズレがある場合は「配当を上へ/下へ」で調整してください。");
                 event.target.value = ''; renderStaging();
             }, 800);
         }
@@ -148,17 +150,18 @@
         }
 
         function addManualData() {
+            const race = document.getElementById('manual-race').value.trim();
             const order = document.getElementById('manual-order').value.trim(), p2 = document.getElementById('manual-payout2').value.trim(), p3 = document.getElementById('manual-payout3').value.trim();
             const r = document.getElementById('manual-racers').value, b = document.getElementById('manual-bets').value.trim();
             if(!order && !p2 && !p3) return alert("着順または配当を入力してください");
             
-            let newRow = createRowData(order, p2, p3, false);
+            let newRow = createRowData(race, order, p2, p3, false);
             newRow.racers = r; newRow.bets = b; stagingData.push(newRow); renderStaging();
-            ['manual-order', 'manual-payout2', 'manual-payout3', 'manual-bets'].forEach(id => document.getElementById(id).value = ''); document.getElementById('manual-order').focus();
+            ['manual-race', 'manual-order', 'manual-payout2', 'manual-payout3', 'manual-bets'].forEach(id => document.getElementById(id).value = ''); document.getElementById('manual-race').focus();
         }
 
-        function createRowData(order, p2, p3, isLocked) {
-            return { id: Date.now() + Math.random().toString(36).substr(2, 5), order: order, payout2: p2, payout3: p3, racers: "9", bets: "10", sites: { B:{bet:false,hit:false}, Y:{bet:false,hit:false}, N:{bet:false,hit:false} }, line: "ライン無し", isLocked: isLocked };
+        function createRowData(race, order, p2, p3, isLocked) {
+            return { id: Date.now() + Math.random().toString(36).substr(2, 5), race: race, order: order, payout2: p2, payout3: p3, racers: "9", bets: "10", sites: { B:{bet:false,hit:false}, Y:{bet:false,hit:false}, N:{bet:false,hit:false} }, line: "ライン無し", isLocked: isLocked };
         }
         function renderStaging() { document.getElementById('staging-count').innerText = stagingData.length; document.querySelector('#staging-table tbody').innerHTML = stagingData.map((d, i) => generateRow(d, 'staging', i)).join(''); }
         function renderSavedData() { document.querySelector('#saved-table tbody').innerHTML = savedData.map((d, i) => generateRow(d, 'saved', i)).join(''); }
@@ -171,6 +174,7 @@
 
             return `<tr class="${rowClass}">
                 ${isStg ? `<td class="text-xs text-gray-500 font-bold">${lockIcon}</td>` : ''}
+                <td>${mkInp(d.race, 'race', '12')}</td>
                 <td>${mkInp(d.order, 'order', '20')}</td><td>${mkInp(d.payout2, 'payout2', '24')}</td><td>${mkInp(d.payout3, 'payout3', '24')}</td>
                 <td><select onchange="${upd}'racers',this.value)" class="border p-1 rounded"><option value="" ${d.racers===''?'selected':''}>-</option><option value="9" ${d.racers==='9'?'selected':''}>9車</option><option value="7" ${d.racers==='7'?'selected':''}>7車</option><option value="5" ${d.racers==='5'?'selected':''}>5車</option></select></td>
                 <td>${mkInp(d.bets, 'bets', '16')}</td><td>${siteChk('B')}</td><td>${siteChk('Y')}</td><td>${siteChk('N')}</td>
