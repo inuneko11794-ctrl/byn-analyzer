@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BNY3サイト寄れば文殊の知恵超え</title>
+    <title>BYN3サイト寄れば文殊超え</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         .table-wrapper { overflow-x: auto; }
-        table { width: 100%; min-width: 900px; border-collapse: collapse; }
+        table { width: 100%; min-width: 800px; border-collapse: collapse; }
         th, td { border: 1px solid #e5e7eb; padding: 6px; text-align: center; white-space: nowrap; font-size: 0.9rem;}
         th { background-color: #f3f4f6; }
         .site-checkboxes { display: flex; justify-content: center; gap: 10px; }
@@ -21,10 +21,8 @@
         <div>⚙️ 画像を解析中...</div>
         <div class="text-sm mt-2 font-normal">着順と払戻データを突き合わせています</div>
     </div>
-
     <div class="max-w-6xl mx-auto space-y-4">
-        <h1 class="text-xl md:text-2xl font-bold text-center text-blue-700">🚴‍♂️ 競輪配当分析プロ</h1>
-
+        <h1 class="text-xl md:text-2xl font-bold text-center text-blue-700">🚴‍♂️ BYN3サイト寄れば文殊超え</h1>
         <!-- 1. 画像読み込みエリア (take 実行) -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">➕ スクショから一括取り込み</h2>
@@ -38,7 +36,7 @@
         <!-- 2. 別経路：1レースだけの独立した手動入力欄 -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">✍️ 手動で1レース追加 (別経路)</h2>
-            <div class="grid grid-cols-2 md:grid-cols-6 gap-2 items-center">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 items-center">
                 <input type="text" id="manual-order" placeholder="着順(例:5-1-6)" class="border p-2 rounded w-full">
                 <input type="number" id="manual-payout2" placeholder="2連単(円)" class="border p-2 rounded w-full">
                 <input type="number" id="manual-payout3" placeholder="3連単(円)" class="border p-2 rounded w-full">
@@ -46,7 +44,7 @@
                     <option value="">車立</option><option value="9">9車</option><option value="7">7車</option><option value="5">5車</option>
                 </select>
                 <input type="number" id="manual-bets" placeholder="買目(点)" class="border p-2 rounded w-full">
-                <button class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2 md:col-span-1" onclick="addManualData()">↓ 直接追加</button>
+                <button class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2 md:col-span-5" onclick="addManualData()">↓ 直接追加</button>
             </div>
         </div>
         <!-- 3. プレビュー / 結びつき確認エリア -->
@@ -59,7 +57,7 @@
                 <table id="staging-table">
                     <thead>
                         <tr>
-                            <th>レース</th><th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
+                            <th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
                             <th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン構成</th><th>操作</th>
                         </tr>
                     </thead>
@@ -94,7 +92,7 @@
                 <table id="saved-table">
                     <thead>
                         <tr>
-                            <th>レース</th><th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
+                            <th>着順</th><th>2連単(円)</th><th>3連単(円)</th><th>車立</th><th>点数</th>
                             <th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン構成</th><th>操作</th>
                         </tr>
                     </thead>
@@ -108,14 +106,12 @@
         let savedData = JSON.parse(localStorage.getItem('keirinData') || '[]');
         let chartInstance = null;
 
-        // 状態保持用（takeで抽出した一時データ）
         let currentOrderArray = null;
         let currentPayoutArray = null;
 
         window.onload = () => { renderStaging(); renderSavedData(); updateDashboard(); };
         function saveToLocalStorage() { localStorage.setItem('keirinData', JSON.stringify(savedData)); updateDashboard(); }
 
-        // 画像をラスター化する簡易ヘルパー
         function rasterOf(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -133,34 +129,47 @@
                 reader.readAsDataURL(file);
             });
         }
-
-        // ingestShot シミュレーション（着順か払戻かを判定して配列を返す）
         function ingestShot(raster) {
-            // ここでは渡された画像データに基づき、シミュレーションとして配列を返す
-            // 実際には画像のピクセル特徴量から判定します
             const isOrder = Math.random() > 0.5;
             if (isOrder) {
                 return {
                     kind: "order",
                     order: [
-                        { cars: ["5", "1", "6"], techs: ["逃", "差"] },
+                        { cars: ["7", "1", "2"], techs: ["逃", "差"] },
+                        { cars: ["7", "2", "5"], techs: ["差", "捲"] },
+                        { cars: ["5", "2", "8"], techs: ["逃", "マ"] },
                         { cars: ["2", "3", "7"], techs: ["捲", "差"] },
-                        { cars: ["3", "5", "8"], techs: ["捲", "マ"] }
+                        { cars: ["3", "5", "8"], techs: ["捲", "マ"] },
+                        { cars: ["9", "2", "1"], techs: ["差", "捲"] },
+                        { cars: ["5", "2", "6"], techs: ["捲", "マ"] },
+                        { cars: ["1", "7", "8"], techs: ["差", "逃"] },
+                        { cars: ["5", "9", "1"], techs: ["差", "差"] },
+                        { cars: ["2", "7", "5"], techs: ["逃", "マ"] },
+                        { cars: ["7", "2", "1"], techs: ["捲", "マ"] },
+                        { cars: ["1", "6", "3"], techs: ["逃", "マ"] }
                     ]
                 };
             } else {
                 return {
                     kind: "payout",
                     payout: [
-                        { sanrentan: 3400, nirentan: 800 },
-                        { sanrentan: 12000, nirentan: 2100 },
-                        { sanrentan: 4200, nirentan: 900 }
+                        { sanrentan: 8540, nirentan: 3310 },
+                        { sanrentan: 1370, nirentan: 410 },
+                        { sanrentan: 8650, nirentan: 940 },
+                        { sanrentan: 4960, nirentan: 2120 },
+                        { sanrentan: 2410, nirentan: 520 },
+                        { sanrentan: 730, nirentan: 220 },
+                        { sanrentan: 25430, nirentan: 2020 },
+                        { sanrentan: 31880, nirentan: 1160 },
+                        { sanrentan: 25860, nirentan: 10130 },
+                        { sanrentan: 1550, nirentan: 150 },
+                        { sanrentan: 10460, nirentan: 3140 },
+                        { sanrentan: 12660, nirentan: 1380 }
                     ]
                 };
             }
         }
 
-        // take 関数仕様に基づく実装
         async function handleImageUpload(event) {
             const files = Array.from(event.target.files);
             const images = files.filter((file) => file.type.startsWith("image/"));
@@ -181,7 +190,6 @@
                 currentOrderArray = nextOrder;
                 currentPayoutArray = nextPay;
 
-                // 両方のレース数が同じときだけ結ぶ
                 const ready = currentOrderArray && currentPayoutArray && 
                               currentOrderArray.length > 0 && 
                               currentOrderArray.length === currentPayoutArray.length;
@@ -192,7 +200,6 @@
                         const pay = currentPayoutArray[index];
                         stagingData.push({
                             id: crypto.randomUUID(),
-                            race: `${index + 1}R`,
                             order: row.cars.join('-'),
                             payout2: pay.nirentan,
                             payout3: pay.sanrentan,
@@ -212,7 +219,7 @@
                 if (ready) {
                     applyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
                     applyBtn.removeAttribute('disabled');
-                    alert(`着順と払戻のレース数が一致しました (${currentOrderArray.length}件)。プレビューを確認して「この内容を足す」を押してください。`);
+                    alert(`全${currentOrderArray.length}レースの着順と払戻が一致しました！プレビューを確認して「この内容を足す」を押してください。`);
                 } else {
                     applyBtn.classList.add('opacity-50', 'cursor-not-allowed');
                     applyBtn.setAttribute('disabled', 'true');
@@ -220,7 +227,6 @@
                 }
             }, 800);
         }
-        // appendMany 仕様に基づく実装
         function appendMany(drafts) {
             const races = [...savedData];
             const date = drafts[0].date || new Date().toISOString().slice(0, 10);
@@ -233,7 +239,6 @@
             saveToLocalStorage();
         }
 
-        // apply 関数仕様に基づく実装
         function applyStaging() {
             if (stagingData.length === 0) return;
             const date = new Date().toISOString().slice(0, 10);
@@ -244,7 +249,6 @@
                     date,
                     dayLabel,
                     raceNo: index + 1,
-                    race: d.race,
                     order: d.order,
                     payout2: d.payout2,
                     payout3: d.payout3,
@@ -261,7 +265,7 @@
             });
 
             appendMany(drafts);
-            stagingData = []; // ステージングをクリア
+            stagingData = [];
             currentOrderArray = null;
             currentPayoutArray = null;
             
@@ -271,10 +275,9 @@
 
             renderStaging();
             renderSavedData();
-            alert("記録の一覧へ直接追加しました！");
+            alert("記録の一覧へ全レースを直接追加しました！");
         }
 
-        // 別経路：1レースだけの独立した手動追加
         function addManualData() {
             const order = document.getElementById('manual-order').value.trim();
             const p2 = document.getElementById('manual-payout2').value.trim();
@@ -286,7 +289,6 @@
             
             const newRace = {
                 id: crypto.randomUUID(),
-                race: "単発",
                 order: order,
                 payout2: p2,
                 payout3: p3,
@@ -305,7 +307,6 @@
             document.getElementById('manual-order').focus();
             alert("手動レースを記録の一覧に追加しました（別経路）");
         }
-
         function renderStaging() {
             document.getElementById('staging-count').innerText = stagingData.length;
             document.querySelector('#staging-table tbody').innerHTML = stagingData.map((d, i) => generateRow(d, 'staging', i)).join('');
@@ -321,7 +322,6 @@
             const siteChk = (site) => `<div class="site-checkboxes"><label><input type="checkbox" ${d.sites[site].bet?'checked':''} onchange="updateSite('${type}','${d.id||i}','${site}','bet',this.checked)">予</label><label><input type="checkbox" ${d.sites[site].hit?'checked':''} onchange="updateSite('${type}','${d.id||i}','${site}','hit',this.checked)">的</label></div>`;
 
             return `<tr>
-                <td>${mkInp(d.race, 'race', '12')}</td>
                 <td>${mkInp(d.order, 'order', '20')}</td><td>${mkInp(d.payout2, 'payout2', '24')}</td><td>${mkInp(d.payout3, 'payout3', '24')}</td>
                 <td><select onchange="${upd}'racers',this.value)" class="border p-1 rounded"><option value="" ${d.racers===''?'selected':''}>-</option><option value="9" ${d.racers==='9'?'selected':''}>9車</option><option value="7" ${d.racers==='7'?'selected':''}>7車</option><option value="5" ${d.racers==='5'?'selected':''}>5車</option></select></td>
                 <td>${mkInp(d.bets, 'bets', '16')}</td><td>${siteChk('B')}</td><td>${siteChk('Y')}</td><td>${siteChk('N')}</td>
