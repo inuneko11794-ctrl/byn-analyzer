@@ -23,8 +23,8 @@
 <h2 class="font-bold border-b pb-2 mb-2">✍️ 手動追加</h2>
 <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
 <input id="mOrd" placeholder="着順(7-1-2)" class="border p-2 rounded">
-<input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded">
-<input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
+<input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded" oninput="checkManualMansha()">
+<input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded" oninput="checkManualMansha()">
 <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
 <button onclick="addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-4">直接追加</button>
 </div>
@@ -60,7 +60,7 @@
 <div class="w-full overflow-hidden" style="height:160px;"><canvas id="trendC"></canvas></div>
 </div>
 
-<!-- サイト被り別の配当（2連単を平均に変更） -->
+<!-- サイト被り別の配当 -->
 <div class="overflow-x-auto"><table class="w-full min-w-[500px] text-center border-collapse text-xs"><thead><tr class="bg-gray-100"><th class="border p-1">被り状況</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead><tbody id="dashTbody"></tbody></table></div>
 <div style="height:200px"><canvas id="anaC"></canvas></div>
 </div>
@@ -80,6 +80,19 @@ let cDist, cPay, cTrend, cAna;
 window.onload = () => { renderStg(); renderSaved(); updateDash(); };
 function saveLS() { localStorage.setItem('keirinData', JSON.stringify(sv)); updateDash(); }
 
+// 万車券（1万円以上）かつ「予」にチェックがある場合に「的」を自動チェックするヘルパー
+function autoCheckHit(item) {
+  let p2 = parseInt(item.payout2) || 0;
+  let p3 = parseInt(item.payout3) || 0;
+  let isMansha = (p2 >= 10000 || p3 >= 10000);
+  
+  ['B', 'Y', 'N'].forEach(s => {
+    if (isMansha && item.sites[s].bet) {
+      item.sites[s].hit = true;
+    }
+  });
+}
+
 window.handleImageUpload = async function(e) {
   let files = Array.from(e.target.files);
   if (!files.length) return;
@@ -94,14 +107,15 @@ window.handleImageUpload = async function(e) {
       
       if (res.order.length > 0) {
         res.order.forEach((o, idx) => {
-          stg.push({
+          let newItem = {
             id: crypto.randomUUID(),
             raceNo: idx + 1,
             order: o.cars.join('-'),
             payout2: "", payout3: "", racers: "7",
             sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
             line: "ライン無し"
-          });
+          };
+          stg.push(newItem);
         });
       }
       if (res.payout.length > 0) {
@@ -109,15 +123,18 @@ window.handleImageUpload = async function(e) {
           if (stg[idx]) {
             stg[idx].payout2 = p.nirentan;
             stg[idx].payout3 = p.sanrentan;
+            autoCheckHit(stg[idx]); // 自動判定
           } else {
-            stg.push({
+            let newItem = {
               id: crypto.randomUUID(),
               raceNo: idx + 1,
               order: "",
               payout2: p.nirentan, payout3: p.sanrentan, racers: "7",
               sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
               line: "ライン無し"
-            });
+            };
+            autoCheckHit(newItem);
+            stg.push(newItem);
           }
         });
       }
@@ -128,7 +145,7 @@ window.handleImageUpload = async function(e) {
     let btn = document.getElementById('applyBtn');
     btn.classList.remove('opacity-50', 'cursor-not-allowed');
     btn.removeAttribute('disabled');
-    alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。`);
+    alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。1万円以上の配当には自動で的中チェックが入っています。`);
   } catch (err) {
     console.error(err);
     ov.classList.add('hidden');
@@ -139,13 +156,19 @@ window.handleImageUpload = async function(e) {
 window.addManual = function() {
   let o = mOrd.value.trim(), p2 = mP2.value.trim(), p3 = mP3.value.trim(), r = mRac.value;
   if (!o && !p2 && !p3) return alert("入力してください");
-  sv.push({ id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }, line: "ライン無し" });
+  let newItem = {
+    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r,
+    sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
+    line: "ライン無し"
+  };
+  autoCheckHit(newItem);
+  sv.push(newItem);
   saveLS(); renderSaved(); mOrd.value = ''; mP2.value = ''; mP3.value = '';
 }
 
 window.applyStg = function() {
   if (!stg.length) return;
-  stg.forEach(d => { let { raceNo, ...clean } = d; sv.push(clean); });
+  stg.forEach(d => { let { raceNo, ...clean } = d; autoCheckHit(clean); sv.push(clean); });
   stg = []; renderStg(); renderSaved();
   document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
   document.getElementById('applyBtn').setAttribute('disabled', 'true');
@@ -157,8 +180,8 @@ function renderStg() {
   stgBody.innerHTML = stg.map((d, i) => `<tr>
     <td class="font-bold">${d.raceNo}R</td>
     <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; autoCheckHit(window.stg[${i}]); renderStg();" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; autoCheckHit(window.stg[${i}]); renderStg();" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${chkHtml('stg', i, d)}${lineHtml('stg', i, d)}
     <td><button onclick="window.stg.splice(${i},1);renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
@@ -169,8 +192,8 @@ window.stg = stg;
 function renderSaved() {
   savedBody.innerHTML = sv.map((d, i) => `<tr>
     <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;saveLS()" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value;saveLS()" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value;saveLS()" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; autoCheckHit(window.sv[${i}]); saveLS(); renderSaved();" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; autoCheckHit(window.sv[${i}]); saveLS(); renderSaved();" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.sv[${i}].racers=this.value;saveLS()" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${chkHtml('sv', i, d)}${lineHtml('sv', i, d)}
     <td><button onclick="window.sv.splice(${i},1);saveLS();renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
@@ -180,7 +203,11 @@ window.sv = sv;
 
 function chkHtml(type, i, d) {
   let arr = type === 'stg' ? 'stg' : 'sv';
-  return ['B', 'Y', 'N'].map(s => `<td><label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked;${type === 'stg' ? '' : 'saveLS()'}">予</label><label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked;${type === 'stg' ? '' : 'saveLS()'}">的</label></td>`).join('');
+  let updateFunc = type === 'stg' ? 'renderStg()' : 'saveLS(); renderSaved();';
+  return ['B', 'Y', 'N'].map(s => `<td>
+    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; autoCheckHit(window.${arr}[${i}]); ${updateFunc}">予</label>
+    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${type === 'stg' ? '' : 'saveLS()'}">的</label>
+  </td>`).join('');
 }
 
 function lineHtml(type, i, d) {
@@ -243,7 +270,6 @@ window.updateDash = function() {
   if (cPay) cPay.destroy();
   cPay = new Chart(payC.getContext('2d'), { type: 'line', data: { labels: lbls, datasets: [{ label: '平均配当', data: avgArr, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
 
-  // サイト被り別テーブル（2連単を平均に変更）
   dashTbody.innerHTML = Object.entries(ovMap).map(([k, v]) => `<tr>
     <td class="border p-1 font-bold">${k}</td>
     <td class="border p-1">${v.c}件</td>
@@ -253,7 +279,6 @@ window.updateDash = function() {
 
   let lOver = Object.keys(ovMap);
   if (cAna) cAna.destroy();
-  // サイト被り別比較グラフ（2連単平均に変更）
   cAna = new Chart(anaC.getContext('2d'), {
     type: 'bar',
     data: {
