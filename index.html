@@ -16,14 +16,21 @@
 <div id="loading" class="hidden fixed inset-0 bg-black/75 text-white flex flex-col justify-center items-center z-50 font-bold"><div>爆速ピクセル解析中...</div></div>
 
 <h1 class="text-xl font-bold text-center text-blue-700">🚴‍♂️ BYN3サイト寄れば文殊超え</h1>
-
-<!-- 1. 取り込み（折りたたみ可能） -->
+<!-- 1. 取り込み（ドラッグ＆ドロップ対応） -->
 <details class="bg-white rounded shadow group" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
     <div class="flex items-center gap-2"><span>➕ スクショ取り込み (爆速解析)</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
   </summary>
   <div class="p-4 pt-2">
-    <div class="border-2 border-dashed p-4 text-center cursor-pointer rounded hover:bg-gray-50" onclick="document.getElementById('fileUp').click()">📸 スクショ画像を選択 (複数可)<input type="file" id="fileUp" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)"></div>
+    <!-- ドラッグ＆ドロップのイベントを追加 -->
+    <div class="border-2 border-blue-300 border-dashed p-8 text-center cursor-pointer rounded bg-gray-50 hover:bg-blue-50 transition-colors"
+         onclick="document.getElementById('fileUp').click()"
+         ondragover="event.preventDefault(); this.classList.add('bg-blue-100');"
+         ondragleave="event.preventDefault(); this.classList.remove('bg-blue-100');"
+         ondrop="event.preventDefault(); this.classList.remove('bg-blue-100'); handleImageUpload({target: {files: event.dataTransfer.files}});">
+      📸 スクショ画像を選択、またはここにドロップ (複数可)
+      <input type="file" id="fileUp" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)">
+    </div>
   </div>
 </details>
 
