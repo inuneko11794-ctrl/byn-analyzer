@@ -370,4 +370,283 @@ window.updateDash = function() {
 }
 
 window.updateTrend = function() {
-  let t2 = trendSel.value, cnt = { 1: 0,
+  let t2 = trendSel.value, cnt = { 1: 0,<script type="module">
+import { rasterOf, ingestShot } from './read-shot.js';
+
+let stg = [], sv = JSON.parse(localStorage.getItem('keirinData') || '[]');
+// グローバル空間に変数をバインド（チェックボックスなどで利用するため）
+window.stg = stg;
+window.sv = sv;
+
+let cDist, cPay, cTrend, cAna;
+
+window.onload = () => { renderStg(); renderSaved(); updateDash(); };
+function saveLS() { localStorage.setItem('keirinData', JSON.stringify(sv)); updateDash(); }
+
+// 【万車券自動チェック機能】配当1万以上 ＆「予」にチェック が揃った瞬間に「的」をONにする
+window.autoCheckHit = function(arrName, i) {
+  let item = window[arrName][i];
+  if (!item) return;
+  let p2 = parseInt(item.payout2) || 0;
+  let p3 = parseInt(item.payout3) || 0;
+  let isMansha = (p2 >= 10000 || p3 >= 10000);
+  
+  let changed = false;
+  ['B', 'Y', 'N'].forEach(s => {
+    // 1万超え かつ 「予(bet)」にチェックが入っていて、まだ「的(hit)」がチェックされてない場合
+    if (isMansha && item.sites[s].bet && !item.sites[s].hit) {
+      item.sites[s].hit = true;
+      changed = true;
+    }
+  });
+  
+  // 変更があった場合だけ画面を更新
+  if (changed) {
+    if (arrName === 'stg') renderStg();
+    else { saveLS(); renderSaved(); }
+  }
+}
+
+window.handleImageUpload = async function(e) {
+  let files = Array.from(e.target.files);
+  if (!files.length) return;
+  let ov = document.getElementById('loading');
+  ov.classList.remove('hidden');
+
+  try {
+    stg.length = 0; // 配列の中身を空にする（参照は保持）
+    for (let file of files) {
+      let raster = await rasterOf(file);
+      let res = ingestShot(raster);
+      
+      if (res.order.length > 0) {
+        res.order.forEach((o, idx) => {
+          stg.push({
+            id: crypto.randomUUID(),
+            raceNo: idx + 1,
+            order: o.cars.join('-'),
+            payout2: "", payout3: "", racers: "7",
+            sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
+            line: "ライン無し"
+          });
+        });
+      }
+      if (res.payout.length > 0) {
+        res.payout.forEach((p, idx) => {
+          if (stg[idx]) {
+            stg[idx].payout2 = p.nirentan;
+            stg[idx].payout3 = p.sanrentan;
+          } else {
+            stg.push({
+              id: crypto.randomUUID(),
+              raceNo: idx + 1,
+              order: "",
+              payout2: p.nirentan, payout3: p.sanrentan, racers: "7",
+              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
+              line: "ライン無し"
+            });
+          }
+        });
+      }
+    }
+    ov.classList.add('hidden');
+    e.target.value = '';
+    renderStg();
+    let btn = document.getElementById('applyBtn');
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    btn.removeAttribute('disabled');
+    alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。`);
+  } catch (err) {
+    console.error(err);
+    ov.classList.add('hidden');
+    alert("エラー: " + err.message);
+  }
+}
+
+window.addManual = function() {
+  let o = mOrd.value.trim(), p2 = mP2.value.trim(), p3 = mP3.value.trim(), r = mRac.value;
+  if (!o && !p2 && !p3) return alert("入力してください");
+  sv.push({
+    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r,
+    sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
+    line: "ライン無し"
+  });
+  saveLS(); renderSaved(); mOrd.value = ''; mP2.value = ''; mP3.value = '';
+}
+
+// 【重要修正】保存時にチェックが消えないよう、データを完全にディープコピーしてから移す
+window.applyStg = function() {
+  if (!stg.length) return;
+  stg.forEach(d => {
+    let clean = {
+      id: d.id,
+      order: d.order,
+      payout2: d.payout2,
+      payout3: d.payout3,
+      racers: d.racers,
+      line: d.line,
+      sites: JSON.parse(JSON.stringify(d.sites)) // 完全コピー（チェック状態を保証）
+    };
+    sv.push(clean);
+  });
+  stg.length = 0;
+  renderStg();
+  saveLS(); // 保存済みリスト・ダッシュボード・ローカルストレージを全て更新
+  renderSaved();
+  
+  document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
+  document.getElementById('applyBtn').setAttribute('disabled', 'true');
+  alert("保存しました！");
+}
+
+function renderStg() {
+  stgCnt.innerText = stg.length;
+  stgBody.innerHTML = stg.map((d, i) => `<tr>
+    <td class="font-bold">${d.raceNo}R</td>
+    <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
+    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
+    <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
+    ${chkHtml('stg', i, d)}${lineHtml('stg', i, d)}
+    <td><button onclick="window.stg.splice(${i},1);renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
+  </tr>`).join('');
+}
+
+function renderSaved() {
+  savedBody.innerHTML = sv.map((d, i) => `<tr>
+    <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;saveLS()" class="border p-1 text-center w-20 rounded"></td>
+    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.autoCheckHit('sv', ${i}); saveLS(); renderSaved();" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); saveLS(); renderSaved();" class="border p-1 text-center w-24 rounded"></td>
+    <td><select onchange="window.sv[${i}].racers=this.value;saveLS()" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
+    ${chkHtml('sv', i, d)}${lineHtml('sv', i, d)}
+    <td><button onclick="window.sv.splice(${i},1);saveLS();renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
+  </tr>`).join('');
+}
+
+function chkHtml(type, i, d) {
+  let arr = type === 'stg' ? 'stg' : 'sv';
+  let updateSv = type === 'sv' ? 'saveLS();' : '';
+  return ['B', 'Y', 'N'].map(s => `<td>
+    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${arr}', ${i}); ${updateSv}">予</label>
+    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
+  </td>`).join('');
+}
+
+function lineHtml(type, i, d) {
+  let arr = type === 'stg' ? 'stg' : 'sv';
+  return `<td><select onchange="window.${arr}[${i}].line=this.value;${type === 'stg' ? '' : 'saveLS()'}" class="border p-1 text-xs rounded">${['ライン無し', 'ライン①', 'ライン①②', 'ライン①②③', 'ライン①②③④'].map(l => `<option ${d.line == l ? 'selected' : ''}>${l}</option>`).join('')}</select></td>`;
+}
+
+window.clearAll = function() { if (confirm("本当に全て消去しますか？")) { sv.length = 0; saveLS(); renderSaved(); } }
+window.exportJson = function() { let a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(sv)], { type: 'application/json' })); a.download = 'keirin.json'; a.click(); }
+window.importJson = function(e) { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = ev => { sv.push(...JSON.parse(ev.target.result)); saveLS(); renderSaved(); alert('復元完了'); }; r.readAsText(f); e.target.value = ''; }
+
+window.updateDash = function() {
+  dTot.innerText = sv.length;
+  let sStat = { B: { bet: 0, hit: 0, mansha: 0 }, Y: { bet: 0, hit: 0, mansha: 0 }, N: { bet: 0, hit: 0, mansha: 0 } };
+  let ovMap = { "なし": { c: 0, p3: 0, p2: 0 }, "Bのみ": { c: 0, p3: 0, p2: 0 }, "Yのみ": { c: 0, p3: 0, p2: 0 }, "Nのみ": { c: 0, p3: 0, p2: 0 }, "B+Y": { c: 0, p3: 0, p2: 0 }, "B+N": { c: 0, p3: 0, p2: 0 }, "Y+N": { c: 0, p3: 0, p2: 0 }, "B+Y+N": { c: 0, p3: 0, p2: 0 } };
+  let dType = document.querySelector('input[name="dType"]:checked').value;
+  let distD = {}, o2Set = new Set();
+
+  sv.forEach(d => {
+    let b = d.sites.B.bet, y = d.sites.Y.bet, n = d.sites.N.bet;
+    let p3 = parseInt(d.payout3) || 0, p2 = parseInt(d.payout2) || 0, isM = p3 >= 10000 || p2 >= 10000;
+    ['B', 'Y', 'N'].forEach(s => { if (d.sites[s].bet) sStat[s].bet++; if (d.sites[s].hit) { sStat[s].hit++; if (isM) sStat[s].mansha++; } });
+    let k = "なし";
+    if (b && !y && !n) k = "Bのみ"; else if (!b && y && !n) k = "Yのみ"; else if (!b && !y && n) k = "Nのみ";
+    else if (b && y && !n) k = "B+Y"; else if (b && !y && n) k = "B+N"; else if (!b && y && n) k = "Y+N"; else if (b && y && n) k = "B+Y+N";
+    ovMap[k].c++; ovMap[k].p3 += p3; ovMap[k].p2 += p2;
+
+    let cars = (d.order || '').split('-');
+    let c1 = parseInt(cars[0]), c2 = parseInt(cars[1]), c3 = parseInt(cars[2]);
+    if (!isNaN(c1) && !isNaN(c2)) {
+      o2Set.add(`${c1}-${c2}`);
+      let s2 = c1 + c2, s3 = s2 + (isNaN(c3) ? 0 : c3);
+      let tSum = dType === 'sum2' ? s2 : s3, tPay = dType === 'sum2' ? p2 : p3;
+      let isOv = ((b ? 1 : 0) + (y ? 1 : 0) + (n ? 1 : 0)) >= 2;
+      if (!distD[tSum]) distD[tSum] = { ov: 0, sg: 0, pTot: 0, cnt: 0 };
+      if (isOv) distD[tSum].ov++; else distD[tSum].sg++;
+      distD[tSum].pTot += tPay; distD[tSum].cnt++;
+    }
+  });
+
+  [['b', 'B'], ['y', 'Y'], ['n', 'N']].forEach(([id, S]) => {
+    let r = sStat[S].bet ? Math.round(sStat[S].hit / sStat[S].bet * 100) : 0;
+    document.getElementById(`d${id.toUpperCase()}Hit`).innerText = r + '%';
+    document.getElementById(`d${id.toUpperCase()}Mansha`).innerText = `万車:${sStat[S].mansha}回`;
+  });
+
+  let minS = dType === 'sum2' ? 3 : 6, maxS = dType === 'sum2' ? 17 : 24;
+  let lbls = [], ovArr = [], sgArr = [], avgArr = [];
+  for (let i = minS; i <= maxS; i++) {
+    lbls.push(i);
+    let o = distD[i] || { ov: 0, sg: 0, pTot: 0, cnt: 0 };
+    ovArr.push(o.ov); sgArr.push(o.sg);
+    avgArr.push(o.cnt ? Math.round(o.pTot / o.cnt) : 0);
+  }
+
+  const intYAxis = {
+    responsive: true, maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+    plugins: { legend: { position: 'bottom' } }
+  };
+
+  if (cDist) cDist.destroy();
+  cDist = new Chart(distC.getContext('2d'), {
+    type: 'bar',
+    data: { labels: lbls, datasets: [{ label: '被り', data: ovArr, backgroundColor: '#f97316' }, { label: '単独', data: sgArr, backgroundColor: '#3b82f6' }] },
+    options: intYAxis
+  });
+
+  if (cPay) cPay.destroy();
+  cPay = new Chart(payC.getContext('2d'), {
+    type: 'line',
+    data: { labels: lbls, datasets: [{ label: '平均配当', data: avgArr, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  dashTbody.innerHTML = Object.entries(ovMap).map(([k, v]) => `<tr>
+    <td class="border p-1 font-bold">${k}</td>
+    <td class="border p-1">${v.c}件</td>
+    <td class="border p-1 text-blue-700">${v.c ? Math.round(v.p3 / v.c).toLocaleString() : 0}円</td>
+    <td class="border p-1 text-green-700">${v.c ? Math.round(v.p2 / v.c).toLocaleString() : 0}円</td>
+  </tr>`).join('');
+
+  let lOver = Object.keys(ovMap);
+  if (cAna) cAna.destroy();
+  cAna = new Chart(anaC.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: lOver,
+      datasets: [
+        { label: '3連単平均', data: lOver.map(k => ovMap[k].c ? Math.round(ovMap[k].p3 / ovMap[k].c) : 0), backgroundColor: '#3b82f6', yAxisID: 'y' },
+        { label: '2連単平均', data: lOver.map(k => ovMap[k].c ? Math.round(ovMap[k].p2 / ovMap[k].c) : 0), backgroundColor: '#22c55e', yAxisID: 'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { type: 'linear', position: 'left', beginAtZero: true, ticks: { precision: 0 } },
+        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { precision: 0 } }
+      }
+    }
+  });
+
+  let o2Arr = Array.from(o2Set).sort();
+  trendSel.innerHTML = '<option value="">2車単を選択</option>' + o2Arr.map(o => `<option>${o}</option>`).join('');
+  updateTrend();
+}
+
+window.updateTrend = function() {
+  let t2 = trendSel.value, cnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
+  if (t2) { sv.forEach(d => { let c = (d.order || '').split('-'); if (c.length >= 3 && `${c[0]}-${c[1]}` === t2) { let c3 = +c[2]; if (c3 >= 1 && c3 <= 9) cnt[c3]++; } }); }
+  if (cTrend) cTrend.destroy();
+  cTrend = new Chart(trendC.getContext('2d'), {
+    type: 'bar',
+    data: { labels: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => n + '番'), datasets: [{ label: '3着回数', data: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => cnt[n]), backgroundColor: '#8b5cf6' }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+}
+</script>
+</body>
+</html>
