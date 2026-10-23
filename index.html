@@ -7,7 +7,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  /* 折りたたみの矢印を隠す */
   details > summary { list-style: none; }
   details > summary::-webkit-details-marker { display: none; }
 </style>
@@ -44,7 +43,10 @@
       <input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded">
       <input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
       <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
-      <input id="mWinLine" type="text" placeholder="1着ライン入力" class="border p-2 rounded bg-yellow-50">
+      <!-- 1着ラインを1〜5の選択式に変更 -->
+      <select id="mWinLine" class="border p-2 rounded bg-yellow-50">
+        <option value="">1着L選択</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
+      </select>
       <button onclick="window.addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-5">直接追加</button>
     </div>
   </div>
@@ -74,12 +76,28 @@
       <div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
     </div>
 
-    <!-- NEW: 万車時1着車番グラフ -->
-    <div class="bg-red-50 p-3 rounded border border-red-200 space-y-2">
-      <div class="flex items-center gap-2">
-        <span class="font-bold text-red-800 text-sm whitespace-nowrap">🔥 万車時(3連単1万円以上)の1着車番:</span>
+    <!-- NEW: 万車時1着車番 ＆ 1着ライン分布 -->
+    <div class="grid md:grid-cols-2 gap-2">
+      <div class="bg-red-50 p-3 rounded border border-red-200 space-y-2">
+        <span class="font-bold text-red-800 text-sm">🔥 万車時(1万円以上)の1着車番</span>
+        <div style="height:140px;"><canvas id="manshaC"></canvas></div>
       </div>
-      <div class="w-full overflow-hidden" style="height:140px;"><canvas id="manshaC"></canvas></div>
+      <div class="bg-yellow-50 p-3 rounded border border-yellow-200 space-y-2">
+        <span class="font-bold text-yellow-800 text-sm">🏆 1着はどのラインから来たか</span>
+        <div style="height:140px;"><canvas id="winLineC"></canvas></div>
+      </div>
+    </div>
+
+    <!-- NEW: ライン別の全体分布 ＆ サイト別万車時のライン分布 -->
+    <div class="grid md:grid-cols-2 gap-2">
+      <div class="bg-blue-50 p-3 rounded border border-blue-200 space-y-2">
+        <span class="font-bold text-blue-800 text-sm">📈 予想ライン数 全体分布</span>
+        <div style="height:160px;"><canvas id="lineAllC"></canvas></div>
+      </div>
+      <div class="bg-purple-50 p-3 rounded border border-purple-200 space-y-2">
+        <span class="font-bold text-purple-800 text-sm">🎯 サイト別 万車的中時のライン数</span>
+        <div style="height:160px;"><canvas id="manshaSiteLineC"></canvas></div>
+      </div>
     </div>
 
     <div class="bg-gray-50 p-3 rounded border">
@@ -122,8 +140,8 @@ let stg = [], sv = JSON.parse(localStorage.getItem('keirinData') || '[]');
 window.stg = stg;
 window.sv = sv;
 
-// グラフ用変数を追加（cMansha が今回追加した万車1着グラフ用です）
-let cDist, cPay, cTrend, cAna, cMansha;
+// グラフ用変数を追加（新機能のグラフを格納）
+let cDist, cPay, cTrend, cAna, cMansha, cWinLine, cLineAll, cManshaSiteLine;
 
 window.onload = () => { renderStg(); renderSaved(); window.updateDash(); };
 function saveLS() { localStorage.setItem('keirinData', JSON.stringify(sv)); window.updateDash(); }
@@ -168,7 +186,7 @@ window.handleImageUpload = async function(e) {
             id: crypto.randomUUID(),
             raceNo: idx + 1,
             order: o.cars.join('-'),
-            payout2: "", payout3: "", racers: "7", winLine: "", // ← 追加: 1着ライン
+            payout2: "", payout3: "", racers: "7", winLine: "", // 1着ライン
             sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
             line: "ライン無し"
           });
@@ -184,7 +202,7 @@ window.handleImageUpload = async function(e) {
               id: crypto.randomUUID(),
               raceNo: idx + 1,
               order: "",
-              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", winLine: "", // ← 追加
+              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", winLine: "",
               sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
               line: "ライン無し"
             });
@@ -213,11 +231,11 @@ window.addManual = function() {
       p2 = document.getElementById('mP2').value.trim(), 
       p3 = document.getElementById('mP3').value.trim(), 
       r = document.getElementById('mRac').value,
-      wL = document.getElementById('mWinLine').value.trim(); // ← 追加
+      wL = document.getElementById('mWinLine').value; // 1着ライン(1〜5)
       
   if (!o && !p2 && !p3) return alert("入力してください");
   sv.push({
-    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, winLine: wL, // ← 追加
+    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, winLine: wL,
     sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
     line: "ライン無し"
   });
@@ -225,20 +243,15 @@ window.addManual = function() {
   document.getElementById('mOrd').value = ''; 
   document.getElementById('mP2').value = ''; 
   document.getElementById('mP3').value = '';
-  document.getElementById('mWinLine').value = ''; // ← 追加
+  document.getElementById('mWinLine').value = '';
 }
 
 window.applyStg = function() {
   if (!stg.length) return;
   stg.forEach(d => {
     let clean = {
-      id: d.id,
-      order: d.order,
-      payout2: d.payout2,
-      payout3: d.payout3,
-      racers: d.racers,
-      winLine: d.winLine || "", // ← 追加
-      line: d.line,
+      id: d.id, order: d.order, payout2: d.payout2, payout3: d.payout3,
+      racers: d.racers, winLine: d.winLine || "", line: d.line,
       sites: JSON.parse(JSON.stringify(d.sites)) 
     };
     sv.push(clean);
@@ -253,6 +266,12 @@ window.applyStg = function() {
   alert("保存しました！");
 }
 
+function winLineSelectHtml(type, i, d) {
+  let arr = type === 'stg' ? 'stg' : 'sv';
+  let opts = ['1','2','3','4','5'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
+  return `<td><select onchange="window.${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS()'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
+}
+
 function renderStg() {
   stgCnt.innerText = stg.length;
   stgBody.innerHTML = stg.map((d, i) => `<tr>
@@ -261,7 +280,7 @@ function renderStg() {
     <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
     <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
-    <td><input value="${d.winLine || ''}" onchange="window.stg[${i}].winLine=this.value" placeholder="1着L" class="border p-1 text-center w-16 rounded bg-yellow-50"></td> <!-- ← 追加 -->
+    ${winLineSelectHtml('stg', i, d)}
     ${chkHtml('stg', i, d)}${lineHtml('stg', i, d)}
     <td><button onclick="window.stg.splice(${i},1);window.renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
@@ -274,7 +293,7 @@ function renderSaved() {
     <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
     <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS()" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
-    <td><input value="${d.winLine || ''}" onchange="window.sv[${i}].winLine=this.value;window.saveLS()" placeholder="1着L" class="border p-1 text-center w-16 rounded bg-yellow-50"></td> <!-- ← 追加 -->
+    ${winLineSelectHtml('sv', i, d)}
     ${chkHtml('sv', i, d)}${lineHtml('sv', i, d)}
     <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
@@ -299,7 +318,6 @@ function lineHtml(type, i, d) {
 window.clearAll = function() { if (confirm("本当に全て消去しますか？")) { sv.length = 0; saveLS(); renderSaved(); } }
 window.exportJson = function() { let a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(sv)], { type: 'application/json' })); a.download = 'keirin.json'; a.click(); }
 window.importJson = function(e) { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = ev => { sv.push(...JSON.parse(ev.target.result)); saveLS(); renderSaved(); alert('復元完了'); }; r.readAsText(f); e.target.value = ''; }
-
 window.updateDash = function() {
   dTot.innerText = sv.length;
   let sStat = { B: { bet: 0, hit: 0, mansha: 0 }, Y: { bet: 0, hit: 0, mansha: 0 }, N: { bet: 0, hit: 0, mansha: 0 } };
@@ -307,13 +325,38 @@ window.updateDash = function() {
   let dType = document.querySelector('input[name="dType"]:checked').value;
   
   let distD = {}, o2Set = new Set();
-  // 万車時1着車番集計用
+  
+  // 新規集計用変数
   let mansha1st = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
+  let winLineCnt = { "1":0, "2":0, "3":0, "4":0, "5":0 };
+  let lineAllMap = { 'ライン無し':0, 'ライン①':0, 'ライン①②':0, 'ライン①②③':0, 'ライン①②③④':0 };
+  let manshaSiteLine = {
+    B: { 'ライン無し':0, 'ライン①':0, 'ライン①②':0, 'ライン①②③':0, 'ライン①②③④':0 },
+    Y: { 'ライン無し':0, 'ライン①':0, 'ライン①②':0, 'ライン①②③':0, 'ライン①②③④':0 },
+    N: { 'ライン無し':0, 'ライン①':0, 'ライン①②':0, 'ライン①②③':0, 'ライン①②③④':0 }
+  };
 
   sv.forEach(d => {
     let b = d.sites.B.bet, y = d.sites.Y.bet, n = d.sites.N.bet;
     let p3 = parseInt(d.payout3) || 0, p2 = parseInt(d.payout2) || 0, isM = p3 >= 10000 || p2 >= 10000;
-    ['B', 'Y', 'N'].forEach(s => { if (d.sites[s].bet) sStat[s].bet++; if (d.sites[s].hit) { sStat[s].hit++; if (isM) sStat[s].mansha++; } });
+    
+    // 全体予想ライン集計
+    if (lineAllMap[d.line] !== undefined) lineAllMap[d.line]++;
+    // 1着ライン集計
+    if (d.winLine && winLineCnt[d.winLine] !== undefined) winLineCnt[d.winLine]++;
+
+    ['B', 'Y', 'N'].forEach(s => { 
+      if (d.sites[s].bet) sStat[s].bet++; 
+      if (d.sites[s].hit) { 
+        sStat[s].hit++; 
+        if (isM) {
+          sStat[s].mansha++;
+          // サイト別万車的中時のライン集計
+          if(manshaSiteLine[s][d.line] !== undefined) manshaSiteLine[s][d.line]++;
+        }
+      } 
+    });
+
     let k = "なし";
     if (b && !y && !n) k = "Bのみ"; else if (!b && y && !n) k = "Yのみ"; else if (!b && !y && n) k = "Nのみ";
     else if (b && y && !n) k = "B+Y"; else if (b && !y && n) k = "B+N"; else if (!b && y && n) k = "Y+N"; else if (b && y && n) k = "B+Y+N";
@@ -322,10 +365,8 @@ window.updateDash = function() {
     let cars = (d.order || '').split('-');
     let c1 = parseInt(cars[0]), c2 = parseInt(cars[1]), c3 = parseInt(cars[2]);
     
-    // 万車（3連単1万以上）の時の1着車番を集計
-    if (p3 >= 10000 && c1 >= 1 && c1 <= 9) {
-      mansha1st[c1]++;
-    }
+    // 万車（3連単1万以上）時の1着車番を集計
+    if (p3 >= 10000 && c1 >= 1 && c1 <= 9) mansha1st[c1]++;
 
     if (!isNaN(c1) && !isNaN(c2)) {
       o2Set.add(`${c1}-${c2}`);
@@ -344,15 +385,48 @@ window.updateDash = function() {
     document.getElementById(`d${id.toUpperCase()}Mansha`).innerText = `万車:${sStat[S].mansha}回`;
   });
 
-  // 万車時1着車番グラフ描画
+  const intYAxis = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { position: 'bottom' } } };
+  const intYAxisNoLeg = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } };
+
+  // 1. 万車時1着車番
   if (cMansha) cMansha.destroy();
   cMansha = new Chart(document.getElementById('manshaC').getContext('2d'), {
     type: 'bar',
+    data: { labels: [1,2,3,4,5,6,7,8,9].map(n=>n+'番'), datasets: [{ label: '1着回数 (万車時)', data: [1,2,3,4,5,6,7,8,9].map(n=>mansha1st[n]), backgroundColor: '#ef4444' }] },
+    options: intYAxisNoLeg
+  });
+
+  // 2. 1着ライン分布
+  if (cWinLine) cWinLine.destroy();
+  cWinLine = new Chart(document.getElementById('winLineC').getContext('2d'), {
+    type: 'bar',
+    data: { labels: ['1','2','3','4','5'].map(n=>'L'+n), datasets: [{ label: '1着ライン', data: ['1','2','3','4','5'].map(n=>winLineCnt[n]), backgroundColor: '#eab308' }] },
+    options: intYAxisNoLeg
+  });
+
+  let lineKeys = ['ライン無し', 'ライン①', 'ライン①②', 'ライン①②③', 'ライン①②③④'];
+
+  // 3. 全体ライン分布
+  if (cLineAll) cLineAll.destroy();
+  cLineAll = new Chart(document.getElementById('lineAllC').getContext('2d'), {
+    type: 'bar',
+    data: { labels: lineKeys, datasets: [{ label: '予想回数', data: lineKeys.map(k=>lineAllMap[k]), backgroundColor: '#3b82f6' }] },
+    options: intYAxisNoLeg
+  });
+
+  // 4. サイト別万車時ライン分布
+  if (cManshaSiteLine) cManshaSiteLine.destroy();
+  cManshaSiteLine = new Chart(document.getElementById('manshaSiteLineC').getContext('2d'), {
+    type: 'bar',
     data: {
-      labels: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => n + '番'),
-      datasets: [{ label: '1着回数 (万車時)', data: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => mansha1st[n]), backgroundColor: '#ef4444' }]
+      labels: lineKeys,
+      datasets: [
+        { label: 'B軍', data: lineKeys.map(k=>manshaSiteLine.B[k]), backgroundColor: '#22c55e' },
+        { label: 'Y軍', data: lineKeys.map(k=>manshaSiteLine.Y[k]), backgroundColor: '#f97316' },
+        { label: 'N軍', data: lineKeys.map(k=>manshaSiteLine.N[k]), backgroundColor: '#ef4444' }
+      ]
     },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+    options: intYAxis
   });
 
   let minS = dType === 'sum2' ? 3 : 6, maxS = dType === 'sum2' ? 17 : 24;
@@ -363,12 +437,6 @@ window.updateDash = function() {
     ovArr.push(o.ov); sgArr.push(o.sg);
     avgArr.push(o.cnt ? Math.round(o.pTot / o.cnt) : 0);
   }
-
-  const intYAxis = {
-    responsive: true, maintainAspectRatio: false,
-    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
-    plugins: { legend: { position: 'bottom' } }
-  };
 
   if (cDist) cDist.destroy();
   cDist = new Chart(distC.getContext('2d'), {
