@@ -44,7 +44,7 @@
       <input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
       <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
       <select id="mWinLine" class="border p-2 rounded bg-yellow-50">
-        <option value="">1着L選択</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
+        <option value="">1着L選択</option><option value="単">単</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
       </select>
       <button onclick="window.addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-5">直接追加</button>
     </div>
@@ -58,7 +58,7 @@
     <button id="applyBtn" onclick="event.stopPropagation(); window.applyStg()" class="bg-green-500 text-white px-3 py-1 rounded opacity-50 cursor-not-allowed" disabled>保存する</button>
   </summary>
   <div class="p-4 pt-2 overflow-x-auto">
-    <table class="w-full min-w-[850px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>1着ライン</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>予想ライン</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table>
+    <table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>1着ライン</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table>
   </div>
 </details>
 
@@ -69,7 +69,6 @@
   </summary>
   <div class="p-4 pt-2 space-y-4">
     
-    <!-- NEW: 車立フィルター -->
     <div class="flex items-center justify-end gap-2 bg-indigo-50 p-2 rounded border border-indigo-200">
       <span class="text-sm font-bold text-indigo-800">🎯 車立で絞り込み:</span>
       <select id="dashRacer" onchange="window.updateDash()" class="border p-1 rounded text-sm bg-white font-bold text-indigo-900">
@@ -89,7 +88,6 @@
       <div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
     </div>
 
-    <!-- 万車時1着車番 ＆ 万車時1着ライン分布 -->
     <div class="grid md:grid-cols-2 gap-2">
       <div class="bg-red-50 p-3 rounded border border-red-200 space-y-2">
         <span class="font-bold text-red-800 text-sm">🔥 万車時の1着車番</span>
@@ -102,7 +100,6 @@
     </div>
 
     <div class="grid md:grid-cols-2 gap-2">
-      <!-- タイトルを万車時に変更 -->
       <div class="bg-blue-50 p-3 rounded border border-blue-200 space-y-2">
         <span class="font-bold text-blue-800 text-sm">📈 万車時のライン分布</span>
         <div style="height:160px;"><canvas id="lineAllC"></canvas></div>
@@ -134,7 +131,7 @@
 <!-- 5. 保存済み一覧 -->
 <details class="bg-white rounded shadow group mb-10" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
-    <div class="flex items-center gap-2"><span>📂 保存済み一覧</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
+    <div class="flex items-center gap-2"><span>📂 保存済み一覧 (自動保存)</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
     <div class="flex gap-2">
       <button onclick="event.stopPropagation(); window.exportJson()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">バックアップ</button>
       <input type="file" id="impFile" class="hidden" onchange="window.importJson(event)" accept=".json">
@@ -143,7 +140,7 @@
     </div>
   </summary>
   <div class="p-4 pt-2 overflow-x-auto">
-    <table class="w-full min-w-[850px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>1着ライン</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>予想ライン</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table>
+    <table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>1着ライン</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table>
   </div>
 </details>
 <script type="module">
@@ -197,9 +194,8 @@ window.handleImageUpload = async function(e) {
         res.order.forEach((o, idx) => {
           stg.push({
             id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
-            payout2: "", payout3: "", racers: "7", winLine: "",
-            sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
-            line: "単" // 予想ラインの初期値を「単」に
+            payout2: "", payout3: "", racers: "7", winLine: "単", // 初期値を「単」に
+            sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
           });
         });
       }
@@ -210,9 +206,8 @@ window.handleImageUpload = async function(e) {
           } else {
             stg.push({
               id: crypto.randomUUID(), raceNo: idx + 1, order: "",
-              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", winLine: "",
-              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
-              line: "単"
+              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", winLine: "単",
+              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
             });
           }
         });
@@ -241,9 +236,8 @@ window.addManual = function() {
       
   if (!o && !p2 && !p3) return alert("入力してください");
   sv.push({
-    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, winLine: wL,
-    sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
-    line: "単"
+    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, winLine: wL || "単",
+    sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
   });
   saveLS(); renderSaved(); 
   document.getElementById('mOrd').value = ''; document.getElementById('mP2').value = ''; 
@@ -255,7 +249,7 @@ window.applyStg = function() {
   stg.forEach(d => {
     let clean = {
       id: d.id, order: d.order, payout2: d.payout2, payout3: d.payout3,
-      racers: d.racers, winLine: d.winLine || "", line: d.line,
+      racers: d.racers, winLine: d.winLine || "単",
       sites: JSON.parse(JSON.stringify(d.sites)) 
     };
     sv.push(clean);
@@ -266,10 +260,11 @@ window.applyStg = function() {
   alert("保存しました！");
 }
 
+// ★ 1着ラインの選択肢を「単, 0, 1, 2, 3, 4」に変更
 function winLineSelectHtml(type, i, d) {
   let arr = type === 'stg' ? 'stg' : 'sv';
-  let opts = ['0','1','2','3','4'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
-  return `<td><select onchange="window.${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS()'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
+  let opts = ['単','0','1','2','3','4'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
+  return `<td><select onchange="window.${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved();'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
 }
 
 function renderStg() {
@@ -281,7 +276,7 @@ function renderStg() {
     <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${winLineSelectHtml('stg', i, d)}
-    ${chkHtml('stg', i, d)}${lineHtml('stg', i, d)}
+    ${chkHtml('stg', i, d)}
     <td><button onclick="window.stg.splice(${i},1);window.renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
 }
@@ -294,7 +289,7 @@ function renderSaved() {
     <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${winLineSelectHtml('sv', i, d)}
-    ${chkHtml('sv', i, d)}${lineHtml('sv', i, d)}
+    ${chkHtml('sv', i, d)}
     <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
 }
@@ -308,13 +303,6 @@ function chkHtml(type, i, d) {
     <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${arr}', ${i}); ${updateSv}">予</label>
     <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
   </td>`).join('');
-}
-
-function lineHtml(type, i, d) {
-  let arr = type === 'stg' ? 'stg' : 'sv';
-  // ★ 予想ラインを「単, 0, 1, 2, 3, 4」に変更
-  let opts = ['単', '0', '1', '2', '3', '4'].map(l => `<option ${d.line == l ? 'selected' : ''}>${l}</option>`).join('');
-  return `<td><select onchange="window.${arr}[${i}].line=this.value;${type === 'stg' ? '' : 'window.saveLS()'}" class="border p-1 text-xs rounded">${opts}</select></td>`;
 }
 
 window.clearAll = function() { if (confirm("本当に全て消去しますか？")) { sv.length = 0; saveLS(); renderSaved(); } }
@@ -333,11 +321,11 @@ window.updateDash = function() {
   
   let distD = {}, o2Set = new Set();
   
-  // 新規集計用変数
+  // 新規集計用変数 (予想ラインと1着ラインを統合: 単, 0, 1, 2, 3, 4)
   let mansha1st = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
-  let winLineCnt = { "0":0, "1":0, "2":0, "3":0, "4":0 }; 
   let lineKeys = ['単', '0', '1', '2', '3', '4'];
-  let lineAllMap = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 };
+  let winLineAll = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 };    // 全体の1着ライン
+  let winLineMansha = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 }; // 万車時の1着ライン
   let manshaSiteLine = {
     B: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 },
     Y: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 },
@@ -351,11 +339,13 @@ window.updateDash = function() {
     let cars = (d.order || '').split('-');
     let c1 = parseInt(cars[0]), c2 = parseInt(cars[1]), c3 = parseInt(cars[2]);
 
+    // 1着ラインの全体集計
+    if (d.winLine && winLineAll[d.winLine] !== undefined) winLineAll[d.winLine]++;
+
     // ★ 万車の時だけ各ライン・1着車番をカウント
     if (isM) {
-      if (lineAllMap[d.line] !== undefined) lineAllMap[d.line]++;
-      if (d.winLine && winLineCnt[d.winLine] !== undefined) winLineCnt[d.winLine]++;
       if (c1 >= 1 && c1 <= 9) mansha1st[c1]++;
+      if (d.winLine && winLineMansha[d.winLine] !== undefined) winLineMansha[d.winLine]++;
     }
 
     ['B', 'Y', 'N'].forEach(s => { 
@@ -364,8 +354,8 @@ window.updateDash = function() {
         sStat[s].hit++; 
         if (isM) {
           sStat[s].mansha++;
-          // サイト別万車的中時のライン集計
-          if(manshaSiteLine[s][d.line] !== undefined) manshaSiteLine[s][d.line]++;
+          // サイト別万車的中時のライン集計 (winLineから取得)
+          if(d.winLine && manshaSiteLine[s][d.winLine] !== undefined) manshaSiteLine[s][d.winLine]++;
         }
       } 
     });
@@ -403,19 +393,19 @@ window.updateDash = function() {
     options: intYAxisNoLeg
   });
 
-  // 2. 1着ライン分布 (0〜4、万車時)
+  // 2. 1着ライン分布 (全体)
   if (cWinLine) cWinLine.destroy();
   cWinLine = new Chart(document.getElementById('winLineC').getContext('2d'), {
     type: 'bar',
-    data: { labels: ['0','1','2','3','4'].map(n=>'L'+n), datasets: [{ label: '1着ライン (万車時)', data: ['0','1','2','3','4'].map(n=>winLineCnt[n]), backgroundColor: '#eab308' }] },
+    data: { labels: lineKeys, datasets: [{ label: '全体の1着ライン', data: lineKeys.map(k=>winLineAll[k]), backgroundColor: '#eab308' }] },
     options: intYAxisNoLeg
   });
 
-  // 3. 全体ライン分布 (万車時)
+  // 3. 万車時のライン分布
   if (cLineAll) cLineAll.destroy();
   cLineAll = new Chart(document.getElementById('lineAllC').getContext('2d'), {
     type: 'bar',
-    data: { labels: lineKeys, datasets: [{ label: '万車時のライン回数', data: lineKeys.map(k=>lineAllMap[k]), backgroundColor: '#3b82f6' }] },
+    data: { labels: lineKeys, datasets: [{ label: '万車時のライン回数', data: lineKeys.map(k=>winLineMansha[k]), backgroundColor: '#3b82f6' }] },
     options: intYAxisNoLeg
   });
 
