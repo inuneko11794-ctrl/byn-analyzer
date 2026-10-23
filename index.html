@@ -18,23 +18,22 @@
 <div class="border-2 border-dashed p-4 text-center cursor-pointer rounded hover:bg-gray-50" onclick="document.getElementById('fileUp').click()">📸 スクショ画像を選択 (複数可)<input type="file" id="fileUp" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)"></div>
 </div>
 
-<!-- 2. 手動追加 -->
+<!-- 2. 手動追加（点数削除） -->
 <div class="bg-white p-4 rounded shadow">
 <h2 class="font-bold border-b pb-2 mb-2">✍️ 手動追加</h2>
-<div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
 <input id="mOrd" placeholder="着順(7-1-2)" class="border p-2 rounded">
 <input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded">
 <input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
 <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
-<input type="number" id="mBet" placeholder="点数" value="10" class="border p-2 rounded">
-<button onclick="addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-5">直接追加</button>
+<button onclick="addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-4">直接追加</button>
 </div>
 </div>
 
-<!-- 3. プレビュー -->
+<!-- 3. プレビュー（点数削除） -->
 <div class="bg-white p-4 rounded shadow">
 <div class="flex justify-between items-center mb-2"><h2 class="font-bold">📝 プレビュー (<span id="stgCnt">0</span>件)</h2><button id="applyBtn" onclick="applyStg()" class="bg-green-500 text-white px-3 py-1 rounded opacity-50 cursor-not-allowed" disabled>保存する</button></div>
-<div class="overflow-x-auto"><table class="w-full min-w-[800px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>点数</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table></div>
+<div class="overflow-x-auto"><table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table></div>
 </div>
 
 <!-- 4. ダッシュボード -->
@@ -52,23 +51,23 @@
 <div class="grid md:grid-cols-2 gap-2"><div style="height:200px"><canvas id="distC"></canvas></div><div style="height:200px"><canvas id="payC"></canvas></div></div>
 </div>
 
-<!-- 3着傾向（スマホで縦並び、PCで横並びになるよう修正） -->
-<div class="bg-indigo-50 p-3 rounded border border-indigo-100 flex flex-col md:flex-row items-stretch md:items-center gap-2">
+<!-- 3着傾向（完全縦積み＆はみ出し防止レイアウト） -->
+<div class="bg-indigo-50 p-3 rounded border border-indigo-100 space-y-2">
 <div class="flex items-center gap-2">
 <span class="font-bold text-indigo-800 text-sm whitespace-nowrap">3着傾向:</span>
-<select id="trendSel" onchange="updateTrend()" class="border p-1 text-sm bg-white rounded font-bold w-full md:w-auto"><option value="">2車単選択</option></select>
+<select id="trendSel" onchange="updateTrend()" class="border p-1 text-sm bg-white rounded font-bold w-full"><option value="">2車単を選択してください</option></select>
 </div>
-<div style="flex-grow:1;height:140px;width:100%"><canvas id="trendC"></canvas></div>
+<div class="w-full overflow-hidden" style="height:160px;"><canvas id="trendC"></canvas></div>
 </div>
 
 <div class="overflow-x-auto"><table class="w-full min-w-[500px] text-center border-collapse text-xs"><thead><tr class="bg-gray-100"><th class="border p-1">被り状況</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単合計</th></tr></thead><tbody id="dashTbody"></tbody></table></div>
 <div style="height:200px"><canvas id="anaC"></canvas></div>
 </div>
 
-<!-- 5. 保存済み一覧 -->
+<!-- 5. 保存済み一覧（点数削除） -->
 <div class="bg-white p-4 rounded shadow mb-10">
 <div class="flex justify-between items-center mb-2"><h2 class="font-bold">📂 保存済み一覧</h2><div class="flex gap-2"><button onclick="exportJson()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">バックアップ</button><input type="file" id="impFile" class="hidden" onchange="importJson(event)" accept=".json"><button onclick="impFile.click()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">復元</button><button onclick="clearAll()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">全消去</button></div></div>
-<div class="overflow-x-auto"><table class="w-full min-w-[800px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>点数</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table></div>
+<div class="overflow-x-auto"><table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table></div>
 </div>
 
 <script type="module">
@@ -98,7 +97,7 @@ window.handleImageUpload = async function(e) {
             id: crypto.randomUUID(),
             raceNo: idx + 1,
             order: o.cars.join('-'),
-            p2: "", p3: "", racers: "7", bets: "10",
+            payout2: "", payout2: "", payout3: "", racers: "7",
             sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
             line: "ライン無し"
           });
@@ -107,14 +106,14 @@ window.handleImageUpload = async function(e) {
       if (res.payout.length > 0) {
         res.payout.forEach((p, idx) => {
           if (stg[idx]) {
-            stg[idx].p2 = p.nirentan;
-            stg[idx].p3 = p.sanrentan;
+            stg[idx].payout2 = p.nirentan;
+            stg[idx].payout3 = p.sanrentan;
           } else {
             stg.push({
               id: crypto.randomUUID(),
               raceNo: idx + 1,
               order: "",
-              p2: p.nirentan, p3: p.sanrentan, racers: "7", bets: "10",
+              payout2: p.nirentan, payout3: p.sanrentan, racers: "7",
               sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
               line: "ライン無し"
             });
@@ -137,9 +136,9 @@ window.handleImageUpload = async function(e) {
 }
 
 window.addManual = function() {
-  let o = mOrd.value.trim(), p2 = mP2.value.trim(), p3 = mP3.value.trim(), r = mRac.value, b = mBet.value.trim();
+  let o = mOrd.value.trim(), p2 = mP2.value.trim(), p3 = mP3.value.trim(), r = mRac.value;
   if (!o && !p2 && !p3) return alert("入力してください");
-  sv.push({ id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, bets: b, sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }, line: "ライン無し" });
+  sv.push({ id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }, line: "ライン無し" });
   saveLS(); renderSaved(); mOrd.value = ''; mP2.value = ''; mP3.value = '';
 }
 
@@ -157,10 +156,9 @@ function renderStg() {
   stgBody.innerHTML = stg.map((d, i) => `<tr>
     <td class="font-bold">${d.raceNo}R</td>
     <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.p2}" onchange="window.stg[${i}].p2=this.value" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.p3}" onchange="window.stg[${i}].p3=this.value" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
-    <td><input type="number" value="${d.bets}" onchange="window.stg[${i}].bets=this.value" class="border p-1 text-center w-16 rounded"></td>
     ${chkHtml('stg', i, d)}${lineHtml('stg', i, d)}
     <td><button onclick="window.stg.splice(${i},1);renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
@@ -170,10 +168,9 @@ window.stg = stg;
 function renderSaved() {
   savedBody.innerHTML = sv.map((d, i) => `<tr>
     <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;saveLS()" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2}" onchange="window.sv[${i}].payout2=this.value;saveLS()" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3}" onchange="window.sv[${i}].payout3=this.value;saveLS()" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value;saveLS()" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value;saveLS()" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.sv[${i}].racers=this.value;saveLS()" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
-    <td><input type="number" value="${d.bets}" onchange="window.sv[${i}].bets=this.value;saveLS()" class="border p-1 text-center w-16 rounded"></td>
     ${chkHtml('sv', i, d)}${lineHtml('sv', i, d)}
     <td><button onclick="window.sv.splice(${i},1);saveLS();renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
@@ -252,7 +249,7 @@ window.updateDash = function() {
   cAna = new Chart(anaC.getContext('2d'), { type: 'bar', data: { labels: lOver, datasets: [{ label: '3連単平均', data: lOver.map(k => ovMap[k].c ? Math.round(ovMap[k].p3 / ovMap[k].c) : 0), backgroundColor: '#3b82f6', yAxisID: 'y' }, { label: '2連単合計', data: lOver.map(k => ovMap[k].p2), backgroundColor: '#22c55e', yAxisID: 'y1' }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { type: 'linear', position: 'left' }, y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } } } } });
 
   let o2Arr = Array.from(o2Set).sort();
-  trendSel.innerHTML = '<option value="">2車単選択</option>' + o2Arr.map(o => `<option>${o}</option>`).join('');
+  trendSel.innerHTML = '<option value="">2車単を選択してください</option>' + o2Arr.map(o => `<option>${o}</option>`).join('');
   updateTrend();
 }
 
