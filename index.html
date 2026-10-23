@@ -6,91 +6,137 @@
 <title>BYN3サイト寄れば文殊超え</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  /* 折りたたみ（アコーディオン）の標準矢印を隠すスタイル */
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+</style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-2 md:p-4 max-w-6xl mx-auto space-y-4">
 <div id="loading" class="hidden fixed inset-0 bg-black/75 text-white flex flex-col justify-center items-center z-50 font-bold"><div>爆速ピクセル解析中...</div></div>
 
 <h1 class="text-xl font-bold text-center text-blue-700">🚴‍♂️ BYN3サイト寄れば文殊超え</h1>
 
-<!-- 1. 取り込み -->
-<div class="bg-white p-4 rounded shadow">
-<h2 class="font-bold border-b pb-2 mb-2">➕ スクショ取り込み (爆速ピクセル解析)</h2>
-<div class="border-2 border-dashed p-4 text-center cursor-pointer rounded hover:bg-gray-50" onclick="document.getElementById('fileUp').click()">📸 スクショ画像を選択 (複数可)<input type="file" id="fileUp" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)"></div>
-</div>
+<!-- 1. 取り込み（折りたたみ可能） -->
+<details class="bg-white rounded shadow group" open>
+  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
+    <div class="flex items-center gap-2"><span>➕ スクショ取り込み (爆速解析)</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
+  </summary>
+  <div class="p-4 pt-2">
+    <div class="border-2 border-dashed p-4 text-center cursor-pointer rounded hover:bg-gray-50" onclick="document.getElementById('fileUp').click()">📸 スクショ画像を選択 (複数可)<input type="file" id="fileUp" accept="image/*" multiple class="hidden" onchange="handleImageUpload(event)"></div>
+  </div>
+</details>
 
-<!-- 2. 手動追加 -->
-<div class="bg-white p-4 rounded shadow">
-<h2 class="font-bold border-b pb-2 mb-2">✍️ 手動追加</h2>
-<div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-<input id="mOrd" placeholder="着順(7-1-2)" class="border p-2 rounded">
-<input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded">
-<input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
-<select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
-<button onclick="addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-4">直接追加</button>
-</div>
-</div>
+<!-- 2. 手動追加（折りたたみ可能・初期は閉じる） -->
+<details class="bg-white rounded shadow group">
+  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
+    <div class="flex items-center gap-2"><span>✍️ 手動追加</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
+  </summary>
+  <div class="p-4 pt-2">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+      <input id="mOrd" placeholder="着順(7-1-2)" class="border p-2 rounded">
+      <input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded">
+      <input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
+      <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
+      <button onclick="addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-4">直接追加</button>
+    </div>
+  </div>
+</details>
 
-<!-- 3. プレビュー -->
-<div class="bg-white p-4 rounded shadow">
-<div class="flex justify-between items-center mb-2"><h2 class="font-bold">📝 プレビュー (<span id="stgCnt">0</span>件)</h2><button id="applyBtn" onclick="applyStg()" class="bg-green-500 text-white px-3 py-1 rounded opacity-50 cursor-not-allowed" disabled>保存する</button></div>
-<div class="overflow-x-auto"><table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table></div>
-</div>
+<!-- 3. プレビュー（折りたたみ可能） -->
+<details class="bg-white rounded shadow group" open>
+  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
+    <div class="flex items-center gap-2"><span>📝 プレビュー (<span id="stgCnt">0</span>件)</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
+    <!-- event.stopPropagation()でボタンを押しても折りたたまれないようにする -->
+    <button id="applyBtn" onclick="event.stopPropagation(); applyStg()" class="bg-green-500 text-white px-3 py-1 rounded opacity-50 cursor-not-allowed" disabled>保存する</button>
+  </summary>
+  <div class="p-4 pt-2 overflow-x-auto">
+    <table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table>
+  </div>
+</details>
 
-<!-- 4. ダッシュボード -->
-<div class="bg-white p-4 rounded shadow space-y-4">
-<h2 class="font-bold border-b pb-2">📊 究極分析ダッシュボード</h2>
-<div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-<div class="bg-gray-50 p-2 rounded border"><div class="text-xs text-gray-500">保存済</div><div id="dTot" class="text-lg font-bold text-blue-600">0</div></div>
-<div class="bg-green-50 p-2 rounded border border-green-200"><div class="text-xs text-gray-500">B的軍</div><div id="dBHit" class="font-bold text-green-700">0%</div><div id="dBMansha" class="text-xs text-green-600">万車:0</div></div>
-<div class="bg-orange-50 p-2 rounded border border-orange-200"><div class="text-xs text-gray-500">Y的軍</div><div id="dYHit" class="font-bold text-orange-600">0%</div><div id="dYMansha" class="text-xs text-orange-500">万車:0</div></div>
-<div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
-</div>
+<!-- 4. ダッシュボード（折りたたみ可能） -->
+<details class="bg-white rounded shadow group" open>
+  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
+    <div class="flex items-center gap-2"><span>📊 究極分析ダッシュボード</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
+  </summary>
+  <div class="p-4 pt-2 space-y-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+      <div class="bg-gray-50 p-2 rounded border"><div class="text-xs text-gray-500">保存済</div><div id="dTot" class="text-lg font-bold text-blue-600">0</div></div>
+      <div class="bg-green-50 p-2 rounded border border-green-200"><div class="text-xs text-gray-500">B的軍</div><div id="dBHit" class="font-bold text-green-700">0%</div><div id="dBMansha" class="text-xs text-green-600">万車:0</div></div>
+      <div class="bg-orange-50 p-2 rounded border border-orange-200"><div class="text-xs text-gray-500">Y的軍</div><div id="dYHit" class="font-bold text-orange-600">0%</div><div id="dYMansha" class="text-xs text-orange-500">万車:0</div></div>
+      <div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
+    </div>
 
-<div class="bg-gray-50 p-3 rounded border">
-<div class="flex justify-between mb-2 text-sm font-bold"><span class="text-gray-700">📈 合計値分布＆配当</span><label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum2" checked onchange="updateDash()">2連単</label><label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum3" onchange="updateDash()">3連単</label></div>
-<div class="grid md:grid-cols-2 gap-2"><div style="height:200px"><canvas id="distC"></canvas></div><div style="height:200px"><canvas id="payC"></canvas></div></div>
-</div>
+    <div class="bg-gray-50 p-3 rounded border">
+      <div class="flex justify-between mb-2 text-sm font-bold"><span class="text-gray-700">📈 合計値分布＆配当</span><label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum2" checked onchange="updateDash()">2連単</label><label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum3" onchange="updateDash()">3連単</label></div>
+      <div class="grid md:grid-cols-2 gap-2"><div style="height:200px"><canvas id="distC"></canvas></div><div style="height:200px"><canvas id="payC"></canvas></div></div>
+    </div>
 
-<!-- 3着傾向 -->
-<div class="bg-indigo-50 p-3 rounded border border-indigo-100 space-y-2">
-<div class="flex items-center gap-2">
-<span class="font-bold text-indigo-800 text-sm whitespace-nowrap">3着傾向:</span>
-<select id="trendSel" onchange="updateTrend()" class="border p-1 text-sm bg-white rounded font-bold w-full"><option value="">2車単を選択してください</option></select>
-</div>
-<div class="w-full overflow-hidden" style="height:160px;"><canvas id="trendC"></canvas></div>
-</div>
+    <div class="bg-indigo-50 p-3 rounded border border-indigo-100 space-y-2">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-indigo-800 text-sm whitespace-nowrap">3着傾向:</span>
+        <select id="trendSel" onchange="updateTrend()" class="border p-1 text-sm bg-white rounded font-bold w-full"><option value="">2車単を選択してください</option></select>
+      </div>
+      <div class="w-full overflow-hidden" style="height:160px;"><canvas id="trendC"></canvas></div>
+    </div>
 
-<!-- サイト被り別の配当 -->
-<div class="overflow-x-auto"><table class="w-full min-w-[500px] text-center border-collapse text-xs"><thead><tr class="bg-gray-100"><th class="border p-1">被り状況</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead><tbody id="dashTbody"></tbody></table></div>
-<div style="height:200px"><canvas id="anaC"></canvas></div>
-</div>
+    <div class="overflow-x-auto"><table class="w-full min-w-[500px] text-center border-collapse text-xs"><thead><tr class="bg-gray-100"><th class="border p-1">被り状況</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead><tbody id="dashTbody"></tbody></table></div>
+    <div style="height:200px"><canvas id="anaC"></canvas></div>
+  </div>
+</details>
 
-<!-- 5. 保存済み一覧 -->
-<div class="bg-white p-4 rounded shadow mb-10">
-<div class="flex justify-between items-center mb-2"><h2 class="font-bold">📂 保存済み一覧</h2><div class="flex gap-2"><button onclick="exportJson()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">バックアップ</button><input type="file" id="impFile" class="hidden" onchange="importJson(event)" accept=".json"><button onclick="impFile.click()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">復元</button><button onclick="clearAll()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">全消去</button></div></div>
-<div class="overflow-x-auto"><table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table></div>
-</div>
+<!-- 5. 保存済み一覧（折りたたみ可能） -->
+<details class="bg-white rounded shadow group mb-10" open>
+  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
+    <div class="flex items-center gap-2"><span>📂 保存済み一覧</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
+    <div class="flex gap-2">
+      <button onclick="event.stopPropagation(); exportJson()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">バックアップ</button>
+      <input type="file" id="impFile" class="hidden" onchange="importJson(event)" accept=".json">
+      <button onclick="event.stopPropagation(); document.getElementById('impFile').click()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">復元</button>
+      <button onclick="event.stopPropagation(); clearAll()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">全消去</button>
+    </div>
+  </summary>
+  <div class="p-4 pt-2 overflow-x-auto">
+    <table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>ライン</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table>
+  </div>
+</details>
 
 <script type="module">
 import { rasterOf, ingestShot } from './read-shot.js';
 
 let stg = [], sv = JSON.parse(localStorage.getItem('keirinData') || '[]');
+// グローバル空間に変数をバインド（チェックボックスなどで利用するため）
+window.stg = stg;
+window.sv = sv;
+
 let cDist, cPay, cTrend, cAna;
 
 window.onload = () => { renderStg(); renderSaved(); updateDash(); };
 function saveLS() { localStorage.setItem('keirinData', JSON.stringify(sv)); updateDash(); }
 
-// 万車券（1万円以上）の場合、自動で「的」にチェックを入れる
-function autoCheckHit(item) {
+// 【万車券自動チェック機能】配当1万以上 ＆「予」にチェック が揃った瞬間に「的」をONにする
+window.autoCheckHit = function(arrName, i) {
+  let item = window[arrName][i];
+  if (!item) return;
   let p2 = parseInt(item.payout2) || 0;
   let p3 = parseInt(item.payout3) || 0;
   let isMansha = (p2 >= 10000 || p3 >= 10000);
   
+  let changed = false;
   ['B', 'Y', 'N'].forEach(s => {
-    if (isMansha) {
+    // 1万超え かつ 「予(bet)」にチェックが入っていて、まだ「的(hit)」がチェックされてない場合
+    if (isMansha && item.sites[s].bet && !item.sites[s].hit) {
       item.sites[s].hit = true;
+      changed = true;
     }
   });
+  
+  // 変更があった場合だけ画面を更新
+  if (changed) {
+    if (arrName === 'stg') renderStg();
+    else { saveLS(); renderSaved(); }
+  }
 }
 
 window.handleImageUpload = async function(e) {
@@ -100,22 +146,21 @@ window.handleImageUpload = async function(e) {
   ov.classList.remove('hidden');
 
   try {
-    stg = [];
+    stg.length = 0; // 配列の中身を空にする（参照は保持）
     for (let file of files) {
       let raster = await rasterOf(file);
       let res = ingestShot(raster);
       
       if (res.order.length > 0) {
         res.order.forEach((o, idx) => {
-          let newItem = {
+          stg.push({
             id: crypto.randomUUID(),
             raceNo: idx + 1,
             order: o.cars.join('-'),
             payout2: "", payout3: "", racers: "7",
             sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
             line: "ライン無し"
-          };
-          stg.push(newItem);
+          });
         });
       }
       if (res.payout.length > 0) {
@@ -123,18 +168,15 @@ window.handleImageUpload = async function(e) {
           if (stg[idx]) {
             stg[idx].payout2 = p.nirentan;
             stg[idx].payout3 = p.sanrentan;
-            autoCheckHit(stg[idx]);
           } else {
-            let newItem = {
+            stg.push({
               id: crypto.randomUUID(),
               raceNo: idx + 1,
               order: "",
               payout2: p.nirentan, payout3: p.sanrentan, racers: "7",
               sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
               line: "ライン無し"
-            };
-            autoCheckHit(newItem);
-            stg.push(newItem);
+            });
           }
         });
       }
@@ -156,27 +198,33 @@ window.handleImageUpload = async function(e) {
 window.addManual = function() {
   let o = mOrd.value.trim(), p2 = mP2.value.trim(), p3 = mP3.value.trim(), r = mRac.value;
   if (!o && !p2 && !p3) return alert("入力してください");
-  let newItem = {
+  sv.push({
     id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r,
     sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
     line: "ライン無し"
-  };
-  autoCheckHit(newItem);
-  sv.push(newItem);
+  });
   saveLS(); renderSaved(); mOrd.value = ''; mP2.value = ''; mP3.value = '';
 }
 
+// 【重要修正】保存時にチェックが消えないよう、データを完全にディープコピーしてから移す
 window.applyStg = function() {
   if (!stg.length) return;
   stg.forEach(d => {
-    let { raceNo, ...clean } = d;
-    autoCheckHit(clean);
+    let clean = {
+      id: d.id,
+      order: d.order,
+      payout2: d.payout2,
+      payout3: d.payout3,
+      racers: d.racers,
+      line: d.line,
+      sites: JSON.parse(JSON.stringify(d.sites)) // 完全コピー（チェック状態を保証）
+    };
     sv.push(clean);
   });
-  stg = [];
+  stg.length = 0;
   renderStg();
+  saveLS(); // 保存済みリスト・ダッシュボード・ローカルストレージを全て更新
   renderSaved();
-  saveLS(); // ← 保存データをしっかりとローカルストレージに書き込むように修正！
   
   document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
   document.getElementById('applyBtn').setAttribute('disabled', 'true');
@@ -188,45 +236,42 @@ function renderStg() {
   stgBody.innerHTML = stg.map((d, i) => `<tr>
     <td class="font-bold">${d.raceNo}R</td>
     <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; autoCheckHit(window.stg[${i}]); renderStg();" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; autoCheckHit(window.stg[${i}]); renderStg();" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${chkHtml('stg', i, d)}${lineHtml('stg', i, d)}
     <td><button onclick="window.stg.splice(${i},1);renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
 }
-window.stg = stg;
 
 function renderSaved() {
   savedBody.innerHTML = sv.map((d, i) => `<tr>
     <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;saveLS()" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; autoCheckHit(window.sv[${i}]); saveLS(); renderSaved();" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; autoCheckHit(window.sv[${i}]); saveLS(); renderSaved();" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.autoCheckHit('sv', ${i}); saveLS(); renderSaved();" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); saveLS(); renderSaved();" class="border p-1 text-center w-24 rounded"></td>
     <td><select onchange="window.sv[${i}].racers=this.value;saveLS()" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${chkHtml('sv', i, d)}${lineHtml('sv', i, d)}
     <td><button onclick="window.sv.splice(${i},1);saveLS();renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
 }
-window.sv = sv;
 
 function chkHtml(type, i, d) {
   let arr = type === 'stg' ? 'stg' : 'sv';
-  let updateFunc = type === 'stg' ? 'renderStg()' : 'saveLS(); renderSaved();';
+  let updateSv = type === 'sv' ? 'saveLS();' : '';
   return ['B', 'Y', 'N'].map(s => `<td>
-    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; ${updateFunc}">予</label>
-    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${type === 'stg' ? '' : 'saveLS()'}">的</label>
+    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${arr}', ${i}); ${updateSv}">予</label>
+    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
   </td>`).join('');
 }
 
 function lineHtml(type, i, d) {
   let arr = type === 'stg' ? 'stg' : 'sv';
-  let lines = ['ライン無し', 'ライン①', 'ライン①②', 'ライン①②③', 'ライン①②③④'];
-  return `<td><select onchange="window.${arr}[${i}].line=this.value;${type === 'stg' ? '' : 'saveLS()'}" class="border p-1 text-xs rounded">${lines.map(l => `<option ${d.line == l ? 'selected' : ''}>${l}</option>`).join('')}</select></td>`;
+  return `<td><select onchange="window.${arr}[${i}].line=this.value;${type === 'stg' ? '' : 'saveLS()'}" class="border p-1 text-xs rounded">${['ライン無し', 'ライン①', 'ライン①②', 'ライン①②③', 'ライン①②③④'].map(l => `<option ${d.line == l ? 'selected' : ''}>${l}</option>`).join('')}</select></td>`;
 }
 
-window.clearAll = function() { if (confirm("本当に全て消去しますか？")) { sv = []; window.sv = sv; saveLS(); renderSaved(); } }
+window.clearAll = function() { if (confirm("本当に全て消去しますか？")) { sv.length = 0; saveLS(); renderSaved(); } }
 window.exportJson = function() { let a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(sv)], { type: 'application/json' })); a.download = 'keirin.json'; a.click(); }
-window.importJson = function(e) { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = ev => { sv = [...sv, ...JSON.parse(ev.target.result)]; window.sv = sv; saveLS(); renderSaved(); alert('復元完了'); }; r.readAsText(f); e.target.value = ''; }
+window.importJson = function(e) { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = ev => { sv.push(...JSON.parse(ev.target.result)); saveLS(); renderSaved(); alert('復元完了'); }; r.readAsText(f); e.target.value = ''; }
 
 window.updateDash = function() {
   dTot.innerText = sv.length;
@@ -272,16 +317,9 @@ window.updateDash = function() {
     avgArr.push(o.cnt ? Math.round(o.pTot / o.cnt) : 0);
   }
 
-  // グラフのY軸を常に整数（小数点なし）に固定する共通設定
   const intYAxis = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        beginAtZero: true,
-        ticks: { precision: 0 } // 小数点を排除して整数にする
-      }
-    },
+    responsive: true, maintainAspectRatio: false,
+    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
     plugins: { legend: { position: 'bottom' } }
   };
 
@@ -327,26 +365,9 @@ window.updateDash = function() {
   });
 
   let o2Arr = Array.from(o2Set).sort();
-  trendSel.innerHTML = '<option value="">2車単を選択してください</option>' + o2Arr.map(o => `<option>${o}</option>`).join('');
+  trendSel.innerHTML = '<option value="">2車単を選択</option>' + o2Arr.map(o => `<option>${o}</option>`).join('');
   updateTrend();
 }
 
 window.updateTrend = function() {
-  let t2 = trendSel.value, cnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
-  if (t2) { sv.forEach(d => { let c = (d.order || '').split('-'); if (c.length >= 3 && `${c[0]}-${c[1]}` === t2) { let c3 = +c[2]; if (c3 >= 1 && c3 <= 9) cnt[c3]++; } }); }
-  if (cTrend) cTrend.destroy();
-  cTrend = new Chart(trendC.getContext('2d'), {
-    type: 'bar',
-    data: { labels: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => n + '番'), datasets: [{ label: '3着回数', data: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => cnt[n]), backgroundColor: '#8b5cf6' }] },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: { beginAtZero: true, ticks: { precision: 0 } }
-      }
-    }
-  });
-}
-</script>
-</body>
-</html>
+  let t2 = trendSel.value, cnt = { 1: 0,
