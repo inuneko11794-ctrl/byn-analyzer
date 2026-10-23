@@ -43,7 +43,6 @@
       <input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded">
       <input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
       <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
-      <!-- 1着ラインを0〜4の選択式に変更 -->
       <select id="mWinLine" class="border p-2 rounded bg-yellow-50">
         <option value="">1着L選択</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
       </select>
@@ -69,8 +68,22 @@
     <div class="flex items-center gap-2"><span>📊 究極分析ダッシュボード</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
   </summary>
   <div class="p-4 pt-2 space-y-4">
+    
+    <!-- NEW: 車立フィルター -->
+    <div class="flex items-center justify-end gap-2 bg-indigo-50 p-2 rounded border border-indigo-200">
+      <span class="text-sm font-bold text-indigo-800">🎯 車立で絞り込み:</span>
+      <select id="dashRacer" onchange="window.updateDash()" class="border p-1 rounded text-sm bg-white font-bold text-indigo-900">
+        <option value="all">全て表示</option>
+        <option value="9">9車のみ</option>
+        <option value="8">8車のみ</option>
+        <option value="7">7車のみ</option>
+        <option value="6">6車のみ</option>
+        <option value="5">5車のみ</option>
+      </select>
+    </div>
+
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-      <div class="bg-gray-50 p-2 rounded border"><div class="text-xs text-gray-500">保存済</div><div id="dTot" class="text-lg font-bold text-blue-600">0</div></div>
+      <div class="bg-gray-50 p-2 rounded border"><div class="text-xs text-gray-500">集計対象</div><div id="dTot" class="text-lg font-bold text-blue-600">0</div></div>
       <div class="bg-green-50 p-2 rounded border border-green-200"><div class="text-xs text-gray-500">B的軍</div><div id="dBHit" class="font-bold text-green-700">0%</div><div id="dBMansha" class="text-xs text-green-600">万車:0</div></div>
       <div class="bg-orange-50 p-2 rounded border border-orange-200"><div class="text-xs text-gray-500">Y的軍</div><div id="dYHit" class="font-bold text-orange-600">0%</div><div id="dYMansha" class="text-xs text-orange-500">万車:0</div></div>
       <div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
@@ -89,8 +102,9 @@
     </div>
 
     <div class="grid md:grid-cols-2 gap-2">
+      <!-- タイトルを万車時に変更 -->
       <div class="bg-blue-50 p-3 rounded border border-blue-200 space-y-2">
-        <span class="font-bold text-blue-800 text-sm">📈 予想ライン数 全体分布</span>
+        <span class="font-bold text-blue-800 text-sm">📈 万車時のライン分布</span>
         <div style="height:160px;"><canvas id="lineAllC"></canvas></div>
       </div>
       <div class="bg-purple-50 p-3 rounded border border-purple-200 space-y-2">
@@ -139,7 +153,7 @@ let stg = [], sv = JSON.parse(localStorage.getItem('keirinData') || '[]');
 window.stg = stg;
 window.sv = sv;
 
-// グラフ用変数を追加
+// グラフ用変数
 let cDist, cPay, cTrend, cAna, cMansha, cWinLine, cLineAll, cManshaSiteLine;
 
 window.onload = () => { renderStg(); renderSaved(); window.updateDash(); };
@@ -182,28 +196,23 @@ window.handleImageUpload = async function(e) {
       if (res.order.length > 0) {
         res.order.forEach((o, idx) => {
           stg.push({
-            id: crypto.randomUUID(),
-            raceNo: idx + 1,
-            order: o.cars.join('-'),
+            id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
             payout2: "", payout3: "", racers: "7", winLine: "",
             sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
-            line: "ライン無し"
+            line: "単" // 予想ラインの初期値を「単」に
           });
         });
       }
       if (res.payout.length > 0) {
         res.payout.forEach((p, idx) => {
           if (stg[idx]) {
-            stg[idx].payout2 = p.nirentan;
-            stg[idx].payout3 = p.sanrentan;
+            stg[idx].payout2 = p.nirentan; stg[idx].payout3 = p.sanrentan;
           } else {
             stg.push({
-              id: crypto.randomUUID(),
-              raceNo: idx + 1,
-              order: "",
+              id: crypto.randomUUID(), raceNo: idx + 1, order: "",
               payout2: p.nirentan, payout3: p.sanrentan, racers: "7", winLine: "",
               sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
-              line: "ライン無し"
+              line: "単"
             });
           }
         });
@@ -218,31 +227,27 @@ window.handleImageUpload = async function(e) {
     btn.removeAttribute('disabled');
     alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。`);
   } catch (err) {
-    console.error(err);
-    ov.classList.add('hidden');
-    alert("エラー: " + err.message);
+    console.error(err); ov.classList.add('hidden'); alert("エラー: " + err.message);
   }
 }
 
-// 手動追加（1着ラインを0〜4に変更）
+// 手動追加
 window.addManual = function() {
   let o = document.getElementById('mOrd').value.trim(), 
       p2 = document.getElementById('mP2').value.trim(), 
       p3 = document.getElementById('mP3').value.trim(), 
       r = document.getElementById('mRac').value,
-      wL = document.getElementById('mWinLine').value; // 1着ライン(0〜4)
+      wL = document.getElementById('mWinLine').value; 
       
   if (!o && !p2 && !p3) return alert("入力してください");
   sv.push({
     id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, winLine: wL,
     sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } },
-    line: "ライン無し"
+    line: "単"
   });
   saveLS(); renderSaved(); 
-  document.getElementById('mOrd').value = ''; 
-  document.getElementById('mP2').value = ''; 
-  document.getElementById('mP3').value = '';
-  document.getElementById('mWinLine').value = '';
+  document.getElementById('mOrd').value = ''; document.getElementById('mP2').value = ''; 
+  document.getElementById('mP3').value = ''; document.getElementById('mWinLine').value = '';
 }
 
 window.applyStg = function() {
@@ -255,17 +260,12 @@ window.applyStg = function() {
     };
     sv.push(clean);
   });
-  stg.length = 0;
-  renderStg();
-  saveLS(); 
-  renderSaved();
-  
+  stg.length = 0; renderStg(); saveLS(); renderSaved();
   document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
   document.getElementById('applyBtn').setAttribute('disabled', 'true');
   alert("保存しました！");
 }
 
-// 1着ライン選択肢を 0〜4 に変更
 function winLineSelectHtml(type, i, d) {
   let arr = type === 'stg' ? 'stg' : 'sv';
   let opts = ['0','1','2','3','4'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
@@ -292,7 +292,7 @@ function renderSaved() {
     <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;window.saveLS()" class="border p-1 text-center w-20 rounded"></td>
     <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
     <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
-    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS()" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
+    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${winLineSelectHtml('sv', i, d)}
     ${chkHtml('sv', i, d)}${lineHtml('sv', i, d)}
     <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
@@ -312,40 +312,50 @@ function chkHtml(type, i, d) {
 
 function lineHtml(type, i, d) {
   let arr = type === 'stg' ? 'stg' : 'sv';
-  return `<td><select onchange="window.${arr}[${i}].line=this.value;${type === 'stg' ? '' : 'window.saveLS()'}" class="border p-1 text-xs rounded">${['ライン無し', 'ライン①', 'ライン①②', 'ライン①②③', 'ライン①②③④'].map(l => `<option ${d.line == l ? 'selected' : ''}>${l}</option>`).join('')}</select></td>`;
+  // ★ 予想ラインを「単, 0, 1, 2, 3, 4」に変更
+  let opts = ['単', '0', '1', '2', '3', '4'].map(l => `<option ${d.line == l ? 'selected' : ''}>${l}</option>`).join('');
+  return `<td><select onchange="window.${arr}[${i}].line=this.value;${type === 'stg' ? '' : 'window.saveLS()'}" class="border p-1 text-xs rounded">${opts}</select></td>`;
 }
 
 window.clearAll = function() { if (confirm("本当に全て消去しますか？")) { sv.length = 0; saveLS(); renderSaved(); } }
 window.exportJson = function() { let a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(sv)], { type: 'application/json' })); a.download = 'keirin.json'; a.click(); }
 window.importJson = function(e) { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = ev => { sv.push(...JSON.parse(ev.target.result)); saveLS(); renderSaved(); alert('復元完了'); }; r.readAsText(f); e.target.value = ''; }
 window.updateDash = function() {
-  dTot.innerText = sv.length;
+  let fRac = document.getElementById('dashRacer').value;
+  // ★ 車立フィルターでデータを絞り込み
+  let targetSv = fRac === 'all' ? sv : sv.filter(d => String(d.racers) === fRac);
+  
+  dTot.innerText = targetSv.length;
+  
   let sStat = { B: { bet: 0, hit: 0, mansha: 0 }, Y: { bet: 0, hit: 0, mansha: 0 }, N: { bet: 0, hit: 0, mansha: 0 } };
   let ovMap = { "なし": { c: 0, p3: 0, p2: 0 }, "Bのみ": { c: 0, p3: 0, p2: 0 }, "Yのみ": { c: 0, p3: 0, p2: 0 }, "Nのみ": { c: 0, p3: 0, p2: 0 }, "B+Y": { c: 0, p3: 0, p2: 0 }, "B+N": { c: 0, p3: 0, p2: 0 }, "Y+N": { c: 0, p3: 0, p2: 0 }, "B+Y+N": { c: 0, p3: 0, p2: 0 } };
   let dType = document.querySelector('input[name="dType"]:checked').value;
   
   let distD = {}, o2Set = new Set();
   
-  // 新規集計用変数 (1着ラインは 0〜4 に変更)
+  // 新規集計用変数
   let mansha1st = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
   let winLineCnt = { "0":0, "1":0, "2":0, "3":0, "4":0 }; 
-  let lineAllMap = { 'ライン無し':0, 'ライン①':0, 'ライン①②':0, 'ライン①②③':0, 'ライン①②③④':0 };
+  let lineKeys = ['単', '0', '1', '2', '3', '4'];
+  let lineAllMap = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 };
   let manshaSiteLine = {
-    B: { 'ライン無し':0, 'ライン①':0, 'ライン①②':0, 'ライン①②③':0, 'ライン①②③④':0 },
-    Y: { 'ライン無し':0, 'ライン①':0, 'ライン①②':0, 'ライン①②③':0, 'ライン①②③④':0 },
-    N: { 'ライン無し':0, 'ライン①':0, 'ライン①②':0, 'ライン①②③':0, 'ライン①②③④':0 }
+    B: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 },
+    Y: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 },
+    N: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 }
   };
 
-  sv.forEach(d => {
+  targetSv.forEach(d => {
     let b = d.sites.B.bet, y = d.sites.Y.bet, n = d.sites.N.bet;
     let p3 = parseInt(d.payout3) || 0, p2 = parseInt(d.payout2) || 0, isM = p3 >= 10000 || p2 >= 10000;
     
-    // 全体予想ライン集計
-    if (lineAllMap[d.line] !== undefined) lineAllMap[d.line]++;
-    
-    // 1着ライン集計（★万車の時のみカウントするように変更★）
-    if (isM && d.winLine && winLineCnt[d.winLine] !== undefined) {
-        winLineCnt[d.winLine]++;
+    let cars = (d.order || '').split('-');
+    let c1 = parseInt(cars[0]), c2 = parseInt(cars[1]), c3 = parseInt(cars[2]);
+
+    // ★ 万車の時だけ各ライン・1着車番をカウント
+    if (isM) {
+      if (lineAllMap[d.line] !== undefined) lineAllMap[d.line]++;
+      if (d.winLine && winLineCnt[d.winLine] !== undefined) winLineCnt[d.winLine]++;
+      if (c1 >= 1 && c1 <= 9) mansha1st[c1]++;
     }
 
     ['B', 'Y', 'N'].forEach(s => { 
@@ -364,12 +374,6 @@ window.updateDash = function() {
     if (b && !y && !n) k = "Bのみ"; else if (!b && y && !n) k = "Yのみ"; else if (!b && !y && n) k = "Nのみ";
     else if (b && y && !n) k = "B+Y"; else if (b && !y && n) k = "B+N"; else if (!b && y && n) k = "Y+N"; else if (b && y && n) k = "B+Y+N";
     ovMap[k].c++; ovMap[k].p3 += p3; ovMap[k].p2 += p2;
-
-    let cars = (d.order || '').split('-');
-    let c1 = parseInt(cars[0]), c2 = parseInt(cars[1]), c3 = parseInt(cars[2]);
-    
-    // 万車時の1着車番を集計
-    if (p3 >= 10000 && c1 >= 1 && c1 <= 9) mansha1st[c1]++;
 
     if (!isNaN(c1) && !isNaN(c2)) {
       o2Set.add(`${c1}-${c2}`);
@@ -399,7 +403,7 @@ window.updateDash = function() {
     options: intYAxisNoLeg
   });
 
-  // 2. 1着ライン分布 (0〜4、万車時のみ)
+  // 2. 1着ライン分布 (0〜4、万車時)
   if (cWinLine) cWinLine.destroy();
   cWinLine = new Chart(document.getElementById('winLineC').getContext('2d'), {
     type: 'bar',
@@ -407,13 +411,11 @@ window.updateDash = function() {
     options: intYAxisNoLeg
   });
 
-  let lineKeys = ['ライン無し', 'ライン①', 'ライン①②', 'ライン①②③', 'ライン①②③④'];
-
-  // 3. 全体ライン分布
+  // 3. 全体ライン分布 (万車時)
   if (cLineAll) cLineAll.destroy();
   cLineAll = new Chart(document.getElementById('lineAllC').getContext('2d'), {
     type: 'bar',
-    data: { labels: lineKeys, datasets: [{ label: '予想回数', data: lineKeys.map(k=>lineAllMap[k]), backgroundColor: '#3b82f6' }] },
+    data: { labels: lineKeys, datasets: [{ label: '万車時のライン回数', data: lineKeys.map(k=>lineAllMap[k]), backgroundColor: '#3b82f6' }] },
     options: intYAxisNoLeg
   });
 
@@ -488,8 +490,20 @@ window.updateDash = function() {
 }
 
 window.updateTrend = function() {
+  let fRac = document.getElementById('dashRacer').value;
+  let targetSv = fRac === 'all' ? sv : sv.filter(d => String(d.racers) === fRac);
   let t2 = trendSel.value, cnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
-  if (t2) { sv.forEach(d => { let c = (d.order || '').split('-'); if (c.length >= 3 && `${c[0]}-${c[1]}` === t2) { let c3 = +c[2]; if (c3 >= 1 && c3 <= 9) cnt[c3]++; } }); }
+  
+  if (t2) { 
+    targetSv.forEach(d => { 
+      let c = (d.order || '').split('-'); 
+      if (c.length >= 3 && `${c[0]}-${c[1]}` === t2) { 
+        let c3 = +c[2]; 
+        if (c3 >= 1 && c3 <= 9) cnt[c3]++; 
+      } 
+    }); 
+  }
+  
   if (cTrend) cTrend.destroy();
   cTrend = new Chart(trendC.getContext('2d'), {
     type: 'bar',
