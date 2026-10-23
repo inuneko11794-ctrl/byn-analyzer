@@ -42,7 +42,12 @@
                 <input type="number" id="manual-payout2" placeholder="2連単(円)" class="border p-2 rounded w-full">
                 <input type="number" id="manual-payout3" placeholder="3連単(円)" class="border p-2 rounded w-full">
                 <select id="manual-racers" class="border p-2 rounded w-full">
-                    <option value="">車立</option><option value="9">9車</option><option value="7">7車</option><option value="5">5車</option>
+                    <option value="">車立</option>
+                    <option value="9">9車</option>
+                    <option value="8">8車</option>
+                    <option value="7">7車</option>
+                    <option value="6">6車</option>
+                    <option value="5">5車</option>
                 </select>
                 <input type="number" id="manual-bets" placeholder="買目(点)" class="border p-2 rounded w-full">
                 <button class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2 md:col-span-5" onclick="addManualData()">↓ 直接追加</button>
@@ -301,7 +306,14 @@
             const siteChk = (site) => `<div class="site-checkboxes"><label><input type="checkbox" ${d.sites[site].bet?'checked':''} onchange="updateSite('${type}','${d.id||i}','${site}','bet',this.checked)">予</label><label><input type="checkbox" ${d.sites[site].hit?'checked':''} onchange="updateSite('${type}','${d.id||i}','${site}','hit',this.checked)">的</label></div>`;
             return `<tr>
                 <td>${mkInp(d.order, 'order', '20')}</td><td>${mkInp(d.payout2, 'payout2', '24')}</td><td>${mkInp(d.payout3, 'payout3', '24')}</td>
-                <td><select onchange="${upd}'racers',this.value)" class="border p-1 rounded"><option value="" ${d.racers===''?'selected':''}>-</option><option value="9" ${d.racers==='9'?'selected':''}>9車</option><option value="7" ${d.racers==='7'?'selected':''}>7車</option><option value="5" ${d.racers==='5'?'selected':''}>5車</option></select></td>
+                <td><select onchange="${upd}'racers',this.value)" class="border p-1 rounded">
+                    <option value="" ${d.racers===''?'selected':''}>-</option>
+                    <option value="9" ${d.racers==='9'?'selected':''}>9車</option>
+                    <option value="8" ${d.racers==='8'?'selected':''}>8車</option>
+                    <option value="7" ${d.racers==='7'?'selected':''}>7車</option>
+                    <option value="6" ${d.racers==='6'?'selected':''}>6車</option>
+                    <option value="5" ${d.racers==='5'?'selected':''}>5車</option>
+                </select></td>
                 <td>${mkInp(d.bets, 'bets', '16')}</td><td>${siteChk('B')}</td><td>${siteChk('Y')}</td><td>${siteChk('N')}</td>
                 <td><select onchange="${upd}'line',this.value)" class="border p-1 rounded">${['ライン無し','ライン①','ライン①②','ライン①②③','ライン①②③④'].map(l=>`<option value="${l}" ${d.line===l?'selected':''}>${l}</option>`).join('')}</select></td>
                 <td><button class="bg-red-500 text-white px-2 py-1 rounded text-xs" onclick="deleteData('${type}','${d.id||i}')">✖</button></td>
