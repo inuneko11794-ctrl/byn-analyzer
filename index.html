@@ -23,6 +23,7 @@
     </div>
     <div class="max-w-6xl mx-auto space-y-4">
         <h1 class="text-xl md:text-2xl font-bold text-center text-blue-700">🚴‍♂️ BYN3サイト寄れば文殊超え</h1>
+
         <!-- 1. 画像読み込みエリア -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">➕ スクショから一括取り込み</h2>
@@ -33,7 +34,7 @@
             </div>
         </div>
 
-        <!-- 2. 別経路：1レースだけの独立した手動入力欄 -->
+        <!-- 2. 手動入力欄 -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">✍️ 手動で1レース追加 (別経路)</h2>
             <div class="grid grid-cols-2 md:grid-cols-5 gap-2 items-center">
@@ -47,11 +48,12 @@
                 <button class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 col-span-2 md:col-span-5" onclick="addManualData()">↓ 直接追加</button>
             </div>
         </div>
-        <!-- 3. プレビュー / 結びつき確認エリア -->
+
+        <!-- 3. プレビューエリア -->
         <div class="bg-white p-4 rounded-lg shadow">
             <div class="flex flex-wrap justify-between items-center mb-2 gap-2">
                 <h2 class="text-lg font-bold">📝 読み込みプレビュー (<span id="staging-count">0</span>件)</h2>
-                <button id="apply-btn" class="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 opacity-50 cursor-not-allowed" onclick="applyStaging()" disabled>💾 この内容を足す (appendMany)</button>
+                <button id="apply-btn" class="bg-green-500 text-white px-4 py-2 rounded shadow hover:bg-green-600 opacity-50 cursor-not-allowed" onclick="applyStaging()" disabled>💾 この内容を足す</button>
             </div>
             <div class="table-wrapper">
                 <table id="staging-table">
@@ -65,15 +67,31 @@
                 </table>
             </div>
         </div>
-        <!-- 4. ダッシュボード (万車回数 & サイト被り分析) -->
+        <!-- 4. ダッシュボード (的中率・万車回数 & サイト被り分析) -->
         <div class="bg-white p-4 rounded-lg shadow">
-            <h2 class="text-lg font-bold border-b pb-2 mb-4">📊 サイト被り別 配当分析</h2>
+            <h2 class="text-lg font-bold border-b pb-2 mb-4">📊 分析ダッシュボード</h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
-                <div class="bg-gray-50 border p-3 rounded text-center"><div class="text-xs text-gray-500">保存済レース</div><div class="text-xl font-bold text-blue-600" id="dash-total-races">0</div></div>
-                <div class="bg-green-50 border-green-200 border p-3 rounded text-center"><div class="text-xs text-green-700">B 万車的中</div><div class="text-xl font-bold text-green-700" id="dash-b-mansha">0回</div></div>
-                <div class="bg-orange-50 border-orange-200 border p-3 rounded text-center"><div class="text-xs text-orange-700">Y 万車的中</div><div class="text-xl font-bold text-orange-600" id="dash-y-mansha">0回</div></div>
-                <div class="bg-red-50 border-red-200 border p-3 rounded text-center"><div class="text-xs text-red-700">N 万車的中</div><div class="text-xl font-bold text-red-600" id="dash-n-mansha">0回</div></div>
+                <div class="bg-gray-50 border p-3 rounded text-center">
+                    <div class="text-xs text-gray-500">保存済レース</div>
+                    <div class="text-xl font-bold text-blue-600" id="dash-total-races">0</div>
+                </div>
+                <div class="bg-green-50 border-green-200 border p-3 rounded text-center">
+                    <div class="text-xs text-gray-500">Bサイト 的中率</div>
+                    <div class="text-xl font-bold text-green-700" id="dash-b-hitrate">0%</div>
+                    <div class="text-xs text-green-600 mt-1 font-bold" id="dash-b-mansha">万車: 0回</div>
+                </div>
+                <div class="bg-orange-50 border-orange-200 border p-3 rounded text-center">
+                    <div class="text-xs text-gray-500">Yサイト 的中率</div>
+                    <div class="text-xl font-bold text-orange-600" id="dash-y-hitrate">0%</div>
+                    <div class="text-xs text-orange-500 mt-1 font-bold" id="dash-y-mansha">万車: 0回</div>
+                </div>
+                <div class="bg-red-50 border-red-200 border p-3 rounded text-center">
+                    <div class="text-xs text-gray-500">Nサイト 的中率</div>
+                    <div class="text-xl font-bold text-red-600" id="dash-n-hitrate">0%</div>
+                    <div class="text-xs text-red-500 mt-1 font-bold" id="dash-n-mansha">万車: 0回</div>
+                </div>
             </div>
+            <h3 class="text-md font-bold text-gray-700 mb-2">▼ サイト被り別の配当</h3>
             <div class="overflow-x-auto mb-4">
                 <table class="w-full min-w-[600px] border-collapse text-sm">
                     <thead>
@@ -89,6 +107,7 @@
             </div>
             <div style="height: 300px;"><canvas id="analysisChart"></canvas></div>
         </div>
+
         <!-- 5. 保存済みデータ一覧 -->
         <div class="bg-white p-4 rounded-lg shadow mb-10">
             <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
@@ -255,7 +274,6 @@
             applyBtn.classList.add('opacity-50', 'cursor-not-allowed'); applyBtn.setAttribute('disabled', 'true');
             renderStaging(); renderSavedData(); alert("記録の一覧へ全レースを追加しました！");
         }
-
         function addManualData() {
             const order = document.getElementById('manual-order').value.trim(), p2 = document.getElementById('manual-payout2').value.trim(), p3 = document.getElementById('manual-payout3').value.trim();
             const r = document.getElementById('manual-racers').value, b = document.getElementById('manual-bets').value.trim();
@@ -268,6 +286,7 @@
             saveToLocalStorage(); renderSavedData();
             ['manual-order', 'manual-payout2', 'manual-payout3', 'manual-bets'].forEach(id => document.getElementById(id).value = '');
         }
+
         function renderStaging() {
             document.getElementById('staging-count').innerText = stagingData.length;
             document.querySelector('#staging-table tbody').innerHTML = stagingData.map((d, i) => generateRow(d, 'staging', i)).join('');
@@ -296,11 +315,17 @@
         function clearAllData() { if(confirm('全て消去しますか？')) { savedData = []; saveToLocalStorage(); renderSavedData(); } }
         function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(savedData)], {type:'application/json'})); a.download = 'keirin_backup.json'; a.click(); }
         function importData(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { savedData = [...savedData, ...JSON.parse(ev.target.result)]; saveToLocalStorage(); renderSavedData(); alert('復元しました'); }; r.readAsText(f); e.target.value = ''; }
-
+        // 的中率・万車回数・サイト被りごとの配当分析ロジック
         function updateDashboard() {
             document.getElementById('dash-total-races').innerText = savedData.length;
-            const mansha = { B: 0, Y: 0, N: 0 };
-            const stats = {
+            
+            const siteStats = {
+                B: { bet: 0, hit: 0, mansha: 0 },
+                Y: { bet: 0, hit: 0, mansha: 0 },
+                N: { bet: 0, hit: 0, mansha: 0 }
+            };
+
+            const overlapStats = {
                 "なし": { count: 0, p3Sum: 0, p2Sum: 0 },
                 "Bのみ": { count: 0, p3Sum: 0, p2Sum: 0 },
                 "Yのみ": { count: 0, p3Sum: 0, p2Sum: 0 },
@@ -313,12 +338,20 @@
 
             savedData.forEach(d => {
                 const b = d.sites.B.bet, y = d.sites.Y.bet, n = d.sites.N.bet;
+                const hitB = d.sites.B.hit, hitY = d.sites.Y.hit, hitN = d.sites.N.hit;
                 const p3 = parseInt(d.payout3) || 0;
                 const p2 = parseInt(d.payout2) || 0;
                 
-                // 万車カウント (的中にチェックがあり、かつ配当が10000円以上)
+                // 万車判定 (配当が10,000円以上)
                 const isMansha = p3 >= 10000 || p2 >= 10000;
-                ['B','Y','N'].forEach(s => { if(d.sites[s].hit && isMansha) mansha[s]++; });
+
+                ['B', 'Y', 'N'].forEach(s => {
+                    if (d.sites[s].bet) siteStats[s].bet++;
+                    if (d.sites[s].hit) {
+                        siteStats[s].hit++;
+                        if (isMansha) siteStats[s].mansha++;
+                    }
+                });
 
                 // 被り集計
                 let key = "なし";
@@ -326,19 +359,24 @@
                 else if (b && y && !n) key = "B+Y"; else if (b && !y && n) key = "B+N"; else if (!b && y && n) key = "Y+N";
                 else if (b && y && n) key = "B+Y+N";
 
-                stats[key].count++;
-                stats[key].p3Sum += p3;
-                stats[key].p2Sum += p2;
+                overlapStats[key].count++;
+                overlapStats[key].p3Sum += p3;
+                overlapStats[key].p2Sum += p2;
             });
 
-            document.getElementById('dash-b-mansha').innerText = mansha.B + '回';
-            document.getElementById('dash-y-mansha').innerText = mansha.Y + '回';
-            document.getElementById('dash-n-mansha').innerText = mansha.N + '回';
+            // 的中率と万車回数の表示更新
+            ['b', 'y', 'n'].forEach(s => {
+                const S = s.toUpperCase();
+                const rate = siteStats[S].bet > 0 ? Math.round((siteStats[S].hit / siteStats[S].bet) * 100) : 0;
+                document.getElementById(`dash-${s}-hitrate`).innerText = rate + '%';
+                document.getElementById(`dash-${s}-mansha`).innerText = `万車: ${siteStats[S].mansha}回`;
+            });
 
-            const labels = Object.keys(stats);
-            const avgP3 = labels.map(k => stats[k].count > 0 ? Math.round(stats[k].p3Sum / stats[k].count) : 0);
-            const sumP2 = labels.map(k => stats[k].p2Sum);
-            const counts = labels.map(k => stats[k].count);
+            // 表とグラフの描画
+            const labels = Object.keys(overlapStats);
+            const avgP3 = labels.map(k => overlapStats[k].count > 0 ? Math.round(overlapStats[k].p3Sum / overlapStats[k].count) : 0);
+            const sumP2 = labels.map(k => overlapStats[k].p2Sum);
+            const counts = labels.map(k => overlapStats[k].count);
 
             document.getElementById('dash-tbody').innerHTML = labels.map((k, i) => `
                 <tr>
