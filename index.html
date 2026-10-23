@@ -65,9 +65,15 @@
                 </table>
             </div>
         </div>
-        <!-- 4. ダッシュボード (サイト被りごとの配当分析) -->
+        <!-- 4. ダッシュボード (万車回数 & サイト被り分析) -->
         <div class="bg-white p-4 rounded-lg shadow">
             <h2 class="text-lg font-bold border-b pb-2 mb-4">📊 サイト被り別 配当分析</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                <div class="bg-gray-50 border p-3 rounded text-center"><div class="text-xs text-gray-500">保存済レース</div><div class="text-xl font-bold text-blue-600" id="dash-total-races">0</div></div>
+                <div class="bg-green-50 border-green-200 border p-3 rounded text-center"><div class="text-xs text-green-700">B 万車的中</div><div class="text-xl font-bold text-green-700" id="dash-b-mansha">0回</div></div>
+                <div class="bg-orange-50 border-orange-200 border p-3 rounded text-center"><div class="text-xs text-orange-700">Y 万車的中</div><div class="text-xl font-bold text-orange-600" id="dash-y-mansha">0回</div></div>
+                <div class="bg-red-50 border-red-200 border p-3 rounded text-center"><div class="text-xs text-red-700">N 万車的中</div><div class="text-xl font-bold text-red-600" id="dash-n-mansha">0回</div></div>
+            </div>
             <div class="overflow-x-auto mb-4">
                 <table class="w-full min-w-[600px] border-collapse text-sm">
                     <thead>
@@ -291,8 +297,9 @@
         function exportData() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(savedData)], {type:'application/json'})); a.download = 'keirin_backup.json'; a.click(); }
         function importData(e) { const f = e.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (ev) => { savedData = [...savedData, ...JSON.parse(ev.target.result)]; saveToLocalStorage(); renderSavedData(); alert('復元しました'); }; r.readAsText(f); e.target.value = ''; }
 
-        // ダッシュボード更新処理 (的中率を廃止し、被りごとの平均配当・合計値へ)
         function updateDashboard() {
+            document.getElementById('dash-total-races').innerText = savedData.length;
+            const mansha = { B: 0, Y: 0, N: 0 };
             const stats = {
                 "なし": { count: 0, p3Sum: 0, p2Sum: 0 },
                 "Bのみ": { count: 0, p3Sum: 0, p2Sum: 0 },
@@ -306,15 +313,27 @@
 
             savedData.forEach(d => {
                 const b = d.sites.B.bet, y = d.sites.Y.bet, n = d.sites.N.bet;
+                const p3 = parseInt(d.payout3) || 0;
+                const p2 = parseInt(d.payout2) || 0;
+                
+                // 万車カウント (的中にチェックがあり、かつ配当が10000円以上)
+                const isMansha = p3 >= 10000 || p2 >= 10000;
+                ['B','Y','N'].forEach(s => { if(d.sites[s].hit && isMansha) mansha[s]++; });
+
+                // 被り集計
                 let key = "なし";
                 if (b && !y && !n) key = "Bのみ"; else if (!b && y && !n) key = "Yのみ"; else if (!b && !y && n) key = "Nのみ";
                 else if (b && y && !n) key = "B+Y"; else if (b && !y && n) key = "B+N"; else if (!b && y && n) key = "Y+N";
                 else if (b && y && n) key = "B+Y+N";
 
                 stats[key].count++;
-                stats[key].p3Sum += parseInt(d.payout3) || 0;
-                stats[key].p2Sum += parseInt(d.payout2) || 0;
+                stats[key].p3Sum += p3;
+                stats[key].p2Sum += p2;
             });
+
+            document.getElementById('dash-b-mansha').innerText = mansha.B + '回';
+            document.getElementById('dash-y-mansha').innerText = mansha.Y + '回';
+            document.getElementById('dash-n-mansha').innerText = mansha.N + '回';
 
             const labels = Object.keys(stats);
             const avgP3 = labels.map(k => stats[k].count > 0 ? Math.round(stats[k].p3Sum / stats[k].count) : 0);
