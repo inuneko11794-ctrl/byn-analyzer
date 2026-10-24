@@ -61,7 +61,7 @@
   </div>
 </details>
 
-<!-- 4. ダッシュボード前半 -->
+<!-- 4. ダッシュボード -->
 <details class="bg-white rounded shadow group" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
     <div class="flex items-center gap-2"><span>📊 究極分析ダッシュボード</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
@@ -86,45 +86,41 @@
       <div class="bg-orange-50 p-2 rounded border border-orange-200"><div class="text-xs text-gray-500">Y的軍</div><div id="dYHit" class="font-bold text-orange-600">0%</div><div id="dYMansha" class="text-xs text-orange-500">万車:0</div></div>
       <div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
     </div>
+
     <div class="grid md:grid-cols-2 gap-2">
       <div class="bg-red-50 p-3 rounded border border-red-200 space-y-2">
-        <span class="font-bold text-red-800 text-sm">🔥 万車時の1着車番</span>
+        <div class="border-b-2 border-red-200 pb-1">
+          <span class="font-bold text-red-800 text-sm">🔥 万車時の1着車番</span>
+          <p class="text-[10px] text-red-600 mt-1">① 万車券になったレースで、どの車番が1着に来やすいかの傾向です。</p>
+        </div>
         <div style="height:140px;"><canvas id="manshaC"></canvas></div>
       </div>
       <div class="bg-yellow-50 p-3 rounded border border-yellow-200 space-y-2">
-        <span class="font-bold text-yellow-800 text-sm">🏆 万車時の1着ライン</span>
+        <div class="border-b-2 border-yellow-200 pb-1">
+          <span class="font-bold text-yellow-800 text-sm">🏆 万車時の1着ライン</span>
+          <p class="text-[10px] text-yellow-700 mt-1">② 全データの中で、1着になったライン（単〜4）の全体割合です。</p>
+        </div>
         <div style="height:140px;"><canvas id="winLineC"></canvas></div>
       </div>
     </div>
 
     <div class="grid md:grid-cols-2 gap-2">
       <div class="bg-blue-50 p-3 rounded border border-blue-200 space-y-2">
-        <span class="font-bold text-blue-800 text-sm">📈 万車時のライン分布</span>
+        <div class="border-b-2 border-blue-200 pb-1">
+          <span class="font-bold text-blue-800 text-sm">📈 万車時のライン分布</span>
+          <p class="text-[10px] text-blue-600 mt-1">③ 万車券になったレース限定での、1着ラインの分布状況です。</p>
+        </div>
         <div style="height:160px;"><canvas id="lineAllC"></canvas></div>
       </div>
       <div class="bg-purple-50 p-3 rounded border border-purple-200 space-y-2">
-        <span class="font-bold text-purple-800 text-sm">🎯 サイト別 万車的中時のライン数</span>
+        <div class="border-b-2 border-purple-200 pb-1">
+          <span class="font-bold text-purple-800 text-sm">🎯 サイト別 万車的中時のライン</span>
+          <p class="text-[10px] text-purple-600 mt-1">④ B/Y/N軍がそれぞれ万車券を当てた時、どのラインだったかを示します。</p>
+        </div>
         <div style="height:160px;"><canvas id="manshaSiteLineC"></canvas></div>
       </div>
     </div>
-    <div class="bg-gray-50 p-3 rounded border">
-      <div class="flex justify-between mb-2 text-sm font-bold"><span class="text-gray-700">📈 合計値分布＆配当</span><label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum2" checked onchange="window.updateDash()">2連単</label><label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum3" onchange="window.updateDash()">3連単</label></div>
-      <div class="grid md:grid-cols-2 gap-2"><div style="height:200px"><canvas id="distC"></canvas></div><div style="height:200px"><canvas id="payC"></canvas></div></div>
-    </div>
-
-    <div class="bg-indigo-50 p-3 rounded border border-indigo-100 space-y-2">
-      <div class="flex items-center gap-2">
-        <span class="font-bold text-indigo-800 text-sm whitespace-nowrap">3着傾向:</span>
-        <select id="trendSel" onchange="window.updateTrend()" class="border p-1 text-sm bg-white rounded font-bold w-full"><option value="">2車単を選択してください</option></select>
-      </div>
-      <div class="w-full overflow-hidden" style="height:160px;"><canvas id="trendC"></canvas></div>
-    </div>
-
-    <div class="overflow-x-auto"><table class="w-full min-w-[500px] text-center border-collapse text-xs"><thead><tr class="bg-gray-100"><th class="border p-1">被り状況</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead><tbody id="dashTbody"></tbody></table></div>
-    <div style="height:200px"><canvas id="anaC"></canvas></div>
-  </div>
-</details>
-
+    
 <!-- 5. 保存済み一覧 -->
 <details class="bg-white rounded shadow group mb-10" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
