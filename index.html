@@ -50,7 +50,6 @@
     </div>
   </div>
 </details>
-
 <!-- 3. プレビュー -->
 <details class="bg-white rounded shadow group" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
@@ -62,7 +61,7 @@
   </div>
 </details>
 
-<!-- 4. ダッシュボード -->
+<!-- 4. ダッシュボード前半 -->
 <details class="bg-white rounded shadow group" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
     <div class="flex items-center gap-2"><span>📊 究極分析ダッシュボード</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
@@ -87,7 +86,6 @@
       <div class="bg-orange-50 p-2 rounded border border-orange-200"><div class="text-xs text-gray-500">Y的軍</div><div id="dYHit" class="font-bold text-orange-600">0%</div><div id="dYMansha" class="text-xs text-orange-500">万車:0</div></div>
       <div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
     </div>
-
     <div class="grid md:grid-cols-2 gap-2">
       <div class="bg-red-50 p-3 rounded border border-red-200 space-y-2">
         <span class="font-bold text-red-800 text-sm">🔥 万車時の1着車番</span>
@@ -109,7 +107,6 @@
         <div style="height:160px;"><canvas id="manshaSiteLineC"></canvas></div>
       </div>
     </div>
-
     <div class="bg-gray-50 p-3 rounded border">
       <div class="flex justify-between mb-2 text-sm font-bold"><span class="text-gray-700">📈 合計値分布＆配当</span><label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum2" checked onchange="window.updateDash()">2連単</label><label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum3" onchange="window.updateDash()">3連単</label></div>
       <div class="grid md:grid-cols-2 gap-2"><div style="height:200px"><canvas id="distC"></canvas></div><div style="height:200px"><canvas id="payC"></canvas></div></div>
@@ -156,7 +153,7 @@ let cDist, cPay, cTrend, cAna, cMansha, cWinLine, cLineAll, cManshaSiteLine;
 window.onload = () => { renderStg(); renderSaved(); window.updateDash(); };
 function saveLS() { localStorage.setItem('keirinData', JSON.stringify(sv)); window.updateDash(); }
 
-// 【万車券自動チェック】
+// --- 🎯 万車券の自動チェック ---
 window.autoCheckHit = function(arrName, i) {
   let item = window[arrName][i];
   if (!item) return;
@@ -178,6 +175,7 @@ window.autoCheckHit = function(arrName, i) {
   }
 }
 
+// --- 📸 画像解析処理 ---
 window.handleImageUpload = async function(e) {
   let files = Array.from(e.target.files);
   if (!files.length) return;
@@ -194,7 +192,7 @@ window.handleImageUpload = async function(e) {
         res.order.forEach((o, idx) => {
           stg.push({
             id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
-            payout2: "", payout3: "", racers: "7", winLine: "単", // 初期値を「単」に
+            payout2: "", payout3: "", racers: "7", winLine: "単",
             sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
           });
         });
@@ -226,7 +224,7 @@ window.handleImageUpload = async function(e) {
   }
 }
 
-// 手動追加
+// --- ✍️ 手動追加処理 ---
 window.addManual = function() {
   let o = document.getElementById('mOrd').value.trim(), 
       p2 = document.getElementById('mP2').value.trim(), 
@@ -244,6 +242,7 @@ window.addManual = function() {
   document.getElementById('mP3').value = ''; document.getElementById('mWinLine').value = '';
 }
 
+// --- 📝 プレビューから保存 ---
 window.applyStg = function() {
   if (!stg.length) return;
   stg.forEach(d => {
@@ -259,12 +258,20 @@ window.applyStg = function() {
   document.getElementById('applyBtn').setAttribute('disabled', 'true');
   alert("保存しました！");
 }
-
-// ★ 1着ラインの選択肢を「単, 0, 1, 2, 3, 4」に変更
+// --- 🎨 表の描画パーツ・描画処理 ---
 function winLineSelectHtml(type, i, d) {
   let arr = type === 'stg' ? 'stg' : 'sv';
   let opts = ['単','0','1','2','3','4'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
   return `<td><select onchange="window.${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved();'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
+}
+
+function chkHtml(type, i, d) {
+  let arr = type === 'stg' ? 'stg' : 'sv';
+  let updateSv = type === 'sv' ? 'window.saveLS();' : '';
+  return ['B', 'Y', 'N'].map(s => `<td>
+    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${arr}', ${i}); ${updateSv}">予</label>
+    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
+  </td>`).join('');
 }
 
 function renderStg() {
@@ -274,7 +281,7 @@ function renderStg() {
     <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
     <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
     <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
-    <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
+    <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${winLineSelectHtml('stg', i, d)}
     ${chkHtml('stg', i, d)}
     <td><button onclick="window.stg.splice(${i},1);window.renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
@@ -287,7 +294,7 @@ function renderSaved() {
     <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;window.saveLS()" class="border p-1 text-center w-20 rounded"></td>
     <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
     <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
-    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option ${d.racers == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
+    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${winLineSelectHtml('sv', i, d)}
     ${chkHtml('sv', i, d)}
     <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
@@ -296,22 +303,14 @@ function renderSaved() {
 window.renderSaved = renderSaved;
 window.saveLS = saveLS;
 
-function chkHtml(type, i, d) {
-  let arr = type === 'stg' ? 'stg' : 'sv';
-  let updateSv = type === 'sv' ? 'window.saveLS();' : '';
-  return ['B', 'Y', 'N'].map(s => `<td>
-    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${arr}', ${i}); ${updateSv}">予</label>
-    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
-  </td>`).join('');
-}
-
+// --- ⚙️ その他ツール ---
 window.clearAll = function() { if (confirm("本当に全て消去しますか？")) { sv.length = 0; saveLS(); renderSaved(); } }
 window.exportJson = function() { let a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(sv)], { type: 'application/json' })); a.download = 'keirin.json'; a.click(); }
 window.importJson = function(e) { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = ev => { sv.push(...JSON.parse(ev.target.result)); saveLS(); renderSaved(); alert('復元完了'); }; r.readAsText(f); e.target.value = ''; }
+// --- 📊 ダッシュボード・グラフ更新処理 ---
 window.updateDash = function() {
   let fRac = document.getElementById('dashRacer').value;
-  // ★ 車立フィルターでデータを絞り込み
-  let targetSv = fRac === 'all' ? sv : sv.filter(d => String(d.racers) === fRac);
+  let targetSv = fRac === 'all' ? sv : sv.filter(d => String(d.racers).replace('車', '') === fRac);
   
   dTot.innerText = targetSv.length;
   
@@ -321,11 +320,10 @@ window.updateDash = function() {
   
   let distD = {}, o2Set = new Set();
   
-  // 新規集計用変数 (予想ラインと1着ラインを統合: 単, 0, 1, 2, 3, 4)
   let mansha1st = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
   let lineKeys = ['単', '0', '1', '2', '3', '4'];
-  let winLineAll = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 };    // 全体の1着ライン
-  let winLineMansha = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 }; // 万車時の1着ライン
+  let winLineAll = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 };    
+  let winLineMansha = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 }; 
   let manshaSiteLine = {
     B: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 },
     Y: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 },
@@ -339,10 +337,8 @@ window.updateDash = function() {
     let cars = (d.order || '').split('-');
     let c1 = parseInt(cars[0]), c2 = parseInt(cars[1]), c3 = parseInt(cars[2]);
 
-    // 1着ラインの全体集計
     if (d.winLine && winLineAll[d.winLine] !== undefined) winLineAll[d.winLine]++;
 
-    // ★ 万車の時だけ各ライン・1着車番をカウント
     if (isM) {
       if (c1 >= 1 && c1 <= 9) mansha1st[c1]++;
       if (d.winLine && winLineMansha[d.winLine] !== undefined) winLineMansha[d.winLine]++;
@@ -354,7 +350,6 @@ window.updateDash = function() {
         sStat[s].hit++; 
         if (isM) {
           sStat[s].mansha++;
-          // サイト別万車的中時のライン集計 (winLineから取得)
           if(d.winLine && manshaSiteLine[s][d.winLine] !== undefined) manshaSiteLine[s][d.winLine]++;
         }
       } 
@@ -385,7 +380,6 @@ window.updateDash = function() {
   const intYAxis = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { position: 'bottom' } } };
   const intYAxisNoLeg = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } };
 
-  // 1. 万車時1着車番
   if (cMansha) cMansha.destroy();
   cMansha = new Chart(document.getElementById('manshaC').getContext('2d'), {
     type: 'bar',
@@ -393,7 +387,6 @@ window.updateDash = function() {
     options: intYAxisNoLeg
   });
 
-  // 2. 1着ライン分布 (全体)
   if (cWinLine) cWinLine.destroy();
   cWinLine = new Chart(document.getElementById('winLineC').getContext('2d'), {
     type: 'bar',
@@ -401,7 +394,6 @@ window.updateDash = function() {
     options: intYAxisNoLeg
   });
 
-  // 3. 万車時のライン分布
   if (cLineAll) cLineAll.destroy();
   cLineAll = new Chart(document.getElementById('lineAllC').getContext('2d'), {
     type: 'bar',
@@ -409,7 +401,6 @@ window.updateDash = function() {
     options: intYAxisNoLeg
   });
 
-  // 4. サイト別万車時ライン分布
   if (cManshaSiteLine) cManshaSiteLine.destroy();
   cManshaSiteLine = new Chart(document.getElementById('manshaSiteLineC').getContext('2d'), {
     type: 'bar',
@@ -481,7 +472,7 @@ window.updateDash = function() {
 
 window.updateTrend = function() {
   let fRac = document.getElementById('dashRacer').value;
-  let targetSv = fRac === 'all' ? sv : sv.filter(d => String(d.racers) === fRac);
+  let targetSv = fRac === 'all' ? sv : sv.filter(d => String(d.racers).replace('車', '') === fRac);
   let t2 = trendSel.value, cnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
   
   if (t2) { 
