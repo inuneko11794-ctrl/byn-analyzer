@@ -23,7 +23,6 @@ var TECH_BITS = {
 
 var DIGIT_TEMPLATES = Object.entries(DIGIT_BITS).map(([ch, bits]) => ({ ch, grid: unpack(bits, DIGIT_W, DIGIT_H) }));
 var TECH_TEMPLATES = Object.entries(TECH_BITS).map(([ch, bits]) => ({ ch, grid: unpack(bits, TECH_W, TECH_H) }));
-
 function unpack(bits, w, h) {
   const grid = [];
   for (let y = 0; y < h; y++) grid.push(bits.slice(y * w, y * w + w).split("").map((c) => c === "1" ? 1 : 0));
@@ -128,14 +127,14 @@ function components(img, x0, x1, y0, y1, dark) {
 function normalize(comp, w, h) {
   const bw = Math.max(1, comp.x1 - comp.x + 1);
   const bh = Math.max(1, comp.y1 - comp.y + 1);
-  const pts = new Set(comp.pts.map(([x, y]) => `\( ${x}, \)${y}`));
+  const pts = new Set(comp.pts.map(([x, y]) => `${x},${y}`));
   const grid = [];
   for (let gy = 0; gy < h; gy++) {
     const row = [];
     for (let gx = 0; gx < w; gx++) {
       const sx = comp.x + Math.floor((gx + 0.5) * bw / w);
       const sy = comp.y + Math.floor((gy + 0.5) * bh / h);
-      row.push(pts.has(`\( ${sx}, \)${sy}`) ? 1 : 0);
+      row.push(pts.has(`${sx},${sy}`) ? 1 : 0);
     }
     grid.push(row);
   }
@@ -380,7 +379,7 @@ function readOrder(img) {
   }
   return rows;
 }
-export function ingestShot(img) {
+function ingestShot(img) {
   const order = readOrder(img);
   const payout = readPayout(img);
   let kind = "unknown";
@@ -388,23 +387,6 @@ export function ingestShot(img) {
   else if (payout.length >= 4) kind = "payout";
   return { kind, order, payout };
 }
-export async function rasterOf(file) {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const img = new Image();
-    img.onload = () => {
-      const cvs = document.createElement("canvas");
-      cvs.width = img.width;
-      cvs.height = img.height;
-      const ctx = cvs.getContext("2d");
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      resolve(ctx.getImageData(0, 0, img.width, img.height));
-    };
-    img.src = url;
-  });
-}
-// --- read-shot.js の一番下に追記 ---
 async function rasterOf(file) {
   const bitmap = await createImageBitmap(file);
   const canvas = document.createElement("canvas");
