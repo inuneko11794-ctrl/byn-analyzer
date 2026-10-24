@@ -202,6 +202,72 @@ window.autoCheckHit = function(arrName, i) {
     else { saveLS(); renderSaved(); }
   }
 }
+  // --- 📸 画像解析処理（ペースト貼り付け対応版） ---
+window.handleImageUpload = async function(e) {
+  let files = [];
+  
+  // スマホやPCの「クリップボードからの貼り付け（ペースト）」に対応
+  if (e.type === 'paste') {
+    let items = e.clipboardData.items;
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf('image') !== -1) {
+        files.push(items[i].getAsFile());
+      }
+    }
+  } else {
+    // 通常のファイル選択やドロップ
+    files = Array.from(e.target.files || (e.dataTransfer && e.dataTransfer.files) || []);
+  }
+
+  if (!files.length) return;
+  let ov = document.getElementById('loading');
+  ov.classList.remove('hidden');
+
+  try {
+    stg.length = 0; 
+    for (let file of files) {
+      let raster = await rasterOf(file);
+      let res = ingestShot(raster);
+      
+      if (res.order.length > 0) {
+        res.order.forEach((o, idx) => {
+          stg.push({
+            id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
+            payout2: "", payout3: "", racers: "7", battle: "", winLine: "単",
+            sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+          });
+        });
+      }
+      if (res.payout.length > 0) {
+        res.payout.forEach((p, idx) => {
+          if (stg[idx]) {
+            stg[idx].payout2 = p.nirentan; stg[idx].payout3 = p.sanrentan;
+          } else {
+            stg.push({
+              id: crypto.randomUUID(), raceNo: idx + 1, order: "",
+              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", battle: "", winLine: "単",
+              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+            });
+          }
+        });
+      }
+    }
+    ov.classList.add('hidden');
+    if(e.target && e.target.id === 'fileUp') e.target.value = ''; // 連続で同じ画像を選べるようにリセット
+    
+    renderStg();
+    let btn = document.getElementById('applyBtn');
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    btn.removeAttribute('disabled');
+    alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。`);
+  } catch (err) {
+    console.error(err); ov.classList.add('hidden'); alert("エラー: " + err.message);
+  }
+}
+
+// 画面のどこでも「ペースト」したら画像を取り込む設定
+document.addEventListener('paste', window.handleImageUpload);
+
 // --- 📸 画像解析処理 ---
 window.handleImageUpload = async function(e) {
   let files = Array.from(e.target.files);
@@ -338,55 +404,6 @@ function renderSaved() {
   </tr>`).join('');
 }
 window.renderSaved = renderSaved;
-
-// --- 📸 画像解析処理 ---
-window.handleImageUpload = async function(e) {
-  let files = Array.from(e.target.files);
-  if (!files.length) return;
-  let ov = document.getElementById('loading');
-  ov.classList.remove('hidden');
-
-  try {
-    stg.length = 0; 
-    for (let file of files) {
-      let raster = await rasterOf(file);
-      let res = ingestShot(raster);
-      
-      if (res.order.length > 0) {
-        res.order.forEach((o, idx) => {
-          stg.push({
-            id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
-            payout2: "", payout3: "", racers: "7", winLine: "単",
-            sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-          });
-        });
-      }
-      if (res.payout.length > 0) {
-        res.payout.forEach((p, idx) => {
-          if (stg[idx]) {
-            stg[idx].payout2 = p.nirentan; stg[idx].payout3 = p.sanrentan;
-          } else {
-            stg.push({
-              id: crypto.randomUUID(), raceNo: idx + 1, order: "",
-              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", winLine: "単",
-              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-            });
-          }
-        });
-      }
-    }
-    ov.classList.add('hidden');
-    if(e.target.id === 'fileUp') e.target.value = '';
-    
-    renderStg();
-    let btn = document.getElementById('applyBtn');
-    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-    btn.removeAttribute('disabled');
-    alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。`);
-  } catch (err) {
-    console.error(err); ov.classList.add('hidden'); alert("エラー: " + err.message);
-  }
-}
   
 // --- ✍️ 手動追加処理 ---
 window.addManual = function() {
