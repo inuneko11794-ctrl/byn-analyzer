@@ -155,7 +155,6 @@
   </details>
   <!-- 🌟 JavaScript モジュール 🌟 -->
   <script type="module">
-    // 【超重要】ここでGrok版の解析コードを読み込む
     import { rasterOf, ingestShot } from './read-shot.js';
 
     window.stg = [];
@@ -172,7 +171,7 @@
       window.charts = {};
     }
 
-    // --- 📸 画像アップロード処理（2枚合成対応） ---
+    // --- 📸 画像アップロード処理（複数読み込み＆2枚合体対応） ---
     window.handleImageUpload = async function (e) {
       const files = [];
       if (e.type === "paste") {
@@ -225,7 +224,7 @@
         const btn = document.getElementById("applyBtn");
         btn.classList.remove("opacity-50", "cursor-not-allowed");
         btn.removeAttribute("disabled");
-        alert("着順 " + (orderRows?.length || 0) + "、払戻 " + (payRows?.length || 0));
+        alert("着順 " + (orderRows?.length || 0) + "件、払戻 " + (payRows?.length || 0) + "件");
       } catch (err) {
         alert("エラー: " + err.message);
       } finally {
@@ -277,6 +276,7 @@
       </tr>`;
     };
 
+    // --- データ操作系 ---
     window.updateVal = function(type, i, field, val) {
       let arr = type === 'stg' ? window.stg : window.sv;
       arr[i][field] = val;
@@ -328,7 +328,7 @@
       if (!window.stg.length) return;
       window.stg.forEach(d => window.sv.push(JSON.parse(JSON.stringify(d))));
       window.stg.length = 0;
-      orderRows = null; 
+      orderRows = null; // 合体用の一時データをクリア
       payRows = null;
       window.renderStg(); window.saveLS(); window.renderSaved(); window.updateDash();
       document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
@@ -366,7 +366,6 @@
         window.sv = []; window.saveLS(); window.renderSaved(); window.updateDash();
       }
     };
-
     // --- 📊 ダッシュボード描画処理 ---
     window.updateDash = function() {
       destroyCharts();
@@ -394,6 +393,7 @@
 
       Chart.defaults.font.family = 'sans-serif';
       
+      // ✅ maintainAspectRatio: false を削除し、グラフの高さを自動確保！
       const c = (id, type, d, opts={}) => window.charts[id] = new Chart(document.getElementById(id), {
         type: type, 
         data: d, 
