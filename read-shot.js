@@ -404,3 +404,18 @@ export async function rasterOf(file) {
     img.src = url;
   });
 }
+// --- read-shot.js の一番下に追記 ---
+async function rasterOf(file) {
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) throw new Error("canvas");
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  return { width: image.width, height: image.height, data: image.data };
+}
+
+export { rasterOf, ingestShot };
