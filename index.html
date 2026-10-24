@@ -26,12 +26,12 @@
          ondragover="event.preventDefault(); this.classList.add('bg-blue-100');"
          ondragleave="event.preventDefault(); this.classList.remove('bg-blue-100');"
          ondrop="event.preventDefault(); this.classList.remove('bg-blue-100'); window.handleImageUpload({target: {files: event.dataTransfer.files}});">
-      📸 スクショ画像を選択、またはここにドロップ (複数可)
+      📸 スクショを選択、ペースト、またはドロップ
       <input type="file" id="fileUp" accept="image/*" multiple class="hidden" onchange="window.handleImageUpload(event)">
     </label>
   </div>
 </details>
-  
+
 <!-- 2. 手動追加 -->
 <details class="bg-white rounded shadow group">
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
@@ -53,7 +53,6 @@
     </div>
   </div>
 </details>
-
 <!-- 3. プレビュー -->
 <details class="bg-white rounded shadow group" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
@@ -64,8 +63,8 @@
     <table class="w-full min-w-[800px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>戦型</th><th>1着L</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table>
   </div>
 </details>
-  
-<!-- 4. ダッシュボード -->
+
+<!-- 4. ダッシュボード前半 -->
 <details class="bg-white rounded shadow group" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
     <div class="flex items-center gap-2"><span>📊 究極分析ダッシュボード</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
@@ -90,7 +89,6 @@
       <div class="bg-orange-50 p-2 rounded border border-orange-200"><div class="text-xs text-gray-500">Y的軍</div><div id="dYHit" class="font-bold text-orange-600">0%</div><div id="dYMansha" class="text-xs text-orange-500">万車:0</div></div>
       <div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
     </div>
-
     <div class="grid md:grid-cols-2 gap-2">
       <div class="bg-red-50 p-3 rounded border border-red-200 space-y-2">
         <div class="border-b-2 border-red-200 pb-1">
@@ -124,7 +122,7 @@
         <div style="height:160px;"><canvas id="manshaSiteLineC"></canvas></div>
       </div>
     </div>
-        <div class="bg-gray-50 p-3 rounded border">
+    <div class="bg-gray-50 p-3 rounded border">
       <div class="flex justify-between mb-2 text-sm font-bold border-b-2 border-gray-200 pb-1">
         <span class="text-gray-700">📈 合計値分布＆配当</span>
         <div class="flex gap-2">
@@ -152,7 +150,7 @@
     <div style="height:200px"><canvas id="anaC"></canvas></div>
   </div>
 </details>
-  
+
 <!-- 5. 保存済み一覧 -->
 <details class="bg-white rounded shadow group mb-10" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
@@ -167,55 +165,34 @@
   <div class="p-4 pt-2 overflow-x-auto">
     <table class="w-full min-w-[800px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>戦型</th><th>1着L</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table>
   </div>
-</details>
-<script type="module">
+</details><script type="module">
 import { rasterOf, ingestShot } from './read-shot.js';
 
-let stg = [], sv = JSON.parse(localStorage.getItem('keirinData') || '[]');
-window.stg = stg;
-window.sv = sv;
+window.stg = [];
+window.sv = [];
+let cMansha, cWinLine, cLineAll, cManshaSiteLine, cDist, cPay, cTrend, cAna;
 
-// グラフ用変数
-let cDist, cPay, cTrend, cAna, cMansha, cWinLine, cLineAll, cManshaSiteLine;
-
-window.onload = () => { renderStg(); renderSaved(); window.updateDash(); };
-function saveLS() { localStorage.setItem('keirinData', JSON.stringify(sv)); window.updateDash(); }
-
-// --- 🎯 万車券の自動チェック ---
-window.autoCheckHit = function(arrName, i) {
-  let item = window[arrName][i];
-  if (!item) return;
-  let p2 = parseInt(item.payout2) || 0;
-  let p3 = parseInt(item.payout3) || 0;
-  let isMansha = (p2 >= 10000 || p3 >= 10000);
-  
-  let changed = false;
-  ['B', 'Y', 'N'].forEach(s => {
-    if (isMansha && item.sites[s].bet && !item.sites[s].hit) {
-      item.sites[s].hit = true;
-      changed = true;
-    }
-  });
-  
-  if (changed) {
-    if (arrName === 'stg') renderStg();
-    else { saveLS(); renderSaved(); }
-  }
+// --- 💾 データ保存・読み込み ---
+function loadLS() {
+  let d = localStorage.getItem('keirin_data');
+  if (d) window.sv = JSON.parse(d);
 }
-  // --- 📸 画像解析処理（ペースト貼り付け対応版） ---
+function saveLS() {
+  localStorage.setItem('keirin_data', JSON.stringify(window.sv));
+}
+window.saveLS = saveLS;
+loadLS();
+
+// --- 📸 画像解析処理（ペースト貼り付け対応） ---
 window.handleImageUpload = async function(e) {
   let files = [];
   
-  // スマホやPCの「クリップボードからの貼り付け（ペースト）」に対応
   if (e.type === 'paste') {
     let items = e.clipboardData.items;
     for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) {
-        files.push(items[i].getAsFile());
-      }
+      if (items[i].type.indexOf('image') !== -1) files.push(items[i].getAsFile());
     }
   } else {
-    // 通常のファイル選択やドロップ
     files = Array.from(e.target.files || (e.dataTransfer && e.dataTransfer.files) || []);
   }
 
@@ -224,14 +201,14 @@ window.handleImageUpload = async function(e) {
   ov.classList.remove('hidden');
 
   try {
-    stg.length = 0; 
+    window.stg.length = 0; 
     for (let file of files) {
       let raster = await rasterOf(file);
       let res = ingestShot(raster);
       
       if (res.order.length > 0) {
         res.order.forEach((o, idx) => {
-          stg.push({
+          window.stg.push({
             id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
             payout2: "", payout3: "", racers: "7", battle: "", winLine: "単",
             sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
@@ -240,10 +217,10 @@ window.handleImageUpload = async function(e) {
       }
       if (res.payout.length > 0) {
         res.payout.forEach((p, idx) => {
-          if (stg[idx]) {
-            stg[idx].payout2 = p.nirentan; stg[idx].payout3 = p.sanrentan;
+          if (window.stg[idx]) {
+            window.stg[idx].payout2 = p.nirentan; window.stg[idx].payout3 = p.sanrentan;
           } else {
-            stg.push({
+            window.stg.push({
               id: crypto.randomUUID(), raceNo: idx + 1, order: "",
               payout2: p.nirentan, payout3: p.sanrentan, racers: "7", battle: "", winLine: "単",
               sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
@@ -253,70 +230,19 @@ window.handleImageUpload = async function(e) {
       }
     }
     ov.classList.add('hidden');
-    if(e.target && e.target.id === 'fileUp') e.target.value = ''; // 連続で同じ画像を選べるようにリセット
+    if(e.target && e.target.id === 'fileUp') e.target.value = '';
     
-    renderStg();
+    window.renderStg();
     let btn = document.getElementById('applyBtn');
     btn.classList.remove('opacity-50', 'cursor-not-allowed');
     btn.removeAttribute('disabled');
-    alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。`);
+    alert(`爆速ピクセル解析完了！ ${window.stg.length}件抽出しました。`);
   } catch (err) {
     console.error(err); ov.classList.add('hidden'); alert("エラー: " + err.message);
   }
 }
 
-// 画面のどこでも「ペースト」したら画像を取り込む設定
 document.addEventListener('paste', window.handleImageUpload);
-
-// --- 📸 画像解析処理 ---
-window.handleImageUpload = async function(e) {
-  let files = Array.from(e.target.files);
-  if (!files.length) return;
-  let ov = document.getElementById('loading');
-  ov.classList.remove('hidden');
-
-  try {
-    stg.length = 0; 
-    for (let file of files) {
-      let raster = await rasterOf(file);
-      let res = ingestShot(raster);
-      
-      if (res.order.length > 0) {
-        res.order.forEach((o, idx) => {
-          stg.push({
-            id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
-            payout2: "", payout3: "", racers: "7", battle: "", winLine: "単",
-            sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-          });
-        });
-      }
-      if (res.payout.length > 0) {
-        res.payout.forEach((p, idx) => {
-          if (stg[idx]) {
-            stg[idx].payout2 = p.nirentan; stg[idx].payout3 = p.sanrentan;
-          } else {
-            stg.push({
-              id: crypto.randomUUID(), raceNo: idx + 1, order: "",
-              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", battle: "", winLine: "単",
-              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-            });
-          }
-        });
-      }
-    }
-    ov.classList.add('hidden');
-    if(e.target.id === 'fileUp') e.target.value = '';
-    
-    renderStg();
-    let btn = document.getElementById('applyBtn');
-    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-    btn.removeAttribute('disabled');
-    alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。`);
-  } catch (err) {
-    console.error(err); ov.classList.add('hidden'); alert("エラー: " + err.message);
-  }
-}
-
 // --- ✍️ 手動追加処理 ---
 window.addManual = function() {
   let o = document.getElementById('mOrd').value.trim(), 
@@ -327,57 +253,98 @@ window.addManual = function() {
       wL = document.getElementById('mWinLine').value; 
       
   if (!o && !p2 && !p3) return alert("入力してください");
-  sv.push({
+  window.sv.push({
     id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, battle: b, winLine: wL || "単",
     sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
   });
-  saveLS(); renderSaved(); 
+  window.saveLS(); window.renderSaved(); 
+  if(window.updateDash) window.updateDash();
   document.getElementById('mOrd').value = ''; document.getElementById('mP2').value = ''; 
   document.getElementById('mP3').value = ''; document.getElementById('mBattle').value = ''; document.getElementById('mWinLine').value = '';
 }
 
 // --- 📝 プレビューから保存 ---
 window.applyStg = function() {
-  if (!stg.length) return;
-  stg.forEach(d => {
-    let clean = {
+  if (!window.stg.length) return;
+  window.stg.forEach(d => {
+    window.sv.push({
       id: d.id, order: d.order, payout2: d.payout2, payout3: d.payout3,
       racers: d.racers, battle: d.battle || "", winLine: d.winLine || "単",
       sites: JSON.parse(JSON.stringify(d.sites)) 
-    };
-    sv.push(clean);
+    });
   });
-  stg.length = 0; renderStg(); saveLS(); renderSaved();
+  window.stg.length = 0; window.renderStg(); window.saveLS(); window.renderSaved();
+  if(window.updateDash) window.updateDash();
   document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
   document.getElementById('applyBtn').setAttribute('disabled', 'true');
   alert("保存しました！");
 }
 
+// --- 🤖 的中チェック用プレースホルダー ---
+window.autoCheckHit = function(type, idx) {
+  // 必要に応じて自動的中判定を拡張できる枠組みです
+}
+
+// --- 💾 データエクスポート / インポート / 消去 ---
+window.exportJson = function() {
+  let blob = new Blob([JSON.stringify(window.sv, null, 2)], { type: 'application/json' });
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'keirin.json';
+  a.click();
+}
+
+window.importJson = function(e) {
+  let file = e.target.files[0];
+  if (!file) return;
+  let reader = new FileReader();
+  reader.onload = function(evt) {
+    try {
+      let arr = JSON.parse(evt.target.result);
+      if (Array.isArray(arr)) {
+        window.sv = window.sv.concat(arr);
+        window.saveLS(); window.renderSaved();
+        if(window.updateDash) window.updateDash();
+        alert("データを復元・結合しました！");
+      }
+    } catch (err) { alert("JSONの読み込みに失敗しました。"); }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+window.clearAll = function() {
+  if (confirm("本当に保存済みの全データを消去しますか？")) {
+    window.sv = []; window.saveLS(); window.renderSaved();
+    if(window.updateDash) window.updateDash();
+  }
+}
+
 // --- 🎨 表の描画パーツ・描画処理 ---
 function battleSelectHtml(type, i, d) {
-  let arr = type === 'stg' ? 'stg' : 'sv';
+  let arr = type === 'stg' ? 'window.stg' : 'window.sv';
   let opts = ['2分戦','3分戦','4分戦','単騎戦'].map(v => `<option value="${v}" ${d.battle == v ? 'selected' : ''}>${v}</option>`).join('');
-  return `<td><select onchange="window.${arr}[${i}].battle=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved();'}" class="border p-1 text-xs rounded bg-blue-50"><option value="">選択</option>${opts}</select></td>`;
+  return `<td><select onchange="${arr}[${i}].battle=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved(); if(window.updateDash) window.updateDash();'}" class="border p-1 text-xs rounded bg-blue-50"><option value="">選択</option>${opts}</select></td>`;
 }
 
 function winLineSelectHtml(type, i, d) {
-  let arr = type === 'stg' ? 'stg' : 'sv';
+  let arr = type === 'stg' ? 'window.stg' : 'window.sv';
   let opts = ['単','0','1','2','3','4'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
-  return `<td><select onchange="window.${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved();'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
+  return `<td><select onchange="${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved(); if(window.updateDash) window.updateDash();'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
 }
 
 function chkHtml(type, i, d) {
-  let arr = type === 'stg' ? 'stg' : 'sv';
-  let updateSv = type === 'sv' ? 'window.saveLS();' : '';
+  let arr = type === 'stg' ? 'window.stg' : 'window.sv';
+  let updateSv = type === 'sv' ? 'window.saveLS(); if(window.updateDash) window.updateDash();' : '';
   return ['B', 'Y', 'N'].map(s => `<td>
-    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${arr}', ${i}); ${updateSv}">予</label>
-    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
+    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${type}', ${i}); ${updateSv}">予</label>
+    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
   </td>`).join('');
 }
 
-function renderStg() {
-  stgCnt.innerText = stg.length;
-  stgBody.innerHTML = stg.map((d, i) => `<tr>
+window.renderStg = function() {
+  document.getElementById('stgCnt').innerText = window.stg.length;
+  document.getElementById('stgBody').innerHTML = window.stg.map((d, i) => `<tr>
     <td class="font-bold">${d.raceNo}R</td>
     <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
     <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
@@ -389,66 +356,31 @@ function renderStg() {
     <td><button onclick="window.stg.splice(${i},1);window.renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
 }
-window.renderStg = renderStg;
 
-function renderSaved() {
-  savedBody.innerHTML = sv.map((d, i) => `<tr>
-    <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;window.saveLS()" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
-    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
+window.renderSaved = function() {
+  document.getElementById('savedBody').innerHTML = window.sv.map((d, i) => `<tr>
+    <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;window.saveLS();if(window.updateDash) window.updateDash();" class="border p-1 text-center w-20 rounded"></td>
+    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.saveLS(); if(window.updateDash) window.updateDash();" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.saveLS(); if(window.updateDash) window.updateDash();" class="border p-1 text-center w-24 rounded"></td>
+    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();if(window.updateDash) window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
     ${battleSelectHtml('sv', i, d)}
     ${winLineSelectHtml('sv', i, d)}
     ${chkHtml('sv', i, d)}
-    <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
+    <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved();if(window.updateDash) window.updateDash();" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
   </tr>`).join('');
 }
-window.renderSaved = renderSaved;
-  
-// --- ✍️ 手動追加処理 ---
-window.addManual = function() {
-  let o = document.getElementById('mOrd').value.trim(), 
-      p2 = document.getElementById('mP2').value.trim(), 
-      p3 = document.getElementById('mP3').value.trim(), 
-      r = document.getElementById('mRac').value,
-      wL = document.getElementById('mWinLine').value; 
-      
-  if (!o && !p2 && !p3) return alert("入力してください");
-  sv.push({
-    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, winLine: wL || "単",
-    sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-  });
-  saveLS(); renderSaved(); 
-  document.getElementById('mOrd').value = ''; document.getElementById('mP2').value = ''; 
-  
-function renderSaved() {
-  savedBody.innerHTML = sv.map((d, i) => `<tr>
-    <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;window.saveLS()" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
-    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
-    ${winLineSelectHtml('sv', i, d)}
-    ${chkHtml('sv', i, d)}
-    <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
-  </tr>`).join('');
-}
-window.renderSaved = renderSaved;
-window.saveLS = saveLS;
-
-// --- ⚙️ その他ツール ---
-window.clearAll = function() { if (confirm("本当に全て消去しますか？")) { sv.length = 0; saveLS(); renderSaved(); } }
-window.exportJson = function() { let a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(sv)], { type: 'application/json' })); a.download = 'keirin.json'; a.click(); }
-window.importJson = function(e) { let f = e.target.files[0]; if (!f) return; let r = new FileReader(); r.onload = ev => { sv.push(...JSON.parse(ev.target.result)); saveLS(); renderSaved(); alert('復元完了'); }; r.readAsText(f); e.target.value = ''; }
 // --- 📊 ダッシュボード・グラフ更新処理 ---
 window.updateDash = function() {
   let fRac = document.getElementById('dashRacer').value;
-  let targetSv = fRac === 'all' ? sv : sv.filter(d => String(d.racers).replace('車', '') === fRac);
+  let targetSv = fRac === 'all' ? window.sv : window.sv.filter(d => String(d.racers).replace('車', '') === fRac);
   
-  dTot.innerText = targetSv.length;
+  document.getElementById('dTot').innerText = targetSv.length;
   
   let sStat = { B: { bet: 0, hit: 0, mansha: 0 }, Y: { bet: 0, hit: 0, mansha: 0 }, N: { bet: 0, hit: 0, mansha: 0 } };
   let ovMap = { "なし": { c: 0, p3: 0, p2: 0 }, "Bのみ": { c: 0, p3: 0, p2: 0 }, "Yのみ": { c: 0, p3: 0, p2: 0 }, "Nのみ": { c: 0, p3: 0, p2: 0 }, "B+Y": { c: 0, p3: 0, p2: 0 }, "B+N": { c: 0, p3: 0, p2: 0 }, "Y+N": { c: 0, p3: 0, p2: 0 }, "B+Y+N": { c: 0, p3: 0, p2: 0 } };
-  let dType = document.querySelector('input[name="dType"]:checked').value;
+  
+  let dTypeEl = document.querySelector('input[name="dType"]:checked');
+  let dType = dTypeEl ? dTypeEl.value : 'sum2';
   
   let distD = {}, o2Set = new Set();
   
@@ -557,20 +489,20 @@ window.updateDash = function() {
   }
 
   if (cDist) cDist.destroy();
-  cDist = new Chart(distC.getContext('2d'), {
+  cDist = new Chart(document.getElementById('distC').getContext('2d'), {
     type: 'bar',
     data: { labels: lbls, datasets: [{ label: '被り', data: ovArr, backgroundColor: '#f97316' }, { label: '単独', data: sgArr, backgroundColor: '#3b82f6' }] },
     options: intYAxis
   });
 
   if (cPay) cPay.destroy();
-  cPay = new Chart(payC.getContext('2d'), {
+  cPay = new Chart(document.getElementById('payC').getContext('2d'), {
     type: 'line',
     data: { labels: lbls, datasets: [{ label: '平均配当', data: avgArr, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }] },
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
   });
 
-  dashTbody.innerHTML = Object.entries(ovMap).map(([k, v]) => `<tr>
+  document.getElementById('dashTbody').innerHTML = Object.entries(ovMap).map(([k, v]) => `<tr>
     <td class="border p-1 font-bold">${k}</td>
     <td class="border p-1">${v.c}件</td>
     <td class="border p-1 text-blue-700">${v.c ? Math.round(v.p3 / v.c).toLocaleString() : 0}円</td>
@@ -579,7 +511,7 @@ window.updateDash = function() {
 
   let lOver = Object.keys(ovMap);
   if (cAna) cAna.destroy();
-  cAna = new Chart(anaC.getContext('2d'), {
+  cAna = new Chart(document.getElementById('anaC').getContext('2d'), {
     type: 'bar',
     data: {
       labels: lOver,
@@ -598,14 +530,18 @@ window.updateDash = function() {
   });
 
   let o2Arr = Array.from(o2Set).sort();
-  trendSel.innerHTML = '<option value="">2車単を選択</option>' + o2Arr.map(o => `<option>${o}</option>`).join('');
+  let trendSel = document.getElementById('trendSel');
+  let currentVal = trendSel.value;
+  trendSel.innerHTML = '<option value="">2車単を選択</option>' + o2Arr.map(o => `<option value="${o}">${o}</option>`).join('');
+  if (o2Arr.includes(currentVal)) trendSel.value = currentVal;
+  
   window.updateTrend();
 }
 
 window.updateTrend = function() {
   let fRac = document.getElementById('dashRacer').value;
-  let targetSv = fRac === 'all' ? sv : sv.filter(d => String(d.racers).replace('車', '') === fRac);
-  let t2 = trendSel.value, cnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
+  let targetSv = fRac === 'all' ? window.sv : window.sv.filter(d => String(d.racers).replace('車', '') === fRac);
+  let t2 = document.getElementById('trendSel').value, cnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
   
   if (t2) { 
     targetSv.forEach(d => { 
@@ -618,12 +554,18 @@ window.updateTrend = function() {
   }
   
   if (cTrend) cTrend.destroy();
-  cTrend = new Chart(trendC.getContext('2d'), {
+  cTrend = new Chart(document.getElementById('trendC').getContext('2d'), {
     type: 'bar',
     data: { labels: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => n + '番'), datasets: [{ label: '3着回数', data: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => cnt[n]), backgroundColor: '#8b5cf6' }] },
     options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
   });
 }
+
+// 初回読み込み時の処理
+window.renderSaved();
+window.updateDash();
+
 </script>
 </body>
 </html>
+
