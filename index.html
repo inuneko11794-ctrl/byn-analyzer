@@ -279,10 +279,36 @@ window.applyStg = function() {
   document.getElementById('applyBtn').setAttribute('disabled', 'true');
   alert("保存しました！");
 }
-
-// --- 🤖 的中チェック用プレースホルダー ---
+  
+// --- 🤖 的中チェック自動化 ---
 window.autoCheckHit = function(type, idx) {
-  // 必要に応じて自動的中判定を拡張できる枠組みです
+  let arr = type === 'stg' ? window.stg : window.sv;
+  let d = arr[idx];
+  let p2 = parseInt(d.payout2) || 0;
+  let p3 = parseInt(d.payout3) || 0;
+
+  // 2連単または3連単が1万円以上(万車券)の場合
+  if (p2 >= 10000 || p3 >= 10000) {
+    let changed = false;
+    ['B', 'Y', 'N'].forEach(s => {
+      // 「予(予想)」にチェックが入っていて、「的(的中)」がまだ入っていないなら自動でON
+      if (d.sites[s].bet && !d.sites[s].hit) {
+        d.sites[s].hit = true;
+        changed = true;
+      }
+    });
+    
+    // 変更があった時だけ画面を更新
+    if (changed) {
+      if (type === 'stg') {
+        window.renderStg();
+      } else {
+        window.saveLS();
+        window.renderSaved();
+        if (window.updateDash) window.updateDash();
+      }
+    }
+  }
 }
 
 // --- 💾 データエクスポート / インポート / 消去 ---
