@@ -1,626 +1,487 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BYN3サイト寄れば文殊超え</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-  details > summary { list-style: none; }
-  details > summary::-webkit-details-marker { display: none; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BYN3サイト寄れば文殊超え</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans p-2 md:p-4 max-w-6xl mx-auto space-y-4">
-<div id="loading" class="hidden fixed inset-0 bg-black/75 text-white flex flex-col justify-center items-center z-50 font-bold"><div>爆速ピクセル解析中...</div></div>
+<body class="bg-gray-100 p-2 md:p-4 text-sm md:text-base font-sans">
 
-<h1 class="text-xl font-bold text-center text-blue-700">🚴‍♂️ BYN3サイト寄れば文殊超え</h1>
-<!-- 万車ノートの画面内埋め込み（コチラもどうぞ） -->
-<details class="bg-white rounded shadow group mb-2">
-  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-purple-50 transition-colors text-purple-800">
-    <div class="flex items-center gap-2"><span>📓 別アプリ『万車ノート』(Grok版) を表示</span><span class="text-purple-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
-  </summary>
-  <div class="p-1">
-    <iframe src="https://brook-beam-sunny-arch.grok.me" class="w-full h-[600px] border-0 rounded bg-gray-50"></iframe>
+  <!-- ローディング -->
+  <div id="loading" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="text-white font-bold text-xl animate-pulse">爆速ピクセル解析中...</div>
   </div>
-</details>
 
-<!-- 1. 取り込み -->
-<details class="bg-white rounded shadow group" open>
-  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
-    <div class="flex items-center gap-2"><span>➕ スクショ取り込み (爆速解析)</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
-  </summary>
-  <div class="p-4 pt-2">
-    <label class="block border-2 border-blue-300 border-dashed p-8 text-center cursor-pointer rounded bg-gray-50 hover:bg-blue-50 transition-colors"
-         ondragover="event.preventDefault(); this.classList.add('bg-blue-100');"
-         ondragleave="event.preventDefault(); this.classList.remove('bg-blue-100');"
-         ondrop="event.preventDefault(); this.classList.remove('bg-blue-100'); window.handleImageUpload({target: {files: event.dataTransfer.files}});">
-      📸 スクショを選択、ペースト、またはドロップ
-      <input type="file" id="fileUp" accept="image/*" multiple class="hidden" onchange="window.handleImageUpload(event)">
-    </label>
-  </div>
-</details>
+  <h1 class="text-2xl font-extrabold text-gray-800 mb-4 tracking-tight">🚴‍♂️ BYN3サイト寄れば文殊超え</h1>
 
-<!-- 2. 手動追加 -->
-<details class="bg-white rounded shadow group">
-  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
-    <div class="flex items-center gap-2"><span>✍️ 手動追加</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
-  </summary>
-  <div class="p-4 pt-2">
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
-      <input id="mOrd" placeholder="着順(7-1-2)" class="border p-2 rounded">
-      <input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded">
-      <input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
-      <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
-      <select id="mBattle" class="border p-2 rounded bg-blue-50">
-        <option value="">戦型選択</option><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option>
-      </select>
-      <select id="mWinLine" class="border p-2 rounded bg-yellow-50">
-        <option value="">1着L選択</option><option value="単">単</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
-      </select>
-      <button onclick="window.addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-6">直接追加</button>
+  <!-- 1. 万車ノート埋め込み -->
+  <details class="bg-white rounded shadow group mb-3 border border-purple-200">
+    <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center hover:bg-purple-100 transition-colors">
+      <span>📓 別アプリ『万車ノート』(Grok版) を表示</span>
+      <span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+    </summary>
+    <div class="p-1">
+      <iframe src="https://brook-beam-sunny-arch.grok.me" class="w-full h-[600px] border-0 rounded bg-gray-50"></iframe>
     </div>
-  </div>
-</details>
-<!-- 3. プレビュー -->
-<details class="bg-white rounded shadow group" open>
-  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
-    <div class="flex items-center gap-2"><span>📝 プレビュー (<span id="stgCnt">0</span>件)</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
-    <button id="applyBtn" onclick="event.stopPropagation(); window.applyStg()" class="bg-green-500 text-white px-3 py-1 rounded opacity-50 cursor-not-allowed" disabled>保存する</button>
-  </summary>
-  <div class="p-4 pt-2 overflow-x-auto">
-    <table class="w-full min-w-[800px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>戦型</th><th>1着L</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table>
-  </div>
-</details>
+  </details>
 
-<!-- 4. ダッシュボード前半 -->
-<details class="bg-white rounded shadow group" open>
-  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
-    <div class="flex items-center gap-2"><span>📊 究極分析ダッシュボード</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
-  </summary>
-  <div class="p-4 pt-2 space-y-4">
-    
-    <div class="flex items-center justify-end gap-2 bg-indigo-50 p-2 rounded border border-indigo-200">
-      <span class="text-sm font-bold text-indigo-800">🎯 車立で絞り込み:</span>
-      <select id="dashRacer" onchange="window.updateDash()" class="border p-1 rounded text-sm bg-white font-bold text-indigo-900">
-        <option value="all">全て表示</option>
-        <option value="9">9車のみ</option>
-        <option value="8">8車のみ</option>
-        <option value="7">7車のみ</option>
-        <option value="6">6車のみ</option>
-        <option value="5">5車のみ</option>
-      </select>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-      <div class="bg-gray-50 p-2 rounded border"><div class="text-xs text-gray-500">集計対象</div><div id="dTot" class="text-lg font-bold text-blue-600">0</div></div>
-      <div class="bg-green-50 p-2 rounded border border-green-200"><div class="text-xs text-gray-500">B的軍</div><div id="dBHit" class="font-bold text-green-700">0%</div><div id="dBMansha" class="text-xs text-green-600">万車:0</div></div>
-      <div class="bg-orange-50 p-2 rounded border border-orange-200"><div class="text-xs text-gray-500">Y的軍</div><div id="dYHit" class="font-bold text-orange-600">0%</div><div id="dYMansha" class="text-xs text-orange-500">万車:0</div></div>
-      <div class="bg-red-50 p-2 rounded border border-red-200"><div class="text-xs text-gray-500">N的軍</div><div id="dNHit" class="font-bold text-red-600">0%</div><div id="dNMansha" class="text-xs text-red-500">万車:0</div></div>
-    </div>
-    <div class="grid md:grid-cols-2 gap-2">
-      <div class="bg-red-50 p-3 rounded border border-red-200 space-y-2">
-        <div class="border-b-2 border-red-200 pb-1">
-          <span class="font-bold text-red-800 text-sm">🔥 万車時の1着車番</span>
-          <p class="text-[10px] text-red-600 mt-1">① 万車券になったレースで、どの車番が1着に来やすいかの傾向です。</p>
-        </div>
-        <div style="height:140px;"><canvas id="manshaC"></canvas></div>
+  <!-- 2. スクショ取り込み -->
+  <details open class="bg-white rounded shadow group mb-3">
+    <summary class="font-bold p-3 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center hover:bg-blue-100 transition-colors">
+      <span>➕ スクショ取り込み (爆速解析)</span>
+      <span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
+    </summary>
+    <div class="p-4 border-t">
+      <div id="dropZone" class="border-2 border-dashed border-blue-300 bg-blue-50 p-6 text-center rounded cursor-pointer hover:bg-blue-100 transition-colors" onclick="document.getElementById('fileUp').click()">
+        <p class="text-blue-700 font-bold mb-2">ここをタップして画像を選択</p>
+        <p class="text-xs text-blue-500">または画像をここにペースト (複数可)</p>
       </div>
-      <div class="bg-yellow-50 p-3 rounded border border-yellow-200 space-y-2">
-        <div class="border-b-2 border-yellow-200 pb-1">
-          <span class="font-bold text-yellow-800 text-sm">🏆 万車時の1着ライン</span>
-          <p class="text-[10px] text-yellow-700 mt-1">② 全データの中で、1着になったライン（単〜4）の全体割合です。</p>
-        </div>
-        <div style="height:140px;"><canvas id="winLineC"></canvas></div>
+      <input type="file" id="fileUp" multiple accept="image/*" class="hidden">
+    </div>
+  </details>
+
+  <!-- 3. 手動追加 -->
+  <details class="bg-white rounded shadow group mb-3">
+    <summary class="font-bold p-3 cursor-pointer bg-gray-50 text-gray-800 flex justify-between items-center hover:bg-gray-100 transition-colors">
+      <span>✍️ 手動追加</span>
+      <span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+    </summary>
+    <div class="p-4 border-t">
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-2 mb-2">
+        <input type="text" id="mOrd" placeholder="着順(例:1-2-3)" class="border p-2 rounded">
+        <input type="number" id="mP2" placeholder="2連単配当" class="border p-2 rounded">
+        <input type="number" id="mP3" placeholder="3連単配当" class="border p-2 rounded">
+        <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
+        <select id="mBattle" class="border p-2 rounded"><option value="">戦型選択</option><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option></select>
+        <select id="mWinLine" class="border p-2 rounded"><option value="単">単</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
+      </div>
+      <button onclick="window.addManual()" class="w-full bg-gray-800 text-white font-bold p-2 rounded shadow hover:bg-gray-700">追加</button>
+    </div>
+  </details>
+
+  <!-- 4. プレビュー -->
+  <details open class="bg-white rounded shadow group mb-3">
+    <summary class="font-bold p-3 cursor-pointer bg-yellow-50 text-yellow-800 flex justify-between items-center hover:bg-yellow-100 transition-colors">
+      <span>📝 プレビュー (<span id="stgCount">0</span>件)</span>
+      <span class="text-yellow-400 group-open:rotate-180 transition-transform">▼</span>
+    </summary>
+    <div class="p-2 overflow-x-auto border-t">
+      <table class="w-full text-left border-collapse min-w-[800px] whitespace-nowrap">
+        <thead>
+          <tr class="bg-gray-200 text-gray-700 text-xs">
+            <th class="p-2 border">R</th><th class="p-2 border">着順</th><th class="p-2 border">決まり手</th><th class="p-2 border">2連単</th><th class="p-2 border">3連単</th><th class="p-2 border">車立</th><th class="p-2 border">戦型</th><th class="p-2 border">1着L</th><th class="p-2 border text-center">B(予/的)</th><th class="p-2 border text-center">Y(予/的)</th><th class="p-2 border text-center">N(予/的)</th><th class="p-2 border text-center">操作</th>
+          </tr>
+        </thead>
+        <tbody id="stgBody" class="text-sm"></tbody>
+      </table>
+      <div class="mt-3 text-right">
+        <button id="applyBtn" onclick="window.applyStg()" disabled class="bg-blue-600 text-white font-bold px-6 py-2 rounded shadow opacity-50 cursor-not-allowed">保存する</button>
       </div>
     </div>
+  </details>
 
-    <div class="grid md:grid-cols-2 gap-2">
-      <div class="bg-blue-50 p-3 rounded border border-blue-200 space-y-2">
-        <div class="border-b-2 border-blue-200 pb-1">
-          <span class="font-bold text-blue-800 text-sm">📈 万車時のライン分布</span>
-          <p class="text-[10px] text-blue-600 mt-1">③ 万車券になったレース限定での、1着ラインの分布状況です。</p>
-        </div>
-        <div style="height:160px;"><canvas id="lineAllC"></canvas></div>
+  <!-- 5. 究極分析ダッシュボード -->
+  <details open class="bg-white rounded shadow group mb-3">
+    <summary class="font-bold p-3 cursor-pointer bg-red-50 text-red-800 flex justify-between items-center hover:bg-red-100 transition-colors">
+      <span>📊 究極分析ダッシュボード</span>
+      <span class="text-red-400 group-open:rotate-180 transition-transform">▼</span>
+    </summary>
+    <div class="p-4 border-t">
+      
+      <div class="mb-4 flex items-center gap-2">
+        <span class="font-bold">🎯 車立で絞り込み:</span>
+        <select id="dashFilter" class="border p-2 rounded bg-white shadow-sm" onchange="window.updateDash()">
+          <option value="all">全て表示</option><option value="9">9車のみ</option><option value="8">8車のみ</option><option value="7">7車のみ</option><option value="6">6車のみ</option><option value="5">5車のみ</option>
+        </select>
       </div>
-      <div class="bg-purple-50 p-3 rounded border border-purple-200 space-y-2">
-        <div class="border-b-2 border-purple-200 pb-1">
-          <span class="font-bold text-purple-800 text-sm">🎯 サイト別 万車的中時のライン</span>
-          <p class="text-[10px] text-purple-600 mt-1">④ B/Y/N軍がそれぞれ万車券を当てた時、どのラインだったかを示します。</p>
-        </div>
-        <div style="height:160px;"><canvas id="manshaSiteLineC"></canvas></div>
+
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+        <div class="bg-gray-100 p-3 rounded text-center"><div class="text-xs text-gray-500">集計対象</div><div id="d_total" class="text-xl font-bold">0</div></div>
+        <div class="bg-blue-50 p-3 rounded text-center border-b-4 border-blue-500"><div class="text-xs font-bold text-blue-700">B的軍</div><div id="d_b_rate" class="text-xl font-bold">0%</div><div id="d_b_man" class="text-xs mt-1">万車:0</div></div>
+        <div class="bg-yellow-50 p-3 rounded text-center border-b-4 border-yellow-500"><div class="text-xs font-bold text-yellow-700">Y的軍</div><div id="d_y_rate" class="text-xl font-bold">0%</div><div id="d_y_man" class="text-xs mt-1">万車:0</div></div>
+        <div class="bg-purple-50 p-3 rounded text-center border-b-4 border-purple-500"><div class="text-xs font-bold text-purple-700">N的軍</div><div id="d_n_rate" class="text-xl font-bold">0%</div><div id="d_n_man" class="text-xs mt-1">万車:0</div></div>
       </div>
-    </div>
-    <div class="bg-gray-50 p-3 rounded border">
-      <div class="flex justify-between mb-2 text-sm font-bold border-b-2 border-gray-200 pb-1">
-        <span class="text-gray-700">📈 合計値分布＆配当</span>
-        <div class="flex gap-2">
-          <label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum2" checked onchange="window.updateDash()">2連単</label>
-          <label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum3" onchange="window.updateDash()">3連単</label>
+
+      <!-- グラフエリア -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">🔥 万車時の1着車番</p><canvas id="winCarChart"></canvas></div>
+        <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">🏆 1着ライン割合(全体)</p><canvas id="winLineChart"></canvas></div>
+        <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">📈 1着ライン割合(万車時)</p><canvas id="manshaLineChart"></canvas></div>
+        <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">🎯 サイト別 万車的中時ライン</p><canvas id="siteLineChart"></canvas></div>
+      </div>
+
+      <div class="border rounded p-2 bg-gray-50 mb-4">
+        <p class="text-xs font-bold mb-1 text-center">📈 合計値分布＆配当推移</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div><canvas id="sumDistChart"></canvas></div>
+          <div><canvas id="sumPayoutChart"></canvas></div>
         </div>
       </div>
-      <p class="text-[10px] text-gray-500 mb-2">⑤ 着順の数字を足した合計値の分布と、平均配当の推移です。</p>
-      <div class="grid md:grid-cols-2 gap-2"><div style="height:200px"><canvas id="distC"></canvas></div><div style="height:200px"><canvas id="payC"></canvas></div></div>
-    </div>
-
-    <div class="bg-indigo-50 p-3 rounded border border-indigo-100 space-y-2">
-      <div class="flex items-center gap-2 border-b-2 border-indigo-200 pb-1">
-        <span class="font-bold text-indigo-800 text-sm whitespace-nowrap">3着傾向:</span>
-        <select id="trendSel" onchange="window.updateTrend()" class="border p-1 text-sm bg-white rounded font-bold w-full"><option value="">2車単を選択してください</option></select>
+      
+      <div class="border rounded p-2 bg-gray-50">
+        <p class="text-xs font-bold mb-2 text-center">⑦ 被り状況別 成績</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-center text-sm border-collapse bg-white">
+            <thead><tr class="bg-gray-200"><th class="border p-1">被り</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead>
+            <tbody id="kaburiTbody"></tbody>
+          </table>
+        </div>
       </div>
-      <p class="text-[10px] text-indigo-600">⑥ 選択した2車単が来た時、3着にどの車番が来やすいかの傾向です。</p>
-      <div class="w-full overflow-hidden" style="height:160px;"><canvas id="trendC"></canvas></div>
     </div>
+  </details>
 
-    <div class="overflow-x-auto mt-4">
-      <p class="text-[10px] text-gray-600 mb-1 font-bold">⑦ 各サイトの予想被り状況別の件数と平均配当データです。</p>
-      <table class="w-full min-w-[500px] text-center border-collapse text-xs"><thead><tr class="bg-gray-100"><th class="border p-1">被り状況</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead><tbody id="dashTbody"></tbody></table>
+  <!-- 6. 保存済み一覧 -->
+  <details open class="bg-white rounded shadow group mb-8">
+    <summary class="font-bold p-3 cursor-pointer bg-green-50 text-green-800 flex justify-between items-center hover:bg-green-100 transition-colors">
+      <div class="flex items-center gap-2"><span>📂 保存済み一覧 (自動保存)</span><span class="text-green-400 group-open:rotate-180 transition-transform">▼</span></div>
+      <div class="flex gap-2">
+        <button onclick="window.backupData(event)" class="text-xs bg-gray-600 text-white px-2 py-1 rounded">バックアップ</button>
+        <button onclick="document.getElementById('restoreFile').click(); event.stopPropagation();" class="text-xs bg-gray-600 text-white px-2 py-1 rounded">復元</button>
+        <button onclick="window.clearData(event)" class="text-xs bg-red-500 text-white px-2 py-1 rounded">全消去</button>
+      </div>
+    </summary>
+    <div class="p-2 overflow-x-auto border-t">
+      <input type="file" id="restoreFile" accept=".json" class="hidden" onchange="window.restoreData(event)">
+      <table class="w-full text-left border-collapse min-w-[800px] whitespace-nowrap">
+        <thead>
+          <tr class="bg-gray-200 text-gray-700 text-xs">
+            <th class="p-2 border">着順</th><th class="p-2 border">決まり手</th><th class="p-2 border">2連単</th><th class="p-2 border">3連単</th><th class="p-2 border">車立</th><th class="p-2 border">戦型</th><th class="p-2 border">1着L</th><th class="p-2 border text-center">B(予/的)</th><th class="p-2 border text-center">Y(予/的)</th><th class="p-2 border text-center">N(予/的)</th><th class="p-2 border text-center">操作</th>
+          </tr>
+        </thead>
+        <tbody id="svBody" class="text-sm"></tbody>
+      </table>
     </div>
-    <div style="height:200px"><canvas id="anaC"></canvas></div>
-  </div>
-</details>
+  </details>
 
-<!-- 5. 保存済み一覧 -->
-<details class="bg-white rounded shadow group mb-10" open>
-  <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
-    <div class="flex items-center gap-2"><span>📂 保存済み一覧 (自動保存)</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
-    <div class="flex gap-2">
-      <button onclick="event.stopPropagation(); window.exportJson()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">バックアップ</button>
-      <input type="file" id="impFile" class="hidden" onchange="window.importJson(event)" accept=".json">
-      <button onclick="event.stopPropagation(); document.getElementById('impFile').click()" class="bg-gray-600 text-white px-2 py-1 rounded text-xs">復元</button>
-      <button onclick="event.stopPropagation(); window.clearAll()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">全消去</button>
-    </div>
-  </summary>
-  <div class="p-4 pt-2 overflow-x-auto">
-    <table class="w-full min-w-[800px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>戦型</th><th>1着L</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table>
-  </div>
-</details><script type="module">
-import { rasterOf, ingestShot } from './read-shot.js';
+  <!-- 🌟 JavaScript モジュール 🌟 -->
+  <script type="module">
+    // 【超重要】ここでGrok版の解析コードを読み込む
+    import { rasterOf, ingestShot } from './read-shot.js';
 
-window.stg = [];
-window.sv = [];
-let cMansha, cWinLine, cLineAll, cManshaSiteLine, cDist, cPay, cTrend, cAna;
+    window.stg = [];
+    window.sv = JSON.parse(localStorage.getItem('byn3_data')) || [];
+    window.charts = {};
 
-// --- 💾 データ保存・読み込み ---
-function loadLS() {
-  let d = localStorage.getItem('keirin_data');
-  if (d) window.sv = JSON.parse(d);
-}
-function saveLS() {
-  localStorage.setItem('keirin_data', JSON.stringify(window.sv));
-}
-window.saveLS = saveLS;
-loadLS();
-
-  // --- 📸 画像解析処理（決まり手・Grok完全合体版） ---
-window.handleImageUpload = async function(e) {
-  let files = [];
-  if (e.type === 'paste') {
-    let items = e.clipboardData.items;
-    for (let i = 0; i < items.length; i++) {
-      if (items[i].type.indexOf('image') !== -1) files.push(items[i].getAsFile());
-    }
-  } else {
-    files = Array.from(e.target.files || (e.dataTransfer && e.dataTransfer.files) || []);
-  }
-
-  if (!files.length) return;
-  let ov = document.getElementById('loading');
-  ov.classList.remove('hidden');
-
-  try {
-    // 【重要】ここで read-shot.js の rasterOf を呼び出します
-    // （もし新しい read-shot.js に rasterOf が無ければ追加してくださいね！）
-    let raster;
-    if (window.rasterOf) {
-        raster = await window.rasterOf(files[0]);
-    } else {
-        // rasterOf関数を変数として持っている場合の保険
-        const { rasterOf, ingestShot } = await import('./read-shot.js');
-        raster = await rasterOf(files[0]);
-    }
-    
-    const { ingestShot } = await import('./read-shot.js');
-    let res = ingestShot(raster);
-    
-    // 読み込みごとに一時データ(stg)をリセット
-    window.stg.length = 0; 
-    
-    // 【着順＆決まり手】の読み込み (res.kind が 'order' または order にデータがある時)
-    if (res.order && res.order.length > 0) {
-      res.order.forEach((o, idx) => {
-        let t1 = o.techs && o.techs[0] ? o.techs[0] : "";
-        let t2 = o.techs && o.techs[1] ? o.techs[1] : "";
-        window.stg.push({
-          id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
-          payout2: "", payout3: "", racers: "7", battle: "", winLine: "単",
-          tech1: t1, tech2: t2, // 🎯 決まり手を保存！
-          sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-        });
+    // グラフの破棄用関数
+    function destroyCharts() {
+      Object.keys(window.charts).forEach(k => {
+        if(window.charts[k]) window.charts[k].destroy();
       });
+      window.charts = {};
     }
-    
-    // 【配当】の読み込み (res.kind が 'payout' または payout にデータがある時)
-    if (res.payout && res.payout.length > 0) {
-      res.payout.forEach((p, idx) => {
-        if (window.stg[idx]) {
-          window.stg[idx].payout2 = p.nirentan; 
-          window.stg[idx].payout3 = p.sanrentan;
-        } else {
-          window.stg.push({
-            id: crypto.randomUUID(), raceNo: idx + 1, order: "",
-            payout2: p.nirentan, payout3: p.sanrentan, racers: "7", battle: "", winLine: "単",
-            tech1: "", tech2: "",
-            sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+
+    // --- 📸 画像アップロード処理 ---
+    window.handleImageUpload = async function(e) {
+      let files = [];
+      if (e.type === 'paste') {
+        let items = e.clipboardData.items;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) files.push(items[i].getAsFile());
+        }
+      } else {
+        files = Array.from(e.target.files || (e.dataTransfer && e.dataTransfer.files) || []);
+      }
+
+      if (!files.length) return;
+      let ov = document.getElementById('loading');
+      ov.classList.remove('hidden');
+
+      try {
+        let raster = await rasterOf(files[0]);
+        let res = ingestShot(raster);
+        
+        window.stg.length = 0; 
+        
+        // 着順と決まり手の解析
+        if (res.order && res.order.length > 0) {
+          res.order.forEach((o, idx) => {
+            let t1 = o.techs && o.techs[0] ? o.techs[0] : "";
+            let t2 = o.techs && o.techs[1] ? o.techs[1] : "";
+            window.stg.push({
+              id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
+              payout2: "", payout3: "", racers: "7", battle: "", winLine: "単",
+              tech1: t1, tech2: t2, 
+              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+            });
           });
         }
-      });
-    }
-    
-    ov.classList.add('hidden');
-    if(e.target && e.target.id === 'fileUp') e.target.value = '';
-    
-    window.renderStg();
-    let btn = document.getElementById('applyBtn');
-    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-    btn.removeAttribute('disabled');
-    alert(`爆速ピクセル解析完了！ ${window.stg.length}件抽出しました。`);
-  } catch (err) {
-    console.error(err); ov.classList.add('hidden'); alert("エラー: " + err.message);
-  }
-}
-
-/
-  
-// --- ✍️ 手動追加処理 ---
-window.addManual = function() {
-  let o = document.getElementById('mOrd').value.trim(), 
-      p2 = document.getElementById('mP2').value.trim(), 
-      p3 = document.getElementById('mP3').value.trim(), 
-      r = document.getElementById('mRac').value,
-      b = document.getElementById('mBattle').value,
-      wL = document.getElementById('mWinLine').value; 
-      
-  if (!o && !p2 && !p3) return alert("入力してください");
-  window.sv.push({
-    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, battle: b, winLine: wL || "単",
-    sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-  });
-  window.saveLS(); window.renderSaved(); 
-  if(window.updateDash) window.updateDash();
-  document.getElementById('mOrd').value = ''; document.getElementById('mP2').value = ''; 
-  document.getElementById('mP3').value = ''; document.getElementById('mBattle').value = ''; document.getElementById('mWinLine').value = '';
-}
-
-// --- 📝 プレビューから保存 ---
-window.applyStg = function() {
-  if (!window.stg.length) return;
-  window.stg.forEach(d => {
-    window.sv.push({
-      id: d.id, order: d.order, payout2: d.payout2, payout3: d.payout3,
-      racers: d.racers, battle: d.battle || "", winLine: d.winLine || "単",
-      sites: JSON.parse(JSON.stringify(d.sites)) 
-    });
-  });
-  window.stg.length = 0; window.renderStg(); window.saveLS(); window.renderSaved();
-  if(window.updateDash) window.updateDash();
-  document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
-  document.getElementById('applyBtn').setAttribute('disabled', 'true');
-  alert("保存しました！");
-}
-  
-// --- 🤖 的中チェック自動化 ---
-window.autoCheckHit = function(type, idx) {
-  let arr = type === 'stg' ? window.stg : window.sv;
-  let d = arr[idx];
-  let p2 = parseInt(d.payout2) || 0;
-  let p3 = parseInt(d.payout3) || 0;
-
-  // 2連単または3連単が1万円以上(万車券)の場合
-  if (p2 >= 10000 || p3 >= 10000) {
-    let changed = false;
-    ['B', 'Y', 'N'].forEach(s => {
-      // 「予(予想)」にチェックが入っていて、「的(的中)」がまだ入っていないなら自動でON
-      if (d.sites[s].bet && !d.sites[s].hit) {
-        d.sites[s].hit = true;
-        changed = true;
-      }
-    });
-    
-    // 変更があった時だけ画面を更新
-    if (changed) {
-      if (type === 'stg') {
-        window.renderStg();
-      } else {
-        window.saveLS();
-        window.renderSaved();
-        if (window.updateDash) window.updateDash();
-      }
-    }
-  }
-}
-
-// --- 💾 データエクスポート / インポート / 消去 ---
-window.exportJson = function() {
-  let blob = new Blob([JSON.stringify(window.sv, null, 2)], { type: 'application/json' });
-  let a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'keirin.json';
-  a.click();
-}
-
-window.importJson = function(e) {
-  let file = e.target.files[0];
-  if (!file) return;
-  let reader = new FileReader();
-  reader.onload = function(evt) {
-    try {
-      let arr = JSON.parse(evt.target.result);
-      if (Array.isArray(arr)) {
-        window.sv = window.sv.concat(arr);
-        window.saveLS(); window.renderSaved();
-        if(window.updateDash) window.updateDash();
-        alert("データを復元・結合しました！");
-      }
-    } catch (err) { alert("JSONの読み込みに失敗しました。"); }
-    e.target.value = '';
-  };
-  reader.readAsText(file);
-}
-
-window.clearAll = function() {
-  if (confirm("本当に保存済みの全データを消去しますか？")) {
-    window.sv = []; window.saveLS(); window.renderSaved();
-    if(window.updateDash) window.updateDash();
-  }
-}
-
-// --- 🎨 表の描画パーツ・描画処理 ---
-function battleSelectHtml(type, i, d) {
-  let arr = type === 'stg' ? 'window.stg' : 'window.sv';
-  let opts = ['2分戦','3分戦','4分戦','単騎戦'].map(v => `<option value="${v}" ${d.battle == v ? 'selected' : ''}>${v}</option>`).join('');
-  return `<td><select onchange="${arr}[${i}].battle=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved(); if(window.updateDash) window.updateDash();'}" class="border p-1 text-xs rounded bg-blue-50"><option value="">選択</option>${opts}</select></td>`;
-}
-
-function winLineSelectHtml(type, i, d) {
-  let arr = type === 'stg' ? 'window.stg' : 'window.sv';
-  let opts = ['単','0','1','2','3','4'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
-  return `<td><select onchange="${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved(); if(window.updateDash) window.updateDash();'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
-}
-
-function chkHtml(type, i, d) {
-  let arr = type === 'stg' ? 'window.stg' : 'window.sv';
-  let updateSv = type === 'sv' ? 'window.saveLS(); if(window.updateDash) window.updateDash();' : '';
-  return ['B', 'Y', 'N'].map(s => `<td>
-    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${type}', ${i}); ${updateSv}">予</label>
-    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
-  </td>`).join('');
-}
-
-window.renderStg = function() {
-  document.getElementById('stgCnt').innerText = window.stg.length;
-  document.getElementById('stgBody').innerHTML = window.stg.map((d, i) => `<tr>
-    <td class="font-bold">${d.raceNo}R</td>
-    <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
-    <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
-    ${battleSelectHtml('stg', i, d)}
-    ${winLineSelectHtml('stg', i, d)}
-    ${chkHtml('stg', i, d)}
-    <td><button onclick="window.stg.splice(${i},1);window.renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
-  </tr>`).join('');
-}
-
-window.renderSaved = function() {
-  document.getElementById('savedBody').innerHTML = window.sv.map((d, i) => `<tr>
-    <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;window.saveLS();if(window.updateDash) window.updateDash();" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.saveLS(); if(window.updateDash) window.updateDash();" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.saveLS(); if(window.updateDash) window.updateDash();" class="border p-1 text-center w-24 rounded"></td>
-    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();if(window.updateDash) window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
-    ${battleSelectHtml('sv', i, d)}
-    ${winLineSelectHtml('sv', i, d)}
-    ${chkHtml('sv', i, d)}
-    <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved();if(window.updateDash) window.updateDash();" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
-  </tr>`).join('');
-}
-// --- 📊 ダッシュボード・グラフ更新処理 ---
-window.updateDash = function() {
-  let fRac = document.getElementById('dashRacer').value;
-  let targetSv = fRac === 'all' ? window.sv : window.sv.filter(d => String(d.racers).replace('車', '') === fRac);
-  
-  document.getElementById('dTot').innerText = targetSv.length;
-  
-  let sStat = { B: { bet: 0, hit: 0, mansha: 0 }, Y: { bet: 0, hit: 0, mansha: 0 }, N: { bet: 0, hit: 0, mansha: 0 } };
-  let ovMap = { "なし": { c: 0, p3: 0, p2: 0 }, "Bのみ": { c: 0, p3: 0, p2: 0 }, "Yのみ": { c: 0, p3: 0, p2: 0 }, "Nのみ": { c: 0, p3: 0, p2: 0 }, "B+Y": { c: 0, p3: 0, p2: 0 }, "B+N": { c: 0, p3: 0, p2: 0 }, "Y+N": { c: 0, p3: 0, p2: 0 }, "B+Y+N": { c: 0, p3: 0, p2: 0 } };
-  
-  let dTypeEl = document.querySelector('input[name="dType"]:checked');
-  let dType = dTypeEl ? dTypeEl.value : 'sum2';
-  
-  let distD = {}, o2Set = new Set();
-  
-  let mansha1st = { 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0 };
-  let lineKeys = ['単', '0', '1', '2', '3', '4'];
-  let winLineAll = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 };    
-  let winLineMansha = { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 }; 
-  let manshaSiteLine = {
-    B: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 },
-    Y: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 },
-    N: { '単':0, '0':0, '1':0, '2':0, '3':0, '4':0 }
-  };
-
-  targetSv.forEach(d => {
-    let b = d.sites.B.bet, y = d.sites.Y.bet, n = d.sites.N.bet;
-    let p3 = parseInt(d.payout3) || 0, p2 = parseInt(d.payout2) || 0, isM = p3 >= 10000 || p2 >= 10000;
-    
-    let cars = (d.order || '').split('-');
-    let c1 = parseInt(cars[0]), c2 = parseInt(cars[1]), c3 = parseInt(cars[2]);
-
-    if (d.winLine && winLineAll[d.winLine] !== undefined) winLineAll[d.winLine]++;
-
-    if (isM) {
-      if (c1 >= 1 && c1 <= 9) mansha1st[c1]++;
-      if (d.winLine && winLineMansha[d.winLine] !== undefined) winLineMansha[d.winLine]++;
-    }
-
-    ['B', 'Y', 'N'].forEach(s => { 
-      if (d.sites[s].bet) sStat[s].bet++; 
-      if (d.sites[s].hit) { 
-        sStat[s].hit++; 
-        if (isM) {
-          sStat[s].mansha++;
-          if(d.winLine && manshaSiteLine[s][d.winLine] !== undefined) manshaSiteLine[s][d.winLine]++;
+        
+        // 配当の解析
+        if (res.payout && res.payout.length > 0) {
+          res.payout.forEach((p, idx) => {
+            if (window.stg[idx]) {
+              window.stg[idx].payout2 = p.nirentan; 
+              window.stg[idx].payout3 = p.sanrentan;
+            } else {
+              window.stg.push({
+                id: crypto.randomUUID(), raceNo: idx + 1, order: "",
+                payout2: p.nirentan, payout3: p.sanrentan, racers: "7", battle: "", winLine: "単",
+                tech1: "", tech2: "",
+                sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+              });
+            }
+          });
         }
-      } 
-    });
-
-    let k = "なし";
-    if (b && !y && !n) k = "Bのみ"; else if (!b && y && !n) k = "Yのみ"; else if (!b && !y && n) k = "Nのみ";
-    else if (b && y && !n) k = "B+Y"; else if (b && !y && n) k = "B+N"; else if (!b && y && n) k = "Y+N"; else if (b && y && n) k = "B+Y+N";
-    ovMap[k].c++; ovMap[k].p3 += p3; ovMap[k].p2 += p2;
-
-    if (!isNaN(c1) && !isNaN(c2)) {
-      o2Set.add(`${c1}-${c2}`);
-      let s2 = c1 + c2, s3 = s2 + (isNaN(c3) ? 0 : c3);
-      let tSum = dType === 'sum2' ? s2 : s3, tPay = dType === 'sum2' ? p2 : p3;
-      let isOv = ((b ? 1 : 0) + (y ? 1 : 0) + (n ? 1 : 0)) >= 2;
-      if (!distD[tSum]) distD[tSum] = { ov: 0, sg: 0, pTot: 0, cnt: 0 };
-      if (isOv) distD[tSum].ov++; else distD[tSum].sg++;
-      distD[tSum].pTot += tPay; distD[tSum].cnt++;
-    }
-  });
-
-  [['b', 'B'], ['y', 'Y'], ['n', 'N']].forEach(([id, S]) => {
-    let r = sStat[S].bet ? Math.round(sStat[S].hit / sStat[S].bet * 100) : 0;
-    document.getElementById(`d${id.toUpperCase()}Hit`).innerText = r + '%';
-    document.getElementById(`d${id.toUpperCase()}Mansha`).innerText = `万車:${sStat[S].mansha}回`;
-  });
-
-  const intYAxis = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { position: 'bottom' } } };
-  const intYAxisNoLeg = { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }, plugins: { legend: { display: false } } };
-
-  if (cMansha) cMansha.destroy();
-  cMansha = new Chart(document.getElementById('manshaC').getContext('2d'), {
-    type: 'bar',
-    data: { labels: [1,2,3,4,5,6,7,8,9].map(n=>n+'番'), datasets: [{ label: '1着回数 (万車時)', data: [1,2,3,4,5,6,7,8,9].map(n=>mansha1st[n]), backgroundColor: '#ef4444' }] },
-    options: intYAxisNoLeg
-  });
-
-  if (cWinLine) cWinLine.destroy();
-  cWinLine = new Chart(document.getElementById('winLineC').getContext('2d'), {
-    type: 'bar',
-    data: { labels: lineKeys, datasets: [{ label: '全体の1着ライン', data: lineKeys.map(k=>winLineAll[k]), backgroundColor: '#eab308' }] },
-    options: intYAxisNoLeg
-  });
-
-  if (cLineAll) cLineAll.destroy();
-  cLineAll = new Chart(document.getElementById('lineAllC').getContext('2d'), {
-    type: 'bar',
-    data: { labels: lineKeys, datasets: [{ label: '万車時のライン回数', data: lineKeys.map(k=>winLineMansha[k]), backgroundColor: '#3b82f6' }] },
-    options: intYAxisNoLeg
-  });
-
-  if (cManshaSiteLine) cManshaSiteLine.destroy();
-  cManshaSiteLine = new Chart(document.getElementById('manshaSiteLineC').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: lineKeys,
-      datasets: [
-        { label: 'B軍', data: lineKeys.map(k=>manshaSiteLine.B[k]), backgroundColor: '#22c55e' },
-        { label: 'Y軍', data: lineKeys.map(k=>manshaSiteLine.Y[k]), backgroundColor: '#f97316' },
-        { label: 'N軍', data: lineKeys.map(k=>manshaSiteLine.N[k]), backgroundColor: '#ef4444' }
-      ]
-    },
-    options: intYAxis
-  });
-
-  let minS = dType === 'sum2' ? 3 : 6, maxS = dType === 'sum2' ? 17 : 24;
-  let lbls = [], ovArr = [], sgArr = [], avgArr = [];
-  for (let i = minS; i <= maxS; i++) {
-    lbls.push(i);
-    let o = distD[i] || { ov: 0, sg: 0, pTot: 0, cnt: 0 };
-    ovArr.push(o.ov); sgArr.push(o.sg);
-    avgArr.push(o.cnt ? Math.round(o.pTot / o.cnt) : 0);
-  }
-
-  if (cDist) cDist.destroy();
-  cDist = new Chart(document.getElementById('distC').getContext('2d'), {
-    type: 'bar',
-    data: { labels: lbls, datasets: [{ label: '被り', data: ovArr, backgroundColor: '#f97316' }, { label: '単独', data: sgArr, backgroundColor: '#3b82f6' }] },
-    options: intYAxis
-  });
-
-  if (cPay) cPay.destroy();
-  cPay = new Chart(document.getElementById('payC').getContext('2d'), {
-    type: 'line',
-    data: { labels: lbls, datasets: [{ label: '平均配当', data: avgArr, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.3 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-  });
-
-  document.getElementById('dashTbody').innerHTML = Object.entries(ovMap).map(([k, v]) => `<tr>
-    <td class="border p-1 font-bold">${k}</td>
-    <td class="border p-1">${v.c}件</td>
-    <td class="border p-1 text-blue-700">${v.c ? Math.round(v.p3 / v.c).toLocaleString() : 0}円</td>
-    <td class="border p-1 text-green-700">${v.c ? Math.round(v.p2 / v.c).toLocaleString() : 0}円</td>
-  </tr>`).join('');
-
-  let lOver = Object.keys(ovMap);
-  if (cAna) cAna.destroy();
-  cAna = new Chart(document.getElementById('anaC').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: lOver,
-      datasets: [
-        { label: '3連単平均', data: lOver.map(k => ovMap[k].c ? Math.round(ovMap[k].p3 / ovMap[k].c) : 0), backgroundColor: '#3b82f6', yAxisID: 'y' },
-        { label: '2連単平均', data: lOver.map(k => ovMap[k].c ? Math.round(ovMap[k].p2 / ovMap[k].c) : 0), backgroundColor: '#22c55e', yAxisID: 'y1' }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: {
-        y: { type: 'linear', position: 'left', beginAtZero: true, ticks: { precision: 0 } },
-        y1: { type: 'linear', position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, ticks: { precision: 0 } }
+        
+        ov.classList.add('hidden');
+        if(e.target && e.target.id === 'fileUp') e.target.value = '';
+        
+        window.renderStg();
+        let btn = document.getElementById('applyBtn');
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        btn.removeAttribute('disabled');
+        alert(`爆速ピクセル解析完了！ ${window.stg.length}件抽出しました。`);
+      } catch (err) {
+        console.error(err); 
+        ov.classList.add('hidden'); 
+        alert("エラーが発生しました: " + err.message);
       }
-    }
-  });
+    };
 
-  let o2Arr = Array.from(o2Set).sort();
-  let trendSel = document.getElementById('trendSel');
-  let currentVal = trendSel.value;
-  trendSel.innerHTML = '<option value="">2車単を選択</option>' + o2Arr.map(o => `<option value="${o}">${o}</option>`).join('');
-  if (o2Arr.includes(currentVal)) trendSel.value = currentVal;
-  
-  window.updateTrend();
-}
+    // イベントリスナー登録
+    document.getElementById('fileUp').addEventListener('change', window.handleImageUpload);
+    document.addEventListener('paste', window.handleImageUpload);
 
-window.updateTrend = function() {
-  let fRac = document.getElementById('dashRacer').value;
-  let targetSv = fRac === 'all' ? window.sv : window.sv.filter(d => String(d.racers).replace('車', '') === fRac);
-  let t2 = document.getElementById('trendSel').value, cnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
-  
-  if (t2) { 
-    targetSv.forEach(d => { 
-      let c = (d.order || '').split('-'); 
-      if (c.length >= 3 && `${c[0]}-${c[1]}` === t2) { 
-        let c3 = +c[2]; 
-        if (c3 >= 1 && c3 <= 9) cnt[c3]++; 
-      } 
-    }); 
-  }
-  
-  if (cTrend) cTrend.destroy();
-  cTrend = new Chart(document.getElementById('trendC').getContext('2d'), {
-    type: 'bar',
-    data: { labels: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => n + '番'), datasets: [{ label: '3着回数', data: [1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => cnt[n]), backgroundColor: '#8b5cf6' }] },
-    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
-  });
-}
+    // --- HTML描画系 ---
+    window.renderStg = function() {
+      const tbody = document.getElementById('stgBody');
+      document.getElementById('stgCount').innerText = window.stg.length;
+      tbody.innerHTML = window.stg.map((d, i) => window.rowHTML(d, i, 'stg')).join('');
+    };
 
-// 初回読み込み時の処理
-window.renderSaved();
-window.updateDash();
+    window.renderSaved = function() {
+      const tbody = document.getElementById('svBody');
+      tbody.innerHTML = window.sv.map((d, i) => window.rowHTML(d, i, 'sv')).join('');
+    };
 
-</script>
+    window.rowHTML = function(d, i, type) {
+      const siteBtn = (s) => {
+        let sd = d.sites[s];
+        let betC = sd.bet ? (s==='B'?'bg-blue-500':s==='Y'?'bg-yellow-500':'bg-purple-500')+' text-white' : 'bg-gray-200 text-gray-400';
+        let hitC = sd.hit ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400';
+        return `<div class="flex flex-col gap-1 items-center">
+                  <button onclick="window.toggleSite('${type}',${i},'${s}','bet')" class="w-8 h-8 rounded-full text-xs font-bold ${betC}">予</button>
+                  <button onclick="window.toggleSite('${type}',${i},'${s}','hit')" class="w-8 h-8 rounded-full text-xs font-bold ${hitC}">的</button>
+                </div>`;
+      };
+      
+      let techDisplay = d.tech1 || d.tech2 ? `${d.tech1}-${d.tech2}` : "";
+      
+      let inp = (f, w, p) => `<input type="text" value="${d[f]||''}" onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1 w-${w} text-center" placeholder="${p||''}">`;
+      let sel = (f, opts) => `<select onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1"><option value="">-</option>${opts.map(o=>`<option value="${o}" ${d[f]==o?'selected':''}>${o}</option>`).join('')}</select>`;
+      
+      return `<tr class="border-b hover:bg-gray-50">
+        <td class="p-1">${type==='stg'? d.raceNo : ''}</td>
+        <td class="p-1">${inp('order', 16, '1-2-3')}</td>
+        <td class="p-1 text-center font-bold text-gray-600">${techDisplay}</td>
+        <td class="p-1">${inp('payout2', 20)}</td>
+        <td class="p-1">${inp('payout3', 24)}</td>
+        <td class="p-1">${sel('racers', ['9','8','7','6','5'])}</td>
+        <td class="p-1">${sel('battle', ['2分戦','3分戦','4分戦','単騎戦'])}</td>
+        <td class="p-1">${sel('winLine', ['単','0','1','2','3','4'])}</td>
+        <td class="p-1">${siteBtn('B')}</td><td class="p-1">${siteBtn('Y')}</td><td class="p-1">${siteBtn('N')}</td>
+        <td class="p-1 text-center"><button onclick="window.delRow('${type}',${i})" class="text-red-500 font-bold hover:bg-red-100 px-2 py-1 rounded">✖</button></td>
+      </tr>`;
+    };
+
+    // --- データ操作系 ---
+    window.updateVal = function(type, i, field, val) {
+      let arr = type === 'stg' ? window.stg : window.sv;
+      arr[i][field] = val;
+      if (field === 'payout2' || field === 'payout3') window.autoCheckHit(type, i);
+      if (type === 'sv') { window.saveLS(); window.updateDash(); }
+    };
+
+    window.toggleSite = function(type, i, site, field) {
+      let arr = type === 'stg' ? window.stg : window.sv;
+      arr[i].sites[site][field] = !arr[i].sites[site][field];
+      if (type === 'stg') window.renderStg();
+      else { window.saveLS(); window.renderSaved(); window.updateDash(); }
+    };
+
+    window.delRow = function(type, i) {
+      if(!confirm("削除しますか？")) return;
+      if (type === 'stg') { window.stg.splice(i, 1); window.renderStg(); }
+      else { window.sv.splice(i, 1); window.saveLS(); window.renderSaved(); window.updateDash(); }
+    };
+
+    window.autoCheckHit = function(type, i) {
+      let d = (type === 'stg' ? window.stg : window.sv)[i];
+      let p2 = parseInt(d.payout2)||0; let p3 = parseInt(d.payout3)||0;
+      if (p2 >= 10000 || p3 >= 10000) {
+        ['B','Y','N'].forEach(s => { if(d.sites[s].bet) d.sites[s].hit = true; });
+        if(type==='stg') window.renderStg(); else { window.saveLS(); window.renderSaved(); window.updateDash(); }
+      }
+    };
+
+    window.addManual = function() {
+      let o = document.getElementById('mOrd').value.trim(), 
+          p2 = document.getElementById('mP2').value.trim(), 
+          p3 = document.getElementById('mP3').value.trim(), 
+          r = document.getElementById('mRac').value,
+          b = document.getElementById('mBattle').value,
+          wL = document.getElementById('mWinLine').value; 
+      
+      if (!o && !p2 && !p3) return alert("入力してください");
+      window.sv.push({
+        id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, battle: b, winLine: wL || "単",
+        tech1: "", tech2: "", // 手動追加時はひとまず空
+        sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+      });
+      window.saveLS(); window.renderSaved(); window.updateDash();
+      document.getElementById('mOrd').value=''; document.getElementById('mP2').value=''; document.getElementById('mP3').value='';
+    };
+
+    window.applyStg = function() {
+      if (!window.stg.length) return;
+      window.stg.forEach(d => window.sv.push(JSON.parse(JSON.stringify(d))));
+      window.stg.length = 0; window.renderStg(); window.saveLS(); window.renderSaved(); window.updateDash();
+      document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
+      document.getElementById('applyBtn').setAttribute('disabled', 'true');
+      alert("保存しました！");
+    };
+
+    window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
+
+    // --- バックアップ系 ---
+    window.backupData = function(e) {
+      e.stopPropagation();
+      let blob = new Blob([JSON.stringify(window.sv)], {type: 'application/json'});
+      let a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `byn3_backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    };
+
+    window.restoreData = function(e) {
+      let file = e.target.files[0];
+      if(!file) return;
+      let reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          let data = JSON.parse(ev.target.result);
+          if(Array.isArray(data)) { window.sv = data; window.saveLS(); window.renderSaved(); window.updateDash(); alert("復元完了！"); }
+        } catch(err) { alert("無効なファイルです"); }
+      };
+      reader.readAsText(file);
+    };
+
+    window.clearData = function(e) {
+      e.stopPropagation();
+      if(confirm("全ての保存データを消去しますか？(元には戻せません)")){
+        window.sv = []; window.saveLS(); window.renderSaved(); window.updateDash();
+      }
+    };
+
+    // --- 📊 ダッシュボード描画処理 ---
+    window.updateDash = function() {
+      destroyCharts();
+      let f = document.getElementById('dashFilter').value;
+      let data = = window.sv.filter(d => f === 'all' || d.racers === f);
+      document.getElementById('d_total').innerText = data.length;
+
+      // 各サイト成績
+      let stats = { B: {bet:0, hit:0, man:0}, Y: {bet:0, hit:0, man:0}, N: {bet:0, hit:0, man:0} };
+      data.forEach(d => {
+        let isMan = (parseInt(d.payout2)>=10000 || parseInt(d.payout3)>=10000);
+        ['B','Y','N'].forEach(s => {
+          if(d.sites[s].bet) {
+            stats[s].bet++;
+            if(d.sites[s].hit) { stats[s].hit++; if(isMan) stats[s].man++; }
+          }
+        });
+      });
+      ['B','Y','N'].forEach(s => {
+        let rate = stats[s].bet ? Math.round((stats[s].hit/stats[s].bet)*100) : 0;
+        document.getElementById(`d_${s.toLowerCase()}_rate`).innerText = `${rate}%`;
+        document.getElementById(`d_${s.toLowerCase()}_man`).innerText = `万車:${stats[s].man}`;
+      });
+
+      if (data.length === 0) return;
+
+      // 共通グラフ設定
+      Chart.defaults.font.family = 'sans-serif';
+      const c = (id, type, d, opts={}) => window.charts[id] = new Chart(document.getElementById(id), {type: type, data: d, options: {responsive: true, maintainAspectRatio: false, plugins:{legend:{position:'bottom'}}, ...opts}});
+
+      // グラフ1: 万車時の1着車番
+      let manData = data.filter(d => parseInt(d.payout3) >= 10000 && d.order);
+      let winCars = manData.map(d => d.order.split('-')[0]).filter(x=>x);
+      let wcCount = {}; winCars.forEach(c => wcCount[c] = (wcCount[c]||0)+1);
+      c('winCarChart', 'bar', {
+        labels: Object.keys(wcCount),
+        datasets: [{label:'出現回数', data: Object.values(wcCount), backgroundColor:'rgba(255, 99, 132, 0.5)'}]
+      }, {indexAxis:'x'});
+
+      // グラフ2: 全体ライン
+      let lineCount = {}; data.forEach(d => {if(d.winLine) lineCount[d.winLine] = (lineCount[d.winLine]||0)+1;});
+      c('winLineChart', 'doughnut', {
+        labels: Object.keys(lineCount),
+        datasets: [{data: Object.values(lineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
+      });
+
+      // グラフ3: 万車時ライン
+      let mLineCount = {}; manData.forEach(d => {if(d.winLine) mLineCount[d.winLine] = (mLineCount[d.winLine]||0)+1;});
+      c('manshaLineChart', 'pie', {
+        labels: Object.keys(mLineCount),
+        datasets: [{data: Object.values(mLineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
+      });
+
+      // グラフ4: サイト別万車ライン
+      let sLines = { B:{}, Y:{}, N:{} };
+      manData.forEach(d => {
+        ['B','Y','N'].forEach(s => {
+          if(d.sites[s].hit && d.winLine) sLines[s][d.winLine] = (sLines[s][d.winLine]||0)+1;
+        });
+      });
+      c('siteLineChart', 'bar', {
+        labels: ['単','0','1','2','3','4'],
+        datasets: [
+          {label:'B軍', data:['単','0','1','2','3','4'].map(k=>sLines.B[k]||0), backgroundColor:'rgba(59, 130, 246, 0.7)'},
+          {label:'Y軍', data:['単','0','1','2','3','4'].map(k=>sLines.Y[k]||0), backgroundColor:'rgba(245, 158, 11, 0.7)'},
+          {label:'N軍', data:['単','0','1','2','3','4'].map(k=>sLines.N[k]||0), backgroundColor:'rgba(139, 92, 246, 0.7)'}
+        ]
+      }, {scales:{x:{stacked:true}, y:{stacked:true}}});
+
+      // グラフ5, 6: 合計値と配当
+      let sumGrp = {};
+      data.forEach(d => {
+        if(!d.order) return;
+        let p = d.order.split('-').map(Number);
+        if(p.length===3 && !p.includes(NaN)) {
+          let sum = p[0]+p[1]+p[2];
+          if(!sumGrp[sum]) sumGrp[sum] = {cnt:0, p3:0};
+          sumGrp[sum].cnt++; sumGrp[sum].p3 += parseInt(d.payout3)||0;
+        }
+      });
+      let sums = Object.keys(sumGrp).sort((a,b)=>a-b);
+      c('sumDistChart', 'bar', {
+        labels: sums,
+        datasets: [{label:'出現回数', data: sums.map(k=>sumGrp[k].cnt), backgroundColor:'rgba(75, 192, 192, 0.6)'}]
+      });
+      c('sumPayoutChart', 'line', {
+        labels: sums,
+        datasets: [{label:'平均3連単', data: sums.map(k=>Math.round(sumGrp[k].p3/sumGrp[k].cnt)), borderColor:'#ef4444', fill:false}]
+      });
+      
+       // 被り状況表
+      let kGrp = {};
+      data.forEach(d => {
+        let bets = [];
+        ['B','Y','N'].forEach(s => { if(d.sites[s].bet) bets.push(s); });
+        let key = bets.length ? bets.join('+') : 'なし';
+        if(!kGrp[key]) kGrp[key] = {cnt:0, p2:0, p3:0};
+        kGrp[key].cnt++; kGrp[key].p2 += parseInt(d.payout2)||0; kGrp[key].p3 += parseInt(d.payout3)||0;
+      });
+      document.getElementById('kaburiTbody').innerHTML = Object.entries(kGrp).sort((a,b)=>b[1].cnt-a[1].cnt).map(([k,v])=>
+        `<tr><td class="border p-1">${k}</td><td class="border p-1">${v.cnt}</td><td class="border p-1">${Math.round(v.p3/v.cnt)}円</td><td class="border p-1">${Math.round(v.p2/v.cnt)}円</td></tr>`
+      ).join('');
+    };
+
+    // 初期化
+    window.renderSaved();
+    window.updateDash();
+  </script>
 </body>
 </html>
-
