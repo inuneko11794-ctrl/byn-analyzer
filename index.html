@@ -156,6 +156,325 @@
   </details>
 
   <!-- 🌟 JavaScript モジュール 🌟 -->
+    <script type="module">
+    import { rasterOf, ingestShot } from './read-shot.js';
+
+    window.stg = [];
+    window.sv = JSON.parse(localStorage.getItem('byn3_data')) || [];
+    window.charts = {};
+
+    let orderRows = null;
+    let payRows = null;
+
+    function destroyCharts() {
+      Object.keys(window.charts).forEach(k => {
+        if(window.charts[k]) window.charts[k].destroy();
+      });
+      window.charts = {};
+    }
+
+    // --- 📸 画像アップロード処理（2枚合成対応） ---
+    window.handleImageUpload = async function (e) {
+      const files = [];
+      if (e.type === "paste") {
+        for (const item of e.clipboardData.items) {
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            if (file) files.push(file);
+          }
+        }
+      } else {
+        files.push(...(e.target.files || (e.dataTransfer && e.dataTransfer.files) || []));
+      }
+      if (!files.length) return;
+      
+      const ov = document.getElementById("loading");
+      ov.classList.remove("hidden");
+      
+      try {
+        for (const file of files) {
+          const shot = ingestShot(await rasterOf(file));
+          if (shot.kind === "order") orderRows = shot.order;
+          else if (shot.kind === "payout") payRows = shot.payout;
+        }
+        
+        const n = Math.max(orderRows?.length || 0, payRows?.length || 0);
+        window.stg = Array.from({ length: n }, (_, idx) => {
+          const order = orderRows?.[idx];
+          const pay = payRows?.[idx];
+          return {
+            id: crypto.randomUUID(),
+            raceNo: idx + 1,
+            order: order ? order.cars.join("-") : "",
+            payout2: pay ? pay.nirentan : "",
+            payout3: pay ? pay.sanrentan : "",
+            racers: "7",
+            battle: "",
+            winLine: "単",
+            tech1: order?.techs?.[0] || "",
+            tech2: order?.techs?.[1] || "",
+            sites: {
+              B: { bet: false, hit: false },
+              Y: { bet: false, hit: false },
+              N: { bet: false, hit: false },
+            },
+          };
+        });
+        
+        if (e.target && e.target.id === "fileUp") e.target.value = "";
+        window.renderStg();
+        const btn = document.getElementById("applyBtn");
+        btn.classList.remove("opacity-50", "cursor-not-allowed");
+        btn.removeAttribute("disabled");
+        alert("着順 " + (orderRows?.length || 0) + "、払戻 " + (payRows?.length || 0));
+      } catch (err) {
+        alert("エラー: " + err.message);
+      } finally {
+        ov.classList.add("hidden");
+      }
+    };
+
+    document.getElementById('fileUp').addEventListener('change', window.handleImageUpload);
+    document.addEventListener('paste', window.handleImageUpload);
+
+    // --- HTML描画系 ---
+    window.renderStg = function() {
+      const tbody = document.getElementById('stgBody');
+      document.getElementById('stgCount').innerText = window.stg.length;
+      tbody.innerHTML = window.stg.map((d, i) => window.rowHTML(d, i, 'stg')).join('');
+    };
+
+    window.renderSaved = function() {
+      const tbody = document.getElementById('svBody');
+      tbody.innerHTML = window.sv.map((d, i) => window.rowHTML(d, i, 'sv')).join('');
+    };
+
+    window.rowHTML = function(d, i, type) {
+      const siteBtn = (s) => {
+        let sd = d.sites[s];
+        let betC = sd.bet ? (s==='B'?'bg-blue-500':s==='Y'?'bg-yellow-500':'bg-purple-500')+' text-white' : 'bg-gray-200 text-gray-400';
+        let hitC = sd.hit ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400';
+        return `<div class="flex flex-col gap-1 items-center">
+                  <button onclick="window.toggleSite('${type}',${i},'${s}','bet')" class="w-8 h-8 rounded-full text-xs font-bold ${betC}">予</button>
+                  <button onclick="window.toggleSite('${type}',${i},'${s}','hit')" class="w-8 h-8 rounded-full text-xs font-bold ${hitC}">的</button>
+                </div>`;
+      };
+      
+      let techDisplay = d.tech1 || d.tech2 ? `${d.tech1}-${d.tech2}` : "";
+      
+      let inp = (f, w, p) => `<input type="text" value="${d[f]||''}" onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1 w-${w} text-center" placeholder="${p||''}">`;
+      let sel = (f, opts) => `<select onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1"><option value="">-</option>${opts.map(o=>`<option value="${o}" ${d[f]==o?'selected':''}>${o}</option>`).join('')}</select>`;
+      
+      return `<tr class="border-b hover:bg-gray-50">
+        <td class="p-1">${type==='stg'? d.raceNo : ''}</td>
+        <td class="p-1">${inp('order', 16, '1-2-3')}</td>
+        <td class="p-1 text-center font-bold text-gray-600">${techDisplay}</td>
+        <td class="p-1">${inp('payout2', 20)}</td>
+        <td class="p-1">${inp('payout3', 24)}</td>
+        <td class="p-1">${sel('racers', ['9','8','7','6','5'])}</td>
+        <td class="p-1">${sel('battle', ['2分戦','3分戦','4分戦','単騎戦'])}</td>
+        <td class="p-1">${sel('winLine', ['単','0','1','2','3','4'])}</td>
+        <td class="p-1">${siteBtn('B')}</td><td class="p-1">${siteBtn('Y')}</td><td class="p-1">${siteBtn('N')}</td>
+        <td class="p-1 text-center"><button onclick="window.delRow('${type}',${i})" class="text-red-500 font-bold hover:bg-red-100 px-2 py-1 rounded">✖</button></td>
+      </tr>`;
+    };
+
+    window.updateVal = function(type, i, field, val) {
+      let arr = type === 'stg' ? window.stg : window.sv;
+      arr[i][field] = val;
+      if (field === 'payout2' || field === 'payout3') window.autoCheckHit(type, i);
+      if (type === 'sv') { window.saveLS(); window.updateDash(); }
+    };
+
+    window.toggleSite = function(type, i, site, field) {
+      let arr = type === 'stg' ? window.stg : window.sv;
+      arr[i].sites[site][field] = !arr[i].sites[site][field];
+      if (type === 'stg') window.renderStg();
+      else { window.saveLS(); window.renderSaved(); window.updateDash(); }
+    };
+
+    window.delRow = function(type, i) {
+      if(!confirm("削除しますか？")) return;
+      if (type === 'stg') { window.stg.splice(i, 1); window.renderStg(); }
+      else { window.sv.splice(i, 1); window.saveLS(); window.renderSaved(); window.updateDash(); }
+    };
+
+    window.autoCheckHit = function(type, i) {
+      let d = (type === 'stg' ? window.stg : window.sv)[i];
+      let p2 = parseInt(d.payout2)||0; let p3 = parseInt(d.payout3)||0;
+      if (p2 >= 10000 || p3 >= 10000) {
+        ['B','Y','N'].forEach(s => { if(d.sites[s].bet) d.sites[s].hit = true; });
+        if(type==='stg') window.renderStg(); else { window.saveLS(); window.renderSaved(); window.updateDash(); }
+      }
+    };
+
+    window.addManual = function() {
+      let o = document.getElementById('mOrd').value.trim(), 
+          p2 = document.getElementById('mP2').value.trim(), 
+          p3 = document.getElementById('mP3').value.trim(), 
+          r = document.getElementById('mRac').value,
+          b = document.getElementById('mBattle').value,
+          wL = document.getElementById('mWinLine').value; 
+      
+      if (!o && !p2 && !p3) return alert("入力してください");
+      window.sv.push({
+        id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, battle: b, winLine: wL || "単",
+        tech1: "", tech2: "",
+        sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+      });
+      window.saveLS(); window.renderSaved(); window.updateDash();
+      document.getElementById('mOrd').value=''; document.getElementById('mP2').value=''; document.getElementById('mP3').value='';
+    };
+
+    window.applyStg = function() {
+      if (!window.stg.length) return;
+      window.stg.forEach(d => window.sv.push(JSON.parse(JSON.stringify(d))));
+      window.stg.length = 0;
+      orderRows = null; // 保存後は一時データをクリア
+      payRows = null;
+      window.renderStg(); window.saveLS(); window.renderSaved(); window.updateDash();
+      document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
+      document.getElementById('applyBtn').setAttribute('disabled', 'true');
+      alert("保存しました！");
+    };
+
+    window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
+
+    window.backupData = function(e) {
+      e.stopPropagation();
+      let blob = new Blob([JSON.stringify(window.sv)], {type: 'application/json'});
+      let a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `byn3_backup_${new Date().toISOString().slice(0,10)}.json`;
+      a.click();
+    };
+
+    window.restoreData = function(e) {
+      let file = e.target.files[0];
+      if(!file) return;
+      let reader = new FileReader();
+      reader.onload = function(ev) {
+        try {
+          let data = JSON.parse(ev.target.result);
+          if(Array.isArray(data)) { window.sv = data; window.saveLS(); window.renderSaved(); window.updateDash(); alert("復元完了！"); }
+        } catch(err) { alert("無効なファイルです"); }
+      };
+      reader.readAsText(file);
+    };
+
+    window.clearData = function(e) {
+      e.stopPropagation();
+      if(confirm("全ての保存データを消去しますか？(元には戻せません)")){
+        window.sv = []; window.saveLS(); window.renderSaved(); window.updateDash();
+      }
+    };
+
+    // --- 📊 ダッシュボード描画処理 ---
+    window.updateDash = function() {
+      destroyCharts();
+      let f = document.getElementById('dashFilter').value;
+      let data = window.sv.filter(d => f === 'all' || d.racers === f);
+      document.getElementById('d_total').innerText = data.length;
+
+      let stats = { B: {bet:0, hit:0, man:0}, Y: {bet:0, hit:0, man:0}, N: {bet:0, hit:0, man:0} };
+      data.forEach(d => {
+        let isMan = (parseInt(d.payout2)>=10000 || parseInt(d.payout3)>=10000);
+        ['B','Y','N'].forEach(s => {
+          if(d.sites[s].bet) {
+            stats[s].bet++;
+            if(d.sites[s].hit) { stats[s].hit++; if(isMan) stats[s].man++; }
+          }
+        });
+      });
+      ['B','Y','N'].forEach(s => {
+        let rate = stats[s].bet ? Math.round((stats[s].hit/stats[s].bet)*100) : 0;
+        document.getElementById(`d_${s.toLowerCase()}_rate`).innerText = `${rate}%`;
+        document.getElementById(`d_${s.toLowerCase()}_man`).innerText = `万車:${stats[s].man}`;
+      });
+
+      if (data.length === 0) return;
+
+      Chart.defaults.font.family = 'sans-serif';
+      
+      // maintainAspectRatio: false を削除し、グラフの高さを自動確保させる
+      const c = (id, type, d, opts={}) => window.charts[id] = new Chart(document.getElementById(id), {
+        type: type, 
+        data: d, 
+        options: { responsive: true, plugins:{legend:{position:'bottom'}}, ...opts }
+      });
+
+      let manData = data.filter(d => parseInt(d.payout3) >= 10000 && d.order);
+      let winCars = manData.map(d => d.order.split('-')[0]).filter(x=>x);
+      let wcCount = {}; winCars.forEach(ca => wcCount[ca] = (wcCount[ca]||0)+1);
+      c('winCarChart', 'bar', {
+        labels: Object.keys(wcCount),
+        datasets: [{label:'出現回数', data: Object.values(wcCount), backgroundColor:'rgba(255, 99, 132, 0.5)'}]
+      }, {indexAxis:'x'});
+
+      let lineCount = {}; data.forEach(d => {if(d.winLine) lineCount[d.winLine] = (lineCount[d.winLine]||0)+1;});
+      c('winLineChart', 'doughnut', {
+        labels: Object.keys(lineCount),
+        datasets: [{data: Object.values(lineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
+      });
+
+      let mLineCount = {}; manData.forEach(d => {if(d.winLine) mLineCount[d.winLine] = (mLineCount[d.winLine]||0)+1;});
+      c('manshaLineChart', 'pie', {
+        labels: Object.keys(mLineCount),
+        datasets: [{data: Object.values(mLineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
+      });
+
+      let sLines = { B:{}, Y:{}, N:{} };
+      manData.forEach(d => {
+        ['B','Y','N'].forEach(s => {
+          if(d.sites[s].hit && d.winLine) sLines[s][d.winLine] = (sLines[s][d.winLine]||0)+1;
+        });
+      });
+      c('siteLineChart', 'bar', {
+        labels: ['単','0','1','2','3','4'],
+        datasets: [
+          {label:'B軍', data:['単','0','1','2','3','4'].map(k=>sLines.B[k]||0), backgroundColor:'rgba(59, 130, 246, 0.7)'},
+          {label:'Y軍', data:['単','0','1','2','3','4'].map(k=>sLines.Y[k]||0), backgroundColor:'rgba(245, 158, 11, 0.7)'},
+          {label:'N軍', data:['単','0','1','2','3','4'].map(k=>sLines.N[k]||0), backgroundColor:'rgba(139, 92, 246, 0.7)'}
+        ]
+      }, {scales:{x:{stacked:true}, y:{stacked:true}}});
+
+      let sumGrp = {};
+      data.forEach(d => {
+        if(!d.order) return;
+        let p = d.order.split('-').map(Number);
+        if(p.length===3 && !p.includes(NaN)) {
+          let sum = p[0]+p[1]+p[2];
+          if(!sumGrp[sum]) sumGrp[sum] = {cnt:0, p3:0};
+          sumGrp[sum].cnt++; sumGrp[sum].p3 += parseInt(d.payout3)||0;
+        }
+      });
+      let sums = Object.keys(sumGrp).sort((a,b)=>a-b);
+      c('sumDistChart', 'bar', {
+        labels: sums,
+        datasets: [{label:'出現回数', data: sums.map(k=>sumGrp[k].cnt), backgroundColor:'rgba(75, 192, 192, 0.6)'}]
+      });
+      c('sumPayoutChart', 'line', {
+        labels: sums,
+        datasets: [{label:'平均3連単', data: sums.map(k=>Math.round(sumGrp[k].p3/sumGrp[k].cnt)), borderColor:'#ef4444', fill:false}]
+      });
+
+      let kGrp = {};
+      data.forEach(d => {
+        let bets = [];
+        ['B','Y','N'].forEach(s => { if(d.sites[s].bet) bets.push(s); });
+        let key = bets.length ? bets.join('+') : 'なし';
+        if(!kGrp[key]) kGrp[key] = {cnt:0, p2:0, p3:0};
+        kGrp[key].cnt++; kGrp[key].p2 += parseInt(d.payout2)||0; kGrp[key].p3 += parseInt(d.payout3)||0;
+      });
+      document.getElementById('kaburiTbody').innerHTML = Object.entries(kGrp).sort((a,b)=>b[1].cnt-a[1].cnt).map(([k,v])=>
+        `<tr><td class="border p-1">${k}</td><td class="border p-1">${v.cnt}</td><td class="border p-1">${Math.round(v.p3/v.cnt)}円</td><td class="border p-1">${Math.round(v.p2/v.cnt)}円</td></tr>`
+      ).join('');
+    };
+
+    window.renderSaved();
+    window.updateDash();
+  </script>
+
   <script type="module">
     // 【超重要】ここでGrok版の解析コードを読み込む
     import { rasterOf, ingestShot } from './read-shot.js';
@@ -329,58 +648,7 @@
         id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, battle: b, winLine: wL || "単",
         tech1: "", tech2: "", // 手動追加時はひとまず空
         sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-      });
-      window.saveLS(); window.renderSaved(); window.updateDash();
-      document.getElementById('mOrd').value=''; document.getElementById('mP2').value=''; document.getElementById('mP3').value='';
-    };
 
-    window.applyStg = function() {
-      if (!window.stg.length) return;
-      window.stg.forEach(d => window.sv.push(JSON.parse(JSON.stringify(d))));
-      window.stg.length = 0; window.renderStg(); window.saveLS(); window.renderSaved(); window.updateDash();
-      document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
-      document.getElementById('applyBtn').setAttribute('disabled', 'true');
-      alert("保存しました！");
-    };
-
-    window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
-
-    // --- バックアップ系 ---
-    window.backupData = function(e) {
-      e.stopPropagation();
-      let blob = new Blob([JSON.stringify(window.sv)], {type: 'application/json'});
-      let a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `byn3_backup_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-    };
-
-    window.restoreData = function(e) {
-      let file = e.target.files[0];
-      if(!file) return;
-      let reader = new FileReader();
-      reader.onload = function(ev) {
-        try {
-          let data = JSON.parse(ev.target.result);
-          if(Array.isArray(data)) { window.sv = data; window.saveLS(); window.renderSaved(); window.updateDash(); alert("復元完了！"); }
-        } catch(err) { alert("無効なファイルです"); }
-      };
-      reader.readAsText(file);
-    };
-
-    window.clearData = function(e) {
-      e.stopPropagation();
-      if(confirm("全ての保存データを消去しますか？(元には戻せません)")){
-        window.sv = []; window.saveLS(); window.renderSaved(); window.updateDash();
-      }
-    };
-
-    // --- 📊 ダッシュボード描画処理 ---
-    window.updateDash = function() {
-      destroyCharts();
-      let f = document.getElementById('dashFilter').value;
-      let data = window.sv.filter(d => f === 'all' || d.racers === f);
-      document.getElementById('d_total').innerText = data.length;
 
       // 各サイト成績
       let stats = { B: {bet:0, hit:0, man:0}, Y: {bet:0, hit:0, man:0}, N: {bet:0, hit:0, man:0} };
