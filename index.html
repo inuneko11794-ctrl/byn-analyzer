@@ -120,7 +120,35 @@
         <div style="height:160px;"><canvas id="manshaSiteLineC"></canvas></div>
       </div>
     </div>
-    
+        <div class="bg-gray-50 p-3 rounded border">
+      <div class="flex justify-between mb-2 text-sm font-bold border-b-2 border-gray-200 pb-1">
+        <span class="text-gray-700">📈 合計値分布＆配当</span>
+        <div class="flex gap-2">
+          <label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum2" checked onchange="window.updateDash()">2連単</label>
+          <label class="bg-white px-2 border rounded"><input type="radio" name="dType" value="sum3" onchange="window.updateDash()">3連単</label>
+        </div>
+      </div>
+      <p class="text-[10px] text-gray-500 mb-2">⑤ 着順の数字を足した合計値の分布と、平均配当の推移です。</p>
+      <div class="grid md:grid-cols-2 gap-2"><div style="height:200px"><canvas id="distC"></canvas></div><div style="height:200px"><canvas id="payC"></canvas></div></div>
+    </div>
+
+    <div class="bg-indigo-50 p-3 rounded border border-indigo-100 space-y-2">
+      <div class="flex items-center gap-2 border-b-2 border-indigo-200 pb-1">
+        <span class="font-bold text-indigo-800 text-sm whitespace-nowrap">3着傾向:</span>
+        <select id="trendSel" onchange="window.updateTrend()" class="border p-1 text-sm bg-white rounded font-bold w-full"><option value="">2車単を選択してください</option></select>
+      </div>
+      <p class="text-[10px] text-indigo-600">⑥ 選択した2車単が来た時、3着にどの車番が来やすいかの傾向です。</p>
+      <div class="w-full overflow-hidden" style="height:160px;"><canvas id="trendC"></canvas></div>
+    </div>
+
+    <div class="overflow-x-auto mt-4">
+      <p class="text-[10px] text-gray-600 mb-1 font-bold">⑦ 各サイトの予想被り状況別の件数と平均配当データです。</p>
+      <table class="w-full min-w-[500px] text-center border-collapse text-xs"><thead><tr class="bg-gray-100"><th class="border p-1">被り状況</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead><tbody id="dashTbody"></tbody></table>
+    </div>
+    <div style="height:200px"><canvas id="anaC"></canvas></div>
+  </div>
+</details>
+
 <!-- 5. 保存済み一覧 -->
 <details class="bg-white rounded shadow group mb-10" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
