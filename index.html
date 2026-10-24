@@ -31,25 +31,29 @@
     </label>
   </div>
 </details>
-
+  
 <!-- 2. 手動追加 -->
 <details class="bg-white rounded shadow group">
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
     <div class="flex items-center gap-2"><span>✍️ 手動追加</span><span class="text-gray-400 group-open:rotate-180 transition-transform inline-block">▼</span></div>
   </summary>
   <div class="p-4 pt-2">
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
       <input id="mOrd" placeholder="着順(7-1-2)" class="border p-2 rounded">
       <input type="number" id="mP2" placeholder="2連単(円)" class="border p-2 rounded">
       <input type="number" id="mP3" placeholder="3連単(円)" class="border p-2 rounded">
       <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
+      <select id="mBattle" class="border p-2 rounded bg-blue-50">
+        <option value="">戦型選択</option><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option>
+      </select>
       <select id="mWinLine" class="border p-2 rounded bg-yellow-50">
         <option value="">1着L選択</option><option value="単">単</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option>
       </select>
-      <button onclick="window.addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-5">直接追加</button>
+      <button onclick="window.addManual()" class="bg-blue-500 text-white p-2 rounded col-span-2 md:col-span-6">直接追加</button>
     </div>
   </div>
 </details>
+
 <!-- 3. プレビュー -->
 <details class="bg-white rounded shadow group" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
@@ -57,10 +61,10 @@
     <button id="applyBtn" onclick="event.stopPropagation(); window.applyStg()" class="bg-green-500 text-white px-3 py-1 rounded opacity-50 cursor-not-allowed" disabled>保存する</button>
   </summary>
   <div class="p-4 pt-2 overflow-x-auto">
-    <table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>1着ライン</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table>
+    <table class="w-full min-w-[800px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>R</th><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>戦型</th><th>1着L</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="stgBody"></tbody></table>
   </div>
 </details>
-
+  
 <!-- 4. ダッシュボード -->
 <details class="bg-white rounded shadow group" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
@@ -148,7 +152,7 @@
     <div style="height:200px"><canvas id="anaC"></canvas></div>
   </div>
 </details>
-
+  
 <!-- 5. 保存済み一覧 -->
 <details class="bg-white rounded shadow group mb-10" open>
   <summary class="font-bold border-b p-4 cursor-pointer flex justify-between items-center hover:bg-gray-50 transition-colors">
@@ -161,7 +165,7 @@
     </div>
   </summary>
   <div class="p-4 pt-2 overflow-x-auto">
-    <table class="w-full min-w-[750px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>1着ライン</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table>
+    <table class="w-full min-w-[800px] text-center border-collapse text-sm"><thead><tr class="bg-gray-100"><th>着順</th><th>2連単</th><th>3連単</th><th>車立</th><th>戦型</th><th>1着L</th><th>B(予/的)</th><th>Y(予/的)</th><th>N(予/的)</th><th>操作</th></tr></thead><tbody id="savedBody"></tbody></table>
   </div>
 </details>
 <script type="module">
@@ -198,6 +202,142 @@ window.autoCheckHit = function(arrName, i) {
     else { saveLS(); renderSaved(); }
   }
 }
+// --- 📸 画像解析処理 ---
+window.handleImageUpload = async function(e) {
+  let files = Array.from(e.target.files);
+  if (!files.length) return;
+  let ov = document.getElementById('loading');
+  ov.classList.remove('hidden');
+
+  try {
+    stg.length = 0; 
+    for (let file of files) {
+      let raster = await rasterOf(file);
+      let res = ingestShot(raster);
+      
+      if (res.order.length > 0) {
+        res.order.forEach((o, idx) => {
+          stg.push({
+            id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
+            payout2: "", payout3: "", racers: "7", battle: "", winLine: "単",
+            sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+          });
+        });
+      }
+      if (res.payout.length > 0) {
+        res.payout.forEach((p, idx) => {
+          if (stg[idx]) {
+            stg[idx].payout2 = p.nirentan; stg[idx].payout3 = p.sanrentan;
+          } else {
+            stg.push({
+              id: crypto.randomUUID(), raceNo: idx + 1, order: "",
+              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", battle: "", winLine: "単",
+              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+            });
+          }
+        });
+      }
+    }
+    ov.classList.add('hidden');
+    if(e.target.id === 'fileUp') e.target.value = '';
+    
+    renderStg();
+    let btn = document.getElementById('applyBtn');
+    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+    btn.removeAttribute('disabled');
+    alert(`爆速ピクセル解析完了！ ${stg.length}件抽出しました。`);
+  } catch (err) {
+    console.error(err); ov.classList.add('hidden'); alert("エラー: " + err.message);
+  }
+}
+
+// --- ✍️ 手動追加処理 ---
+window.addManual = function() {
+  let o = document.getElementById('mOrd').value.trim(), 
+      p2 = document.getElementById('mP2').value.trim(), 
+      p3 = document.getElementById('mP3').value.trim(), 
+      r = document.getElementById('mRac').value,
+      b = document.getElementById('mBattle').value,
+      wL = document.getElementById('mWinLine').value; 
+      
+  if (!o && !p2 && !p3) return alert("入力してください");
+  sv.push({
+    id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, battle: b, winLine: wL || "単",
+    sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+  });
+  saveLS(); renderSaved(); 
+  document.getElementById('mOrd').value = ''; document.getElementById('mP2').value = ''; 
+  document.getElementById('mP3').value = ''; document.getElementById('mBattle').value = ''; document.getElementById('mWinLine').value = '';
+}
+
+// --- 📝 プレビューから保存 ---
+window.applyStg = function() {
+  if (!stg.length) return;
+  stg.forEach(d => {
+    let clean = {
+      id: d.id, order: d.order, payout2: d.payout2, payout3: d.payout3,
+      racers: d.racers, battle: d.battle || "", winLine: d.winLine || "単",
+      sites: JSON.parse(JSON.stringify(d.sites)) 
+    };
+    sv.push(clean);
+  });
+  stg.length = 0; renderStg(); saveLS(); renderSaved();
+  document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
+  document.getElementById('applyBtn').setAttribute('disabled', 'true');
+  alert("保存しました！");
+}
+
+// --- 🎨 表の描画パーツ・描画処理 ---
+function battleSelectHtml(type, i, d) {
+  let arr = type === 'stg' ? 'stg' : 'sv';
+  let opts = ['2分戦','3分戦','4分戦','単騎戦'].map(v => `<option value="${v}" ${d.battle == v ? 'selected' : ''}>${v}</option>`).join('');
+  return `<td><select onchange="window.${arr}[${i}].battle=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved();'}" class="border p-1 text-xs rounded bg-blue-50"><option value="">選択</option>${opts}</select></td>`;
+}
+
+function winLineSelectHtml(type, i, d) {
+  let arr = type === 'stg' ? 'stg' : 'sv';
+  let opts = ['単','0','1','2','3','4'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
+  return `<td><select onchange="window.${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved();'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
+}
+
+function chkHtml(type, i, d) {
+  let arr = type === 'stg' ? 'stg' : 'sv';
+  let updateSv = type === 'sv' ? 'window.saveLS();' : '';
+  return ['B', 'Y', 'N'].map(s => `<td>
+    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${arr}', ${i}); ${updateSv}">予</label>
+    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
+  </td>`).join('');
+}
+
+function renderStg() {
+  stgCnt.innerText = stg.length;
+  stgBody.innerHTML = stg.map((d, i) => `<tr>
+    <td class="font-bold">${d.raceNo}R</td>
+    <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
+    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
+    <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
+    ${battleSelectHtml('stg', i, d)}
+    ${winLineSelectHtml('stg', i, d)}
+    ${chkHtml('stg', i, d)}
+    <td><button onclick="window.stg.splice(${i},1);window.renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
+  </tr>`).join('');
+}
+window.renderStg = renderStg;
+
+function renderSaved() {
+  savedBody.innerHTML = sv.map((d, i) => `<tr>
+    <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;window.saveLS()" class="border p-1 text-center w-20 rounded"></td>
+    <td><input type="number" value="${d.payout2||''}" onchange="window.sv[${i}].payout2=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
+    <td><input type="number" value="${d.payout3||''}" onchange="window.sv[${i}].payout3=this.value; window.autoCheckHit('sv', ${i}); window.saveLS(); window.renderSaved();" class="border p-1 text-center w-24 rounded"></td>
+    <td><select onchange="window.sv[${i}].racers=this.value;window.saveLS();window.updateDash();" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
+    ${battleSelectHtml('sv', i, d)}
+    ${winLineSelectHtml('sv', i, d)}
+    ${chkHtml('sv', i, d)}
+    <td><button onclick="window.sv.splice(${i},1);window.saveLS();window.renderSaved()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
+  </tr>`).join('');
+}
+window.renderSaved = renderSaved;
 
 // --- 📸 画像解析処理 ---
 window.handleImageUpload = async function(e) {
@@ -247,7 +387,7 @@ window.handleImageUpload = async function(e) {
     console.error(err); ov.classList.add('hidden'); alert("エラー: " + err.message);
   }
 }
-
+  
 // --- ✍️ 手動追加処理 ---
 window.addManual = function() {
   let o = document.getElementById('mOrd').value.trim(), 
@@ -263,56 +403,7 @@ window.addManual = function() {
   });
   saveLS(); renderSaved(); 
   document.getElementById('mOrd').value = ''; document.getElementById('mP2').value = ''; 
-  document.getElementById('mP3').value = ''; document.getElementById('mWinLine').value = '';
-}
-
-// --- 📝 プレビューから保存 ---
-window.applyStg = function() {
-  if (!stg.length) return;
-  stg.forEach(d => {
-    let clean = {
-      id: d.id, order: d.order, payout2: d.payout2, payout3: d.payout3,
-      racers: d.racers, winLine: d.winLine || "単",
-      sites: JSON.parse(JSON.stringify(d.sites)) 
-    };
-    sv.push(clean);
-  });
-  stg.length = 0; renderStg(); saveLS(); renderSaved();
-  document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
-  document.getElementById('applyBtn').setAttribute('disabled', 'true');
-  alert("保存しました！");
-}
-// --- 🎨 表の描画パーツ・描画処理 ---
-function winLineSelectHtml(type, i, d) {
-  let arr = type === 'stg' ? 'stg' : 'sv';
-  let opts = ['単','0','1','2','3','4'].map(v => `<option value="${v}" ${d.winLine == v ? 'selected' : ''}>${v}</option>`).join('');
-  return `<td><select onchange="window.${arr}[${i}].winLine=this.value;${type === 'stg' ? '' : 'window.saveLS(); window.renderSaved();'}" class="border p-1 text-xs rounded bg-yellow-50"><option value="">選択</option>${opts}</select></td>`;
-}
-
-function chkHtml(type, i, d) {
-  let arr = type === 'stg' ? 'stg' : 'sv';
-  let updateSv = type === 'sv' ? 'window.saveLS();' : '';
-  return ['B', 'Y', 'N'].map(s => `<td>
-    <label class="mr-1"><input type="checkbox" ${d.sites[s].bet ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].bet=this.checked; window.autoCheckHit('${arr}', ${i}); ${updateSv}">予</label>
-    <label><input type="checkbox" ${d.sites[s].hit ? 'checked' : ''} onchange="window.${arr}[${i}].sites['${s}'].hit=this.checked; ${updateSv}">的</label>
-  </td>`).join('');
-}
-
-function renderStg() {
-  stgCnt.innerText = stg.length;
-  stgBody.innerHTML = stg.map((d, i) => `<tr>
-    <td class="font-bold">${d.raceNo}R</td>
-    <td><input value="${d.order}" onchange="window.stg[${i}].order=this.value" class="border p-1 text-center w-20 rounded"></td>
-    <td><input type="number" value="${d.payout2}" onchange="window.stg[${i}].payout2=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
-    <td><input type="number" value="${d.payout3}" onchange="window.stg[${i}].payout3=this.value; window.autoCheckHit('stg', ${i});" class="border p-1 text-center w-24 rounded"></td>
-    <td><select onchange="window.stg[${i}].racers=this.value" class="border p-1 rounded">${['9', '8', '7', '6', '5'].map(v => `<option value="${v}" ${String(d.racers).replace('車','') == v ? 'selected' : ''}>${v}車</option>`).join('')}</select></td>
-    ${winLineSelectHtml('stg', i, d)}
-    ${chkHtml('stg', i, d)}
-    <td><button onclick="window.stg.splice(${i},1);window.renderStg()" class="bg-red-500 text-white px-2 py-1 rounded text-xs">✖</button></td>
-  </tr>`).join('');
-}
-window.renderStg = renderStg;
-
+  
 function renderSaved() {
   savedBody.innerHTML = sv.map((d, i) => `<tr>
     <td><input value="${d.order}" onchange="window.sv[${i}].order=this.value;window.saveLS()" class="border p-1 text-center w-20 rounded"></td>
