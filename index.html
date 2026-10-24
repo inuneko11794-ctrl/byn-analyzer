@@ -137,8 +137,8 @@
       <div class="flex items-center gap-2"><span>📂 保存済み一覧 (自動保存)</span><span class="text-green-400 group-open:rotate-180 transition-transform">▼</span></div>
       <div class="flex gap-2">
         <button onclick="window.backupData(event)" class="text-xs bg-gray-600 text-white px-2 py-1 rounded">バックアップ</button>
-        <button onclick="document.getElementById('restoreFile').click(); event.stopPropagation();" class="text-xs bg-gray-600 text-white px-2 py-1 rounded">復元</button>
-        <button onclick="window.clearData(event)" class="text-xs bg-red-500 text-white px-2 py-1 rounded">全消去</button>
+        <label for="restoreFile" onclick="event.stopPropagation();" class="text-xs bg-gray-600 text-white px-2 py-1 rounded cursor-pointer">復元</label>
+　　　　 <button onclick="window.clearData(event)" class="text-xs bg-red-500 text-white px-2 py-1 rounded">全消去</button>
       </div>
     </summary>
     <div class="p-2 overflow-x-auto border-t">
