@@ -379,7 +379,7 @@
     window.updateDash = function() {
       destroyCharts();
       let f = document.getElementById('dashFilter').value;
-      let data = = window.sv.filter(d => f === 'all' || d.racers === f);
+      let data = window.sv.filter(d => f === 'all' || d.racers === f);
       document.getElementById('d_total').innerText = data.length;
 
       // 各サイト成績
@@ -464,8 +464,8 @@
         labels: sums,
         datasets: [{label:'平均3連単', data: sums.map(k=>Math.round(sumGrp[k].p3/sumGrp[k].cnt)), borderColor:'#ef4444', fill:false}]
       });
-      
-       // 被り状況表
+
+      // 被り状況表
       let kGrp = {};
       data.forEach(d => {
         let bets = [];
