@@ -192,10 +192,9 @@ function saveLS() {
 window.saveLS = saveLS;
 loadLS();
 
-// --- 📸 画像解析処理（ペースト貼り付け対応） ---
+  // --- 📸 画像解析処理（決まり手・Grok完全合体版） ---
 window.handleImageUpload = async function(e) {
   let files = [];
-  
   if (e.type === 'paste') {
     let items = e.clipboardData.items;
     for (let i = 0; i < items.length; i++) {
@@ -210,34 +209,54 @@ window.handleImageUpload = async function(e) {
   ov.classList.remove('hidden');
 
   try {
+    // 【重要】ここで read-shot.js の rasterOf を呼び出します
+    // （もし新しい read-shot.js に rasterOf が無ければ追加してくださいね！）
+    let raster;
+    if (window.rasterOf) {
+        raster = await window.rasterOf(files[0]);
+    } else {
+        // rasterOf関数を変数として持っている場合の保険
+        const { rasterOf, ingestShot } = await import('./read-shot.js');
+        raster = await rasterOf(files[0]);
+    }
+    
+    const { ingestShot } = await import('./read-shot.js');
+    let res = ingestShot(raster);
+    
+    // 読み込みごとに一時データ(stg)をリセット
     window.stg.length = 0; 
-    for (let file of files) {
-      let raster = await rasterOf(file);
-      let res = ingestShot(raster);
-      
-      if (res.order.length > 0) {
-        res.order.forEach((o, idx) => {
+    
+    // 【着順＆決まり手】の読み込み (res.kind が 'order' または order にデータがある時)
+    if (res.order && res.order.length > 0) {
+      res.order.forEach((o, idx) => {
+        let t1 = o.techs && o.techs[0] ? o.techs[0] : "";
+        let t2 = o.techs && o.techs[1] ? o.techs[1] : "";
+        window.stg.push({
+          id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
+          payout2: "", payout3: "", racers: "7", battle: "", winLine: "単",
+          tech1: t1, tech2: t2, // 🎯 決まり手を保存！
+          sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
+        });
+      });
+    }
+    
+    // 【配当】の読み込み (res.kind が 'payout' または payout にデータがある時)
+    if (res.payout && res.payout.length > 0) {
+      res.payout.forEach((p, idx) => {
+        if (window.stg[idx]) {
+          window.stg[idx].payout2 = p.nirentan; 
+          window.stg[idx].payout3 = p.sanrentan;
+        } else {
           window.stg.push({
-            id: crypto.randomUUID(), raceNo: idx + 1, order: o.cars.join('-'),
-            payout2: "", payout3: "", racers: "7", battle: "", winLine: "単",
+            id: crypto.randomUUID(), raceNo: idx + 1, order: "",
+            payout2: p.nirentan, payout3: p.sanrentan, racers: "7", battle: "", winLine: "単",
+            tech1: "", tech2: "",
             sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
           });
-        });
-      }
-      if (res.payout.length > 0) {
-        res.payout.forEach((p, idx) => {
-          if (window.stg[idx]) {
-            window.stg[idx].payout2 = p.nirentan; window.stg[idx].payout3 = p.sanrentan;
-          } else {
-            window.stg.push({
-              id: crypto.randomUUID(), raceNo: idx + 1, order: "",
-              payout2: p.nirentan, payout3: p.sanrentan, racers: "7", battle: "", winLine: "単",
-              sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-            });
-          }
-        });
-      }
+        }
+      });
     }
+    
     ov.classList.add('hidden');
     if(e.target && e.target.id === 'fileUp') e.target.value = '';
     
@@ -251,7 +270,8 @@ window.handleImageUpload = async function(e) {
   }
 }
 
-document.addEventListener('paste', window.handleImageUpload);
+/
+  
 // --- ✍️ 手動追加処理 ---
 window.addManual = function() {
   let o = document.getElementById('mOrd').value.trim(), 
