@@ -214,9 +214,12 @@
         
         const n = Math.max(orderRows?.length || 0, payRows?.length || 0);
         window.stg = Array.from({ length: n }, (_, idx) => {
+                const n = Math.max(orderRows?.length || 0, payRows?.length || 0);
+        window.stg = Array.from({ length: n }, (_, idx) => {
           const order = orderRows?.[idx];
           const pay = payRows?.[idx];
-          return {
+          
+          let d = {
             id: crypto.randomUUID(),
             raceNo: idx + 1,
             order: order ? order.cars.join("-") : "",
@@ -234,20 +237,18 @@
               N: { bet: false, hit: false },
             },
           };
+
+          // 💡 ここで万車券（1万円以上）の自動的中チェックを行う
+          let p2 = parseInt(d.payout2) || 0;
+          let p3 = parseInt(d.payout3) || 0;
+          if (p2 >= 10000 || p3 >= 10000) {
+            ['B', 'Y', 'N'].forEach(s => {
+              if (d.sites[s].bet) d.sites[s].hit = true;
+            });
+          }
+
+          return d;
         });
-        
-        if (e.target && e.target.id === "fileUp") e.target.value = "";
-        window.renderStg();
-        const btn = document.getElementById("applyBtn");
-        btn.classList.remove("opacity-50", "cursor-not-allowed");
-        btn.removeAttribute("disabled");
-        alert("着順 " + (orderRows?.length || 0) + "件、払戻 " + (payRows?.length || 0) + "件を読み込みました！");
-      } catch (err) {
-        alert("エラー: " + err.message);
-      } finally {
-        ov.classList.add("hidden");
-      }
-    };
 
     document.getElementById('fileUp').addEventListener('change', window.handleImageUpload);
     document.addEventListener('paste', window.handleImageUpload);
