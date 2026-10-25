@@ -463,38 +463,53 @@
         datasets: [{data: Object.values(mLineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
       });
 
-            // ④ 🎯 サイト別 万車的中時ライン（的中率・予想回数付き）
-      let sHit = { B:{}, Y:{}, N:{} };
-      let sBet = { B:{}, Y:{}, N:{} };
-      manData.forEach(d => {
-        ['B','Y','N'].forEach(s => {
-          if (d.winLine && d.sites[s].bet) {
-            sBet[s][d.winLine] = (sBet[s][d.winLine]||0) + 1;
-            if (d.sites[s].hit) {
-              sHit[s][d.winLine] = (sHit[s][d.winLine]||0) + 1;
+                 // ④ 🎯 サイト別 戦型別の成績（的中率と回数）
+      let bHit = { B:{}, Y:{}, N:{} };
+      let bBet = { B:{}, Y:{}, N:{} };
+      let battleTypes = ['2分戦', '3分戦', '4分戦', '単騎戦'];
+      
+      data.forEach(d => {
+        let b = d.battle;
+        if (battleTypes.includes(b)) {
+          ['B','Y','N'].forEach(s => {
+            if (d.sites[s].bet) {
+              bBet[s][b] = (bBet[s][b]||0) + 1;
+              if (d.sites[s].hit) {
+                bHit[s][b] = (bHit[s][b]||0) + 1;
+              }
             }
-          }
-        });
+          });
+        }
       });
+
+      const getRate = (site, b) => {
+        let bets = bBet[site][b] || 0;
+        let hits = bHit[site][b] || 0;
+        return bets > 0 ? Math.round((hits / bets) * 100) : 0;
+      };
+
       c('siteLineChart', 'bar', {
-        labels: ['単','0','1','2','3','4'],
+        labels: battleTypes,
         datasets: [
-          {label:'B軍', data:['単','0','1','2','3','4'].map(k=>sHit.B[k]||0), backgroundColor:'rgba(59, 130, 246, 0.8)'},
-          {label:'Y軍', data:['単','0','1','2','3','4'].map(k=>sHit.Y[k]||0), backgroundColor:'rgba(245, 158, 11, 0.8)'},
-          {label:'N軍', data:['単','0','1','2','3','4'].map(k=>sHit.N[k]||0), backgroundColor:'rgba(139, 92, 246, 0.8)'}
+          {label:'B軍', data:battleTypes.map(k=>getRate('B', k)), backgroundColor:'rgba(59, 130, 246, 0.8)'},
+          {label:'Y軍', data:battleTypes.map(k=>getRate('Y', k)), backgroundColor:'rgba(245, 158, 11, 0.8)'},
+          {label:'N軍', data:battleTypes.map(k=>getRate('N', k)), backgroundColor:'rgba(139, 92, 246, 0.8)'}
         ]
       }, {
-        scales: { x: { stacked: false }, y: { stacked: false } },
+        scales: { 
+          x: { stacked: false }, 
+          y: { stacked: false, title: { display: true, text: '的中率 (%)' }, max: 100 } 
+        },
         plugins: {
           tooltip: {
             callbacks: {
               label: function(ctx) {
                 let site = ctx.dataset.label.replace('軍','');
-                let line = ctx.label;
-                let hits = ctx.raw || 0;
-                let bets = sBet[site][line] || 0;
-                let rate = bets > 0 ? Math.round((hits / bets) * 100) : 0;
-                return `${ctx.dataset.label} : 的中 ${hits}回 / 予想 ${bets}回 (的中率: ${rate}%)`;
+                let b = ctx.label;
+                let rate = ctx.raw || 0;
+                let bets = bBet[site][b] || 0;
+                let hits = bHit[site][b] || 0;
+                return `${ctx.dataset.label} : 的中率 ${rate}% (的中 ${hits}回 / 予想 ${bets}回)`;
               }
             }
           }
