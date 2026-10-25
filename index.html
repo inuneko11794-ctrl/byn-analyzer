@@ -558,7 +558,7 @@
         datasets: [{label:'平均3連単', data: sums.map(k=>Math.round(sumGrp[k].p3/sumGrp[k].cnt)), borderColor:'#ef4444', fill:false}]
       });
 
-      // ⑧ 被り状況別 成績
+           // ⑧ 被り状況別 成績
       let kGrp = {};
       data.forEach(d => {
         let bets = [];
@@ -570,10 +570,32 @@
       document.getElementById('kaburiTbody').innerHTML = Object.entries(kGrp).sort((a,b)=>b[1].cnt-a[1].cnt).map(([k,v])=>
         `<tr><td class="border p-1">${k}</td><td class="border p-1">${v.cnt}</td><td class="border p-1">${Math.round(v.p3/v.cnt)}円</td><td class="border p-1">${Math.round(v.p2/v.cnt)}円</td></tr>`
       ).join('');
-    };
+
+      // ⑨ 🔢 2連単合計値別 データ
+      let s2Grp = {};
+      data.forEach(d => {
+        if(!d.order) return;
+        let p = d.order.split('-').map(Number);
+        if(p.length===3 && !p.includes(NaN)) {
+          let s2 = p[0] + p[1];
+          if(!s2Grp[s2]) s2Grp[s2] = {cnt:0, p2:0, p3:0};
+          s2Grp[s2].cnt++; 
+          s2Grp[s2].p2 += parseInt(d.payout2)||0;
+          s2Grp[s2].p3 += parseInt(d.payout3)||0;
+        }
+      });
+      document.getElementById('sum2Tbody').innerHTML = Object.keys(s2Grp).sort((a,b)=>a-b).map(k=>{
+        let v = s2Grp[k];
+        let a2 = Math.round(v.p2/v.cnt);
+        let a3 = Math.round(v.p3/v.cnt);
+        let bai = a2 > 0 ? (a3/a2).toFixed(1) : 0;
+        return `<tr><td class="border p-1">${k}</td><td class="border p-1">${v.cnt}</td><td class="border p-1">${a2}円</td><td class="border p-1">${a3}円</td><td class="border p-1 font-bold text-red-600">${bai}倍</td></tr>`;
+      }).join('');
+    }; // ← ★これが updateDash を閉じるカッコです（重要！）
 
     window.renderSaved();
     window.updateDash();
   </script>
 </body>
 </html>
+
