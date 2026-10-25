@@ -246,7 +246,7 @@
       tbody.innerHTML = window.sv.map((d, i) => window.rowHTML(d, i, 'sv')).join('');
     };
 
-    window.rowHTML = function(d, i, type) {
+        window.rowHTML = function(d, i, type) {
       const siteBtn = (s) => {
         let sd = d.sites[s];
         let betC = sd.bet ? (s==='B'?'bg-blue-500':s==='Y'?'bg-yellow-500':'bg-purple-500')+' text-white' : 'bg-gray-200 text-gray-400';
@@ -256,6 +256,29 @@
                   <button onclick="window.toggleSite('${type}',${i},'${s}','hit')" class="w-8 h-8 rounded-full text-xs font-bold ${hitC}">的</button>
                 </div>`;
       };
+      
+      let techDisplay = d.tech1 || d.tech2 ? `${d.tech1}-${d.tech2}` : "";
+      
+      let inp = (f, w, p) => `<input type="text" value="${d[f]||''}" onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1 w-${w} text-center" placeholder="${p||''}">`;
+      let sel = (f, opts) => `<select onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1"><option value="">-</option>${opts.map(o=>`<option value="${o}" ${d[f]==o?'selected':''}>${o}</option>`).join('')}</select>`;
+      
+      // プレビュー(stg)の時だけレース番号のマスを挿入し、保存済み一覧でのズレを防止
+      let raceTd = type === 'stg' ? `<td class="p-1">${d.raceNo}</td>` : '';
+
+      return `<tr class="border-b hover:bg-gray-50">
+        ${raceTd}
+        <td class="p-1">${inp('order', 16, '1-2-3')}</td>
+        <td class="p-1 text-center font-bold text-gray-600">${techDisplay}</td>
+        <td class="p-1">${inp('payout2', 20)}</td>
+        <td class="p-1">${inp('payout3', 24)}</td>
+        <td class="p-1">${sel('racers', ['9','8','7','6','5'])}</td>
+        <td class="p-1">${sel('battle', ['2分戦','3分戦','4分戦','単騎戦'])}</td>
+        <td class="p-1">${sel('winLine', ['単','0','1','2','3','4'])}</td>
+        <td class="p-1">${siteBtn('B')}</td><td class="p-1">${siteBtn('Y')}</td><td class="p-1">${siteBtn('N')}</td>
+        <td class="p-1 text-center"><button onclick="window.delRow('${type}',${i})" class="text-red-500 font-bold hover:bg-red-100 px-2 py-1 rounded">✖</button></td>
+      </tr>`;
+    };
+
       
       let techDisplay = d.tech1 || d.tech2 ? `${d.tech1}-${d.tech2}` : "";
       
