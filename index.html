@@ -463,21 +463,43 @@
         datasets: [{data: Object.values(mLineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
       });
 
-      // ④ サイト別 万車的中時ライン
-      let sLines = { B:{}, Y:{}, N:{} };
+            // ④ 🎯 サイト別 万車的中時ライン（的中率・予想回数付き）
+      let sHit = { B:{}, Y:{}, N:{} };
+      let sBet = { B:{}, Y:{}, N:{} };
       manData.forEach(d => {
         ['B','Y','N'].forEach(s => {
-          if(d.sites[s].hit && d.winLine) sLines[s][d.winLine] = (sLines[s][d.winLine]||0)+1;
+          if (d.winLine && d.sites[s].bet) {
+            sBet[s][d.winLine] = (sBet[s][d.winLine]||0) + 1;
+            if (d.sites[s].hit) {
+              sHit[s][d.winLine] = (sHit[s][d.winLine]||0) + 1;
+            }
+          }
         });
       });
       c('siteLineChart', 'bar', {
         labels: ['単','0','1','2','3','4'],
         datasets: [
-          {label:'B軍', data:['単','0','1','2','3','4'].map(k=>sLines.B[k]||0), backgroundColor:'rgba(59, 130, 246, 0.7)'},
-          {label:'Y軍', data:['単','0','1','2','3','4'].map(k=>sLines.Y[k]||0), backgroundColor:'rgba(245, 158, 11, 0.7)'},
-          {label:'N軍', data:['単','0','1','2','3','4'].map(k=>sLines.N[k]||0), backgroundColor:'rgba(139, 92, 246, 0.7)'}
+          {label:'B軍', data:['単','0','1','2','3','4'].map(k=>sHit.B[k]||0), backgroundColor:'rgba(59, 130, 246, 0.8)'},
+          {label:'Y軍', data:['単','0','1','2','3','4'].map(k=>sHit.Y[k]||0), backgroundColor:'rgba(245, 158, 11, 0.8)'},
+          {label:'N軍', data:['単','0','1','2','3','4'].map(k=>sHit.N[k]||0), backgroundColor:'rgba(139, 92, 246, 0.8)'}
         ]
-      }, {scales:{x:{stacked:true}, y:{stacked:true}}});
+      }, {
+        scales: { x: { stacked: false }, y: { stacked: false } },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                let site = ctx.dataset.label.replace('軍','');
+                let line = ctx.label;
+                let hits = ctx.raw || 0;
+                let bets = sBet[site][line] || 0;
+                let rate = bets > 0 ? Math.round((hits / bets) * 100) : 0;
+                return `${ctx.dataset.label} : 的中 ${hits}回 / 予想 ${bets}回 (的中率: ${rate}%)`;
+              }
+            }
+          }
+        }
+      });
 
       // ⑤ 1着の決まり手
       let t1Count = {};
