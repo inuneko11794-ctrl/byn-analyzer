@@ -115,14 +115,32 @@
           <div class="bg-purple-50 p-3 rounded text-center border-b-4 border-purple-500"><div class="text-xs font-bold text-purple-700">N的軍</div><div id="d_n_rate" class="text-xl font-bold">0%</div><div id="d_n_man" class="text-xs mt-1">万車:0</div></div>
         </div>
 
-        <!-- グラフエリア -->
+                <!-- グラフエリア -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">🔥 万車時の1着車番</p><canvas id="winCarChart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">🏆 1着ライン割合(全体)</p><canvas id="winLineChart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">📈 1着ライン割合(万車時)</p><canvas id="manshaLineChart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">🎯 サイト別 万車的中時ライン</p><canvas id="siteLineChart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">🏆 1着の決まり手</p><canvas id="tech1Chart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">🔗 決まり手の組み合わせ</p><canvas id="techPairChart"></canvas></div>
+          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">① 🔥 万車時の1着車番</p><canvas id="winCarChart"></canvas></div>
+          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">② 🏆 1着ライン割合(全体)</p><canvas id="winLineChart"></canvas></div>
+          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">③ 📈 1着ライン割合(万車時)</p><canvas id="manshaLineChart"></canvas></div>
+          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">④ 🎯 サイト別 万車的中時ライン</p><canvas id="siteLineChart"></canvas></div>
+          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">⑤ 🏆 1着の決まり手</p><canvas id="tech1Chart"></canvas></div>
+          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">⑥ 🔗 決まり手の組み合わせ</p><canvas id="techPairChart"></canvas></div>
+        </div>
+
+        <div class="border rounded p-2 bg-gray-50 mb-4">
+          <p class="text-xs font-bold mb-1 text-center">⑦ 📈 合計値分布＆配当推移</p>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div><canvas id="sumDistChart"></canvas></div>
+            <div><canvas id="sumPayoutChart"></canvas></div>
+          </div>
+        </div>
+        
+        <div class="border rounded p-2 bg-gray-50">
+          <p class="text-xs font-bold mb-2 text-center">⑧ 📊 被り状況別 成績</p>
+          <div class="overflow-x-auto">
+            <table class="w-full text-center text-sm border-collapse bg-white">
+              <thead><tr class="bg-gray-200"><th class="border p-1">被り</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead>
+              <tbody id="kaburiTbody"></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="border rounded p-2 bg-gray-50 mb-4">
@@ -478,6 +496,79 @@
         ]
       }, {scales:{x:{stacked:true}, y:{stacked:true}}});
 
+    // --- 📊 ダッシュボード描画処理 ---
+    window.updateDash = function() {
+      destroyCharts();
+      let f = document.getElementById('dashFilter').value;
+      let data = window.sv.filter(d => f === 'all' || d.racers === f);
+      document.getElementById('d_total').innerText = data.length;
+
+      let stats = { B: {bet:0, hit:0, man:0}, Y: {bet:0, hit:0, man:0}, N: {bet:0, hit:0, man:0} };
+      data.forEach(d => {
+        let isMan = (parseInt(d.payout2)>=10000 || parseInt(d.payout3)>=10000);
+        ['B','Y','N'].forEach(s => {
+          if(d.sites[s].bet) {
+            stats[s].bet++;
+            if(d.sites[s].hit) { stats[s].hit++; if(isMan) stats[s].man++; }
+          }
+        });
+      });
+      ['B','Y','N'].forEach(s => {
+        let rate = stats[s].bet ? Math.round((stats[s].hit/stats[s].bet)*100) : 0;
+        document.getElementById(`d_${s.toLowerCase()}_rate`).innerText = `${rate}%`;
+        document.getElementById(`d_${s.toLowerCase()}_man`).innerText = `万车:${stats[s].man}`;
+      });
+
+      if (data.length === 0) return;
+
+      Chart.defaults.font.family = 'sans-serif';
+      
+      const c = (id, type, d, opts={}) => window.charts[id] = new Chart(document.getElementById(id), {
+        type: type, 
+        data: d, 
+        options: { responsive: true, plugins:{legend:{position:'bottom'}}, ...opts }
+      });
+
+      // ① 万車時の1着車番分布
+      let manData = data.filter(d => parseInt(d.payout3) >= 10000 && d.order);
+      let winCars = manData.map(d => d.order.split('-')[0]).filter(x=>x);
+      let wcCount = {}; winCars.forEach(ca => wcCount[ca] = (wcCount[ca]||0)+1);
+      c('winCarChart', 'bar', {
+        labels: Object.keys(wcCount),
+        datasets: [{label:'出現回数', data: Object.values(wcCount), backgroundColor:'rgba(255, 99, 132, 0.5)'}]
+      }, {indexAxis:'x'});
+
+      // ② 1着ライン位置（全体）
+      let lineCount = {}; data.forEach(d => {if(d.winLine) lineCount[d.winLine] = (lineCount[d.winLine]||0)+1;});
+      c('winLineChart', 'doughnut', {
+        labels: Object.keys(lineCount),
+        datasets: [{data: Object.values(lineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
+      });
+
+      // ③ 1着ライン位置（万車時）
+      let mLineCount = {}; manData.forEach(d => {if(d.winLine) mLineCount[d.winLine] = (mLineCount[d.winLine]||0)+1;});
+      c('manshaLineChart', 'pie', {
+        labels: Object.keys(mLineCount),
+        datasets: [{data: Object.values(mLineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
+      });
+
+      // ④ サイト別 万車的中時のライン位置
+      let sLines = { B:{}, Y:{}, N:{} };
+      manData.forEach(d => {
+        ['B','Y','N'].forEach(s => {
+          if(d.sites[s].hit && d.winLine) sLines[s][d.winLine] = (sLines[s][d.winLine]||0)+1;
+        });
+      });
+      c('siteLineChart', 'bar', {
+        labels: ['単','0','1','2','3','4'],
+        datasets: [
+          {label:'B軍', data:['単','0','1','2','3','4'].map(k=>sLines.B[k]||0), backgroundColor:'rgba(59, 130, 246, 0.7)'},
+          {label:'Y軍', data:['単','0','1','2','3','4'].map(k=>sLines.Y[k]||0), backgroundColor:'rgba(245, 158, 11, 0.7)'},
+          {label:'N軍', data:['単','0','1','2','3','4'].map(k=>sLines.N[k]||0), backgroundColor:'rgba(139, 92, 246, 0.7)'}
+        ]
+      }, {scales:{x:{stacked:true}, y:{stacked:true}}});
+
+      // ⑤ 1着の決まり手分布
       let t1Count = {};
       data.forEach(d => { if(d.tech1) t1Count[d.tech1] = (t1Count[d.tech1]||0)+1; });
       c('tech1Chart', 'doughnut', {
@@ -485,6 +576,7 @@
         datasets: [{data: Object.values(t1Count), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
       });
 
+      // ⑥ 決まり手の組み合わせパターン
       let tpCount = {};
       data.forEach(d => {
         if(d.tech1 || d.tech2) {
@@ -497,6 +589,7 @@
         datasets: [{label:'出現回数', data: Object.values(tpCount), backgroundColor:'rgba(59, 130, 246, 0.6)'}]
       }, {indexAxis:'x'});
 
+      // ⑦ 合計値分布＆配当推移
       let sumGrp = {};
       data.forEach(d => {
         if(!d.order) return;
@@ -517,6 +610,7 @@
         datasets: [{label:'平均3連単', data: sums.map(k=>Math.round(sumGrp[k].p3/sumGrp[k].cnt)), borderColor:'#ef4444', fill:false}]
       });
 
+      // ⑧ 被り状況別 成績
       let kGrp = {};
       data.forEach(d => {
         let bets = [];
@@ -529,6 +623,7 @@
         `<tr><td class="border p-1">${k}</td><td class="border p-1">${v.cnt}</td><td class="border p-1">${Math.round(v.p3/v.cnt)}円</td><td class="border p-1">${Math.round(v.p2/v.cnt)}円</td></tr>`
       ).join('');
     };
+
 
     window.renderSaved();
     window.updateDash();
