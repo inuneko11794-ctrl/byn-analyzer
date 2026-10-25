@@ -211,9 +211,9 @@ function readPayout(img) {
     if (ni.dist > 90 || san.dist > 90) continue;
     rows.push({
       nirentan: ni.value,
-      niPop: nip && nip.dist <= 90 && nip.value >= 1 && nip.value <= 99 ? nip.value : null,
+      niPop: nip && nip.dist <= 90 && nip.value >= 1 && nip.value <= 999 ? nip.value : null,
       sanrentan: san.value,
-      sanPop: sanp && sanp.dist <= 90 && sanp.value >= 1 && sanp.value <= 99 ? sanp.value : null
+      sanPop: sanp && sanp.dist <= 90 && sanp.value >= 1 && sanp.value <= 999 ? sanp.value : null
     });
   }
   return rows;
@@ -230,11 +230,11 @@ function plateColor(rgb) {
   if (mx < 110 && sat < 40) return 2;
   if (r > 200 && g > 160 && b < 140 && g > b + 40 && r > b + 60) return 5;
   if (g > 120 && g > r + 30 && g >= b && b < 180 && r < 180) return 6;
-  if (b > 150 && b > r + 30 && b > g + 10) return 4;
+  if (r > 180 && g < 50 && b > 60 && b < 160 && r > b + 40) return 8;
+  if (b > 140 && r > 100 && g < 50 && Math.abs(r - b) < 80) return 9;
+  if (b > 150 && r < 90 && b > g + 20) return 4;
   if (r > 180 && g > 80 && g < 200 && b < 140 && r > g + 20 && g > b) return 7;
   if (r > 150 && g < 90 && b < 90 && r > g + 60) return 3;
-  if (r > 170 && g > 70 && b > 90 && r > b && b > g - 30 && sat > 40) return 8;
-  if (b > 110 && r > 70 && Math.abs(r - b) < 70 && g < Math.min(r, b) - 15) return 9;
   return 0;
 }
 function readCars(img, y0, y1) {
