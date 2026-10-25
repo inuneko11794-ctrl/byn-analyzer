@@ -314,12 +314,23 @@
       if (type === 'sv') { window.saveLS(); window.updateDash(); }
     };
 
-    window.toggleSite = function(type, i, site, field) {
+        window.toggleSite = function(type, i, site, field) {
       let arr = type === 'stg' ? window.stg : window.sv;
       arr[i].sites[site][field] = !arr[i].sites[site][field];
+      
+      // 💡 ここを追加： 「予」のボタンをONにしたとき、すでに配当が1万円以上（万車券）なら「的」も自動でONにする
+      if (field === 'bet' && arr[i].sites[site].bet) {
+        let p2 = parseInt(arr[i].payout2) || 0;
+        let p3 = parseInt(arr[i].payout3) || 0;
+        if (p2 >= 10000 || p3 >= 10000) {
+          arr[i].sites[site].hit = true;
+        }
+      }
+
       if (type === 'stg') window.renderStg();
       else { window.saveLS(); window.renderSaved(); window.updateDash(); }
     };
+
 
     window.delRow = function(type, i) {
       if(!confirm("削除しますか？")) return;
