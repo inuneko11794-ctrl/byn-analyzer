@@ -114,7 +114,56 @@
               const payout3 = Number(race.payout3) || 0;
               if (payout3 >= 10000) {
                   let firstCar = null;
-                  if (race.result && typeof race.result === 'string') {
+      <!-- 動かすためのプログラム -->
+      <script>
+      // 📁 ファイルが選ばれたときの処理
+      function handleManshaFileUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              try {
+                  const jsonData = JSON.parse(e.target.result);
+                  analyzeManshaFirstCar(jsonData); 
+              } catch (err) {
+                  document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>ファイルの読み込みに失敗しました。</p>";
+              }
+          };
+          reader.readAsText(file);
+      }
+
+      // 📊 分析を実行する関数
+      function analyzeManshaFirstCar(customData = null) {
+          let data = [];
+          
+          if (customData) {
+              data = customData;
+          } else {
+              try {
+                  if (typeof savedData !== 'undefined') data = savedData;
+                  else if (typeof raceData !== 'undefined') data = raceData;
+                  else data = JSON.parse(localStorage.getItem('byn3_data')) || [];
+              } catch(e) {}
+          }
+
+          if (!data || data.length === 0) {
+              document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>データが見つかりません。</p>";
+              return;
+          }
+
+          const sites = ['B', 'Y', 'N'];
+          const stats = { B: { total: 0, cars: {} }, Y: { total: 0, cars: {} }, N: { total: 0, cars: {} } };
+
+          data.forEach(race => {
+              const payout3 = Number(race.payout3) || 0;
+              if (payout3 >= 10000) {
+                  let firstCar = null;
+                  
+                  // ⚠️ ここを "order" に修正しました！
+                  if (race.order && typeof race.order === 'string') {
+                      firstCar = race.order.split('-')[0];
+                  } else if (race.result && typeof race.result === 'string') {
                       firstCar = race.result.split('-')[0];
                   } else if (race.winCar) {
                       firstCar = race.winCar;
@@ -158,10 +207,9 @@
           });
           html += '</div>';
 
-          document.getElementById('manshaCarResult').innerHTML = html;
+    　　  document.getElementById('manshaCarResult').innerHTML = html;
       }
       </script>
-    </details>
 
     <!-- 1. 画像読み込み -->
     <details open class="bg-white rounded shadow group mb-4">
