@@ -35,7 +35,7 @@
         </details>
 
         <!-- ==========================================
-             ② 今回追加した「万車券1着車番分析」
+             ② 万車券1着車番分析
         =========================================== -->
         <details class="bg-white rounded shadow border group">
           <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center">
@@ -55,23 +55,22 @@
           </div>
         </details>
 
-                <!-- ==========================================
-             ③ スクショ読込・手動登録・データ管理
+        <!-- ==========================================
+             ③ スクショ読込・プレビュー（複数対応・修正版）
         =========================================== -->
         <details class="bg-white rounded shadow border group mb-4" open>
           <summary class="font-bold p-3 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center">
-            <span>📸 着順・払戻 スクショ読込 (ペースト or 選択)</span><span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
+            <span>📸 着順・払戻 スクショ読込 (複数選択対応)</span><span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div class="p-4 border-t">
-            <div id="dropZone" class="border-2 border-dashed border-blue-300 rounded p-6 text-center bg-blue-50/50 mb-2 transition-colors hover:bg-blue-100">
-              <!-- ★ここに multiple を追加して複数選択可能にしました！ -->
+            <div class="border-2 border-dashed border-blue-300 rounded p-6 text-center bg-blue-50/50 mb-3">
               <input type="file" id="fileInput" accept="image/*" multiple class="block w-full text-sm text-gray-500 mx-auto cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
-              <p class="text-xs text-gray-500 mt-3">※スマホの場合、ここに画像を長押しして貼り付け（ペースト）するか、上のボタンから画像を選んでください。<br>（出走表と払戻金など、複数枚同時に選択できます）</p>
+              <p class="text-xs text-gray-500 mt-3">※出走表と払戻金など、複数枚の画像を同時に選択できます。</p>
             </div>
           </div>
         </details>
 
-        <!-- 📝 読込プレビュー (復活！) -->
+        <!-- 📝 読込プレビュー -->
         <details class="bg-white rounded shadow border group mb-4" open>
           <summary class="font-bold p-3 cursor-pointer bg-yellow-50 text-yellow-800 flex justify-between items-center">
             <span>📝 読込プレビュー (<span id="previewCount">0</span>件)</span><span class="text-yellow-400 group-open:rotate-180 transition-transform">▼</span>
@@ -84,15 +83,60 @@
                 </tr>
               </thead>
               <tbody id="previewTableBody" class="divide-y">
-                <!-- プレビューデータがここに入ります -->
+                <tr><td colspan="6" class="p-4 text-center text-gray-400">画像を選択するとここにプレビューが表示されます</td></tr>
               </tbody>
             </table>
-            <button id="btnApplyPreview" class="w-full bg-blue-400 text-white font-bold py-2 rounded shadow hover:bg-blue-500 transition-colors">保存済み一覧へ反映する</button>
+            <button id="btnApplyPreview" class="w-full bg-blue-500 text-white font-bold py-2 rounded shadow hover:bg-blue-600 transition-colors">保存済み一覧へ反映する</button>
           </div>
         </details>
 
         <!-- ==========================================
-             ④ 各種分析グラフ（キャンバス群）
+             ④ 手動データ追加
+        =========================================== -->
+        <details class="bg-white rounded shadow border group" open>
+          <summary class="font-bold p-3 cursor-pointer bg-green-50 text-green-800 flex justify-between items-center">
+            <span>➕ 手動データ追加</span><span class="text-green-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="p-4 border-t">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+              <input type="number" id="inpRace" placeholder="レースR" class="border rounded p-2 text-sm">
+              <input type="text" id="inpOrder" placeholder="着順(例: 1-2-3)" class="border rounded p-2 text-sm">
+              <input type="number" id="inpPay2" placeholder="2連単払戻" class="border rounded p-2 text-sm">
+              <input type="number" id="inpPay3" placeholder="3連単払戻" class="border rounded p-2 text-sm">
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+              <select id="inpRacers" class="border rounded p-2 text-sm"><option value="7">7車</option><option value="9">9車</option></select>
+              <select id="inpBattle" class="border rounded p-2 text-sm"><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option></select>
+              <select id="inpLinePos" class="border rounded p-2 text-sm"><option value="1">1着L: 1</option><option value="2">1着L: 2</option><option value="3">1着L: 3</option><option value="4">1着L: 4</option><option value="単">1着L: 単</option><option value="無">1着L: 無</option></select>
+              <select id="inpTech1" class="border rounded p-2 text-sm"><option value="逃">逃</option><option value="捲">捲</option><option value="差">差</option></select>
+              <select id="inpTech2" class="border rounded p-2 text-sm"><option value="逃">逃</option><option value="捲">捲</option><option value="差">差</option><option value="マ">マ</option></select>
+            </div>
+            <div class="bg-gray-50 p-2 rounded border mb-4 flex justify-around">
+              <label class="flex items-center gap-1 font-bold text-sm"><input type="checkbox" id="hitB" class="w-4 h-4"> B軍的中</label>
+              <label class="flex items-center gap-1 font-bold text-sm"><input type="checkbox" id="hitY" class="w-4 h-4"> Y軍的中</label>
+              <label class="flex items-center gap-1 font-bold text-sm"><input type="checkbox" id="hitN" class="w-4 h-4"> N軍的中</label>
+            </div>
+            <button id="btnSaveData" class="w-full bg-green-600 text-white font-bold py-2 rounded shadow hover:bg-green-700">追加</button>
+          </div>
+        </details>
+        <!-- ==========================================
+             ⑤ データ管理（復元ボタンを大きく分かりやすく配置）
+        =========================================== -->
+        <details class="bg-white rounded shadow border group" open>
+          <summary class="font-bold p-3 cursor-pointer bg-red-50 text-red-800 flex justify-between items-center">
+            <span>💾 データ管理 (バックアップ・復元)</span><span class="text-red-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="p-4 border-t grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button id="btnBackup" class="bg-gray-800 text-white text-sm font-bold p-3 rounded shadow hover:bg-gray-900 text-center">📥 バックアップ保存</button>
+            <label class="bg-blue-600 text-white text-sm font-bold p-3 rounded shadow hover:bg-blue-700 text-center cursor-pointer block">
+              📁 ファイル復元（JSON選択）<input type="file" id="btnRestore" accept=".json" class="hidden">
+            </label>
+            <button id="btnClear" class="bg-red-500 text-white text-sm font-bold p-3 rounded shadow hover:bg-red-600 text-center">🗑 全データ消去</button>
+          </div>
+        </details>
+
+        <!-- ==========================================
+             ⑥ 各種分析グラフ
         =========================================== -->
         <div class="space-y-4 mt-8">
             <h2 class="text-center font-bold text-gray-700 bg-white p-2 rounded shadow">📊 各種データ分析グラフ</h2>
@@ -130,36 +174,57 @@
     </div>
 
     <!-- ==========================================
-         JavaScript: データ管理とグラフ描画
+         JavaScript
     =========================================== -->
     <script>
     const STORAGE_KEY = 'byn3_data';
     let savedData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-    let charts = {}; // グラフのインスタンス管理用
+    let charts = {};
 
-    // 色の定義
     const COLORS = {
         B: '#4A90E2', Y: '#F5A623', N: '#9013FE',
         tech: { '差': '#4A90E2', '捲': '#F5A623', '逃': '#2ECC71' },
         line: { '1': '#F5A623', '2': '#2ECC71', '3': '#E74C3C', '4': '#9013FE', '単': '#7F8C8D', '0': '#4A90E2' }
     };
 
-    // 初期化
     document.addEventListener("DOMContentLoaded", () => {
         setupEventListeners();
         updateDashboard();
     });
 
-    // ダッシュボード全体の更新
     function updateDashboard() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(savedData));
         renderCharts();
     }
 
-    /* --- データ登録・管理系 --- */
     function setupEventListeners() {
-        // 手動追加ボタン
-        document.getElementById('btnSaveData').addEventListener('click', () => {
+        // スクショ複数選択時のプレビュー処理
+        const fileInput = document.getElementById('fileInput');
+        if(fileInput) {
+            fileInput.addEventListener('change', (e) => {
+                const files = e.target.files;
+                const tbody = document.getElementById('previewTableBody');
+                const countSpan = document.getElementById('previewCount');
+                if(!files || files.length === 0) return;
+
+                let html = '';
+                Array.from(files).forEach((file, index) => {
+                    html += `<tr>
+                        <td class="p-2"><input type="number" class="w-12 border rounded p-1 text-xs" value="${index + 1}">R</td>
+                        <td class="p-2"><input type="text" class="w-20 border rounded p-1 text-xs" placeholder="1-2-3"></td>
+                        <td class="p-2"><input type="text" class="w-16 border rounded p-1 text-xs" placeholder="差-逃"></td>
+                        <td class="p-2"><input type="text" class="w-16 border rounded p-1 text-xs" placeholder="1"></td>
+                        <td class="p-2"><input type="number" class="w-20 border rounded p-1 text-xs" placeholder="0"></td>
+                        <td class="p-2"><input type="number" class="w-20 border rounded p-1 text-xs" placeholder="0"></td>
+                    </tr>`;
+                });
+                tbody.innerHTML = html;
+                countSpan.textContent = files.length;
+            });
+        }
+         // 手動追加
+        const btnSave = document.getElementById('btnSaveData');
+        if(btnSave) btnSave.addEventListener('click', () => {
             const raceNo = document.getElementById('inpRace').value;
             const order = document.getElementById('inpOrder').value;
             if(!order) return alert('着順を入力してください');
@@ -172,7 +237,7 @@
                 payout3: Number(document.getElementById('inpPay3').value) || 0,
                 racers: document.getElementById('inpRacers').value,
                 battle: document.getElementById('inpBattle').value,
-                linePos: document.getElementById('inpLinePos').value.replace('1着L: ', ''),
+                linePos: document.getElementById('inpLinePos').value,
                 tech1: document.getElementById('inpTech1').value,
                 tech2: document.getElementById('inpTech2').value,
                 sites: {
@@ -187,7 +252,8 @@
         });
 
         // バックアップ保存
-        document.getElementById('btnBackup').addEventListener('click', () => {
+        const btnBackup = document.getElementById('btnBackup');
+        if(btnBackup) btnBackup.addEventListener('click', () => {
             const blob = new Blob([JSON.stringify(savedData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -197,7 +263,8 @@
         });
 
         // ファイル復元
-        document.getElementById('btnRestore').addEventListener('change', (e) => {
+        const btnRestore = document.getElementById('btnRestore');
+        if(btnRestore) btnRestore.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if(!file) return;
             const reader = new FileReader();
@@ -206,22 +273,25 @@
                     savedData = JSON.parse(ev.target.result);
                     updateDashboard();
                     alert('復元完了しました！');
-                } catch(err) { alert('JSONエラーです'); }
+                } catch(err) { alert('JSONファイルの読み込みに失敗しました'); }
             };
             reader.readAsText(file);
         });
 
         // 全消去
-        document.getElementById('btnClear').addEventListener('click', () => {
+        const btnClear = document.getElementById('btnClear');
+        if(btnClear) btnClear.addEventListener('click', () => {
             if(confirm('本当に全て消去しますか？')) {
                 savedData = [];
                 updateDashboard();
             }
         });
 
-        // 万車1着車番分析ボタン
-        document.getElementById('btnManshaCalc').addEventListener('click', () => analyzeManshaFirstCar(savedData));
-        document.getElementById('manshaFileInput').addEventListener('change', (e) => {
+        // 万車1着車番分析
+        const btnManshaCalc = document.getElementById('btnManshaCalc');
+        if(btnManshaCalc) btnManshaCalc.addEventListener('click', () => analyzeManshaFirstCar(savedData));
+        const manshaFileInput = document.getElementById('manshaFileInput');
+        if(manshaFileInput) manshaFileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if(!file) return;
             const reader = new FileReader();
@@ -230,11 +300,9 @@
         });
     }
 
-    /* --- グラフ描画系 --- */
     function renderCharts() {
         if(savedData.length === 0) return;
 
-        // 共通ヘルパー
         const destroyChart = (id) => { if(charts[id]) charts[id].destroy(); };
         const getPay3 = (d) => Number(String(d.payout3 || d.pay3 || d.payout || "0").replace(/[^0-9]/g, ""));
         const getLine = (d) => (d.linePos || "0").replace("無", "0");
@@ -243,7 +311,8 @@
         destroyChart('chartLineTotal');
         const lineTotalCounts = { '0':0, '1':0, '2':0, '3':0, '4':0, '単':0 };
         savedData.forEach(d => { if(lineTotalCounts[getLine(d)] !== undefined) lineTotalCounts[getLine(d)]++; });
-        charts['chartLineTotal'] = new Chart(document.getElementById('chartLineTotal'), {
+        const elTotal = document.getElementById('chartLineTotal');
+        if(elTotal) charts['chartLineTotal'] = new Chart(elTotal, {
             type: 'doughnut',
             data: { labels: Object.keys(lineTotalCounts), datasets: [{ data: Object.values(lineTotalCounts), backgroundColor: Object.keys(lineTotalCounts).map(k => COLORS.line[k]) }] },
             options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
@@ -253,13 +322,14 @@
         destroyChart('chartLineMansha');
         const lineManshaCounts = { '0':0, '1':0, '2':0, '3':0, '4':0, '単':0 };
         savedData.forEach(d => { if(getPay3(d) >= 10000 && lineManshaCounts[getLine(d)] !== undefined) lineManshaCounts[getLine(d)]++; });
-        charts['chartLineMansha'] = new Chart(document.getElementById('chartLineMansha'), {
+        const elMansha = document.getElementById('chartLineMansha');
+        if(elMansha) charts['chartLineMansha'] = new Chart(elMansha, {
             type: 'pie',
             data: { labels: Object.keys(lineManshaCounts), datasets: [{ data: Object.values(lineManshaCounts), backgroundColor: Object.keys(lineManshaCounts).map(k => COLORS.line[k]) }] },
             options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
         });
 
-        // ④ サイト別 万車的中時ライン (戦型別)
+        // ④ サイト別 万車的中時ライン
         destroyChart('chartSiteManshaBattle');
         const battleTypes = ['2分戦', '3分戦', '4分戦', '単騎戦'];
         const siteBattleHits = { B: [0,0,0,0], Y: [0,0,0,0], N: [0,0,0,0] };
@@ -275,13 +345,13 @@
             });
         });
         
-        // 割合(%)に変換 (各サイトの万車的中総数に対する戦型の割合)
         const getPct = (arr) => {
             const sum = arr.reduce((a,b)=>a+b, 0);
             return sum === 0 ? arr : arr.map(v => Math.round((v/sum)*100));
         };
 
-        charts['chartSiteManshaBattle'] = new Chart(document.getElementById('chartSiteManshaBattle'), {
+        const elBattle = document.getElementById('chartSiteManshaBattle');
+        if(elBattle) charts['chartSiteManshaBattle'] = new Chart(elBattle, {
             type: 'bar',
             data: {
                 labels: battleTypes,
@@ -293,12 +363,13 @@
             },
             options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, title: { display: true, text: '的中率(%)' } } }, plugins: { legend: { position: 'top' } } }
         });
-
+        
         // ⑤ 1着の決まり手
         destroyChart('chartTech1');
         const tech1Counts = { '差':0, '捲':0, '逃':0 };
         savedData.forEach(d => { if(tech1Counts[d.tech1] !== undefined) tech1Counts[d.tech1]++; });
-        charts['chartTech1'] = new Chart(document.getElementById('chartTech1'), {
+        const elTech1 = document.getElementById('chartTech1');
+        if(elTech1) charts['chartTech1'] = new Chart(elTech1, {
             type: 'doughnut',
             data: { labels: Object.keys(tech1Counts), datasets: [{ data: Object.values(tech1Counts), backgroundColor: [COLORS.tech['差'], COLORS.tech['捲'], COLORS.tech['逃']] }] },
             options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
@@ -314,7 +385,8 @@
             }
         });
         const sortedCombos = Object.entries(comboCounts).sort((a,b) => b[1] - a[1]);
-        charts['chartTechCombo'] = new Chart(document.getElementById('chartTechCombo'), {
+        const elCombo = document.getElementById('chartTechCombo');
+        if(elCombo) charts['chartTechCombo'] = new Chart(elCombo, {
             type: 'bar',
             data: { labels: sortedCombos.map(x=>x[0]), datasets: [{ label: '出現回数', data: sortedCombos.map(x=>x[1]), backgroundColor: '#93C5FD' }] },
             options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
@@ -330,14 +402,14 @@
             }
         });
         const sortedSums = Object.keys(sumCounts).sort((a,b) => Number(a) - Number(b));
-        charts['chartSumDist'] = new Chart(document.getElementById('chartSumDist'), {
+        const elSum = document.getElementById('chartSumDist');
+        if(elSum) charts['chartSumDist'] = new Chart(elSum, {
             type: 'bar',
             data: { labels: sortedSums, datasets: [{ label: '出現回数', data: sortedSums.map(k => sumCounts[k]), backgroundColor: '#A7F3D0' }] },
             options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
         });
     }
 
-    /* --- 新機能：万車券1着車番分析 --- */
     function analyzeManshaFirstCar(data) {
         const result = document.getElementById("manshaCarResult");
         if (!data || data.length === 0) { result.innerHTML = "<p class='text-red-500 font-bold'>データなし</p>"; return; }
