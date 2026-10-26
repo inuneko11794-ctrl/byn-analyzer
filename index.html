@@ -59,7 +59,6 @@
             <div id="manshaCarResult" class="text-sm text-gray-700"><p class="text-gray-400 text-center py-2">結果がここに表示されます</p></div>
           </div>
         </details>
-
         <!-- ==========================================
              ③ 着順・払戻 スクショ読込 (自動解析)
         =========================================== -->
@@ -95,7 +94,7 @@
           </div>
         </details>
 
-           <!-- ==========================================
+        <!-- ==========================================
              ④ 手動データ追加
         =========================================== -->
         <details class="bg-white rounded shadow border group" open>
@@ -107,7 +106,13 @@
               <input type="text" id="mOrd" placeholder="着順(例: 1-2-3)" class="border rounded p-2 text-sm">
               <input type="text" id="mP2" placeholder="2連単払戻" class="border rounded p-2 text-sm">
               <input type="text" id="mP3" placeholder="3連単払戻" class="border rounded p-2 text-sm">
-              <select id="mRac" class="border rounded p-2 text-sm"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option></select>
+              <select id="mRac" class="border rounded p-2 text-sm">
+                <option value="9">9車</option>
+                <option value="8">8車</option>
+                <option value="7" selected>7車</option>
+                <option value="6">6車</option>
+                <option value="5">5車</option>
+              </select>
             </div>
             <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
               <select id="mBattle" class="border rounded p-2 text-sm"><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option></select>
@@ -116,7 +121,6 @@
             </div>
           </div>
         </details>
-
         <!-- ==========================================
              ⑤ 保存済み一覧 ＆ データ管理（復元ボタン完備）
         =========================================== -->
@@ -155,7 +159,12 @@
             <div class="flex justify-between items-center mb-4">
               <h2 class="font-bold text-gray-700">📊 分析ダッシュボード (総データ: <span id="d_total">0</span>件)</h2>
               <select id="dashFilter" onchange="window.updateDash()" class="border p-1 text-sm rounded">
-                <option value="all">全車立</option><option value="7">7車</option><option value="9">9車</option>
+                <option value="all">全車立 (なし)</option>
+                <option value="9">9車</option>
+                <option value="8">8車</option>
+                <option value="7">7車</option>
+                <option value="6">6車</option>
+                <option value="5">5車</option>
               </select>
             </div>
 
@@ -185,7 +194,7 @@
         </div>
     </div>
 
-    !-- ==========================================
+    <!-- ==========================================
          JavaScript (モジュール連携 ＆ グラフ処理)
     =========================================== -->
     <script type="module">
@@ -269,7 +278,7 @@
       document.getElementById('fileUp').addEventListener('change', window.handleImageUpload);
       document.addEventListener('paste', window.handleImageUpload);
 
-         // --- HTML描画系 ---
+        // --- HTML描画系 ---
       window.renderStg = function() {
         const tbody = document.getElementById('stgBody');
         document.getElementById('stgCount').innerText = window.stg.length;
@@ -368,19 +377,7 @@
         alert("手動データを追加しました！");
       };
 
-      window.applyStg = function() {
-        if (!window.stg.length) return;
-        window.stg.forEach(d => window.sv.unshift(JSON.parse(JSON.stringify(d))));
-        window.stg.length = 0;
-        orderRows = null; 
-        payRows = null;
-        window.renderStg(); window.saveLS(); window.renderSaved(); window.updateDash();
-        document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
-        document.getElementById('applyBtn').setAttribute('disabled', 'true');
-        alert("保存済み一覧へ反映しました！");
-      };
-
-      window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
+        window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
 
       window.backupData = function(e) {
         e.stopPropagation();
@@ -404,14 +401,15 @@
         };
         reader.readAsText(file);
       };
-        window.clearData = function(e) {
+
+      window.clearData = function(e) {
         e.stopPropagation();
-        if(confirm("全ての保存データを消去しますか？(元には戻せません)")){
+        if(confirm("所有的保存データを消去しますか？(元には戻せません)")){
           window.sv = []; window.saveLS(); window.renderSaved(); window.updateDash();
         }
       };
 
-      // --- 🎯 万車券1着車番分析 ---
+        // --- 🎯 万車券1着車番分析 ---
       window.analyzeManshaFirstCar = function(data) {
         const result = document.getElementById("manshaCarResult");
         if (!data || data.length === 0) { result.innerHTML = "<p class='text-red-500 font-bold text-center'>データがありません</p>"; return; }
@@ -463,7 +461,7 @@
         reader.readAsText(file);
       });
 
-        // --- 📊 ダッシュボード描画処理 ---
+      // --- 📊 ダッシュボード描画処理 ---
       window.updateDash = function() {
         destroyCharts();
         let f = document.getElementById('dashFilter').value;
@@ -520,7 +518,7 @@
           ['B','Y','N'].forEach(s => {
             if(d.sites && d.sites[s]?.hit && d.winLine) sLines[s][d.winLine] = (sLines[s][d.winLine]||0)+1;
           });
-        });
+             });
         c('siteLineChart', 'bar', {
           labels: ['単','0','1','2','3','4'],
           datasets: [
@@ -566,10 +564,8 @@
         }
       };
 
-      window.renderSaved();
+        window.renderSaved();
       window.updateDash();
     </script>
 </body>
 </html>
-
-        
