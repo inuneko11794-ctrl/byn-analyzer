@@ -57,6 +57,7 @@
             <div id="manshaCarResult" class="text-sm text-gray-700"><p class="text-gray-400 text-center py-2">結果がここに表示されます</p></div>
           </div>
         </details>
+
         <!-- ==========================================
              ③ 着順・払戻 スクショ読込 (スマホ優先)
         =========================================== -->
@@ -71,7 +72,6 @@
             </div>
           </div>
         </details>
-
         <!-- 📝 読込プレビュー (stg) -->
         <details class="bg-white rounded-xl shadow border group mb-4" open>
           <summary class="font-bold p-3.5 cursor-pointer bg-yellow-50 text-yellow-800 flex justify-between items-center text-sm md:text-base">
@@ -154,9 +154,8 @@
             </div>
           </div>
         </details>
-
          <!-- ==========================================
-             ⑥ ダッシュボード分析グラフ (①〜⑦の番号・解説付き)
+             ⑥ ダッシュボード分析グラフ (①〜⑧ 番号・解説付き)
         =========================================== -->
         <div class="space-y-4 mt-8 bg-white p-4 md:p-6 rounded-xl shadow border">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
@@ -210,9 +209,20 @@
                 <p class="text-xs text-gray-500 mb-2">車番の合計値ごとに、平均してどの程度の3連単払戻金額がついているか推移を表します。</p>
                 <div class="relative h-64"><canvas id="sumPayoutChart"></canvas></div>
               </div>
-            </div>
 
-            <div class="mt-6 overflow-x-auto bg-gray-50 p-3.5 rounded-xl border">
+              <!-- 新機能：⑧ 2連単別の3着車番分析 -->
+              <div class="bg-gray-50 p-3.5 rounded-xl border">
+                <h3 class="font-bold text-sm mb-1">⑧ 🎯 2連単別の「3着車番」分析</h3>
+                <p class="text-xs text-gray-500 mb-2">2連単（例: 2-5）を選択すると、その時にどの車番が3着に来やすいかを検証できます。</p>
+                <div class="mb-3">
+                  <select id="selectNirentan" onchange="window.updateNirentanChart()" class="border p-2.5 text-sm rounded-xl bg-white w-full font-bold text-blue-800">
+                    <option value="">-- 2連単を選択してください --</option>
+                  </select>
+                </div>
+                <div class="relative h-64"><canvas id="nirentanThirdChart"></canvas></div>
+              </div>
+            </div>
+             <div class="mt-6 overflow-x-auto bg-gray-50 p-3.5 rounded-xl border">
               <h3 class="font-bold text-sm mb-1">⑦ 🤝 サイト被り状況</h3>
               <p class="text-xs text-gray-500 mb-2">どのサイトの予想が重なっているか、その組合せごとの的中回数や平均払戻金額を確認できます。</p>
               <table class="w-full text-xs text-center border bg-white rounded-lg overflow-hidden">
@@ -223,7 +233,7 @@
         </div>
     </div>
 
-     <!-- ==========================================
+    <!-- ==========================================
          JavaScript (モジュール連携 ＆ グラフ処理)
     =========================================== -->
     <script type="module">
@@ -290,7 +300,8 @@
               },
             };
           });
-            if (e.target && e.target.id === "fileUp") e.target.value = "";
+
+          if (e.target && e.target.id === "fileUp") e.target.value = "";
           window.renderStg();
           const btn = document.getElementById("applyBtn");
           btn.classList.remove("opacity-50", "cursor-not-allowed");
@@ -303,7 +314,7 @@
         }
       };
 
-      document.getElementById('fileUp').addEventListener('change', window.handleImageUpload);
+      document.getElementById('fileUp')?.addEventListener('change', window.handleImageUpload);
       document.addEventListener('paste', window.handleImageUpload);
 
       // --- HTML描画系 ---
@@ -354,7 +365,8 @@
           <td class="p-2 text-center"><button onclick="window.delRow('${type}',${i})" class="text-red-500 font-bold hover:bg-red-100 p-2 rounded-lg text-xs">✖</button></td>
         </tr>`;
       };
-        // --- データ操作系 ---
+
+         // --- データ操作系 ---
       window.updateVal = function(type, i, field, val) {
         let arr = type === 'stg' ? window.stg : window.sv;
         arr[i][field] = val;
@@ -415,7 +427,8 @@
         document.getElementById('applyBtn').setAttribute('disabled', 'true');
         alert("保存済み一覧へ反映しました！");
       };
-        window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
+
+      window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
 
       window.backupData = function(e) {
         e.stopPropagation();
@@ -442,7 +455,7 @@
         reader.readAsText(file);
       };
 
-      window.clearData = function(e) {
+        window.clearData = function(e) {
         e.stopPropagation();
         if(confirm("全ての保存データを消去しますか？(元には戻せません)")){
           window.sv = []; window.saveLS(); window.renderSaved(); window.updateDash();
@@ -488,6 +501,88 @@
         });
         result.innerHTML = html + `</div>`;
       };
+
+      document.getElementById('btnManshaCalc')?.addEventListener('click', () => window.analyzeManshaFirstCar(window.sv));
+      document.getElementById('manshaFileInput')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => { 
+            try { window.analyzeManshaFirstCar(JSON.parse(ev.target.result)); } 
+            catch(err){ alert("JSON解析エラー"); } 
+        };
+        reader.readAsText(file);
+      });
+
+         // --- ⑧ 2連単別の3着車番分析チャート更新処理 ---
+      window.updateNirentanOptions = function() {
+        const sel = document.getElementById('selectNirentan');
+        if(!sel) return;
+        let f = document.getElementById('dashFilter').value;
+        let data = window.sv.filter(d => f === 'all' || d.racers === f);
+        
+        const set = new Set();
+        data.forEach(d => {
+          if(d.order) {
+            const parts = d.order.split('-');
+            if(parts.length >= 2) set.add(`${parts[0]}-${parts[1]}`);
+          }
+        });
+        
+        const currentVal = sel.value;
+        let html = '<option value="">-- 2連単を選択してください --</option>';
+        Array.from(set).sort().forEach(pair => {
+          html += `<option value="${pair}" ${pair===currentVal?'selected':''}>2連単: ${pair}</option>`;
+        });
+        sel.innerHTML = html;
+      };
+
+      window.updateNirentanChart = function() {
+        const selVal = document.getElementById('selectNirentan').value;
+        if(window.charts['nirentanThirdChart']) {
+          window.charts['nirentanThirdChart'].destroy();
+        }
+        if(!selVal) return;
+
+        let f = document.getElementById('dashFilter').value;
+        let data = window.sv.filter(d => f === 'all' || d.racers === f);
+
+        const thirdCounts = {};
+        data.forEach(d => {
+          if(d.order) {
+            const parts = d.order.split('-');
+            if(parts.length >= 3 && `${parts[0]}-${parts[1]}` === selVal) {
+              const third = parts[2].trim();
+              if(third) {
+                thirdCounts[third] = (thirdCounts[third] || 0) + 1;
+              }
+            }
+          }
+        });
+
+        const sortedKeys = Object.keys(thirdCounts).sort((a,b)=>Number(a)-Number(b));
+        const el = document.getElementById('nirentanThirdChart');
+        if(!el) return;
+
+        window.charts['nirentanThirdChart'] = new Chart(el, {
+          type: 'bar',
+          data: {
+            labels: sortedKeys.map(k => `${k}番`),
+            datasets: [{
+              label: `2連単「${selVal}」の時の3着出現回数`,
+              data: sortedKeys.map(k => thirdCounts[k]),
+              backgroundColor: 'rgba(54, 162, 235, 0.6)'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+          }
+        });
+      };
+
         // --- 📊 ダッシュボード描画処理 ---
       window.updateDash = function() {
         destroyCharts();
@@ -510,6 +605,10 @@
           document.getElementById(`d_${s.toLowerCase()}_rate`).innerText = `${rate}%`;
           document.getElementById(`d_${s.toLowerCase()}_man`).innerText = `万車:${stats[s].man}`;
         });
+
+        // 2連単セレクターの更新
+        window.updateNirentanOptions();
+        window.updateNirentanChart();
 
         if (data.length === 0) return;
 
@@ -564,8 +663,8 @@
             if(!sumGrp[sum]) sumGrp[sum] = {cnt:0, p3:0};
             sumGrp[sum].cnt++; sumGrp[sum].p3 += parseInt(d.payout3)||0;
           }
-        });
-          let sums = Object.keys(sumGrp).sort((a,b)=>a-b);
+             });
+        let sums = Object.keys(sumGrp).sort((a,b)=>a-b);
         c('sumDistChart', 'bar', {
           labels: sums,
           datasets: [{label:'出現回数', data: sums.map(k=>sumGrp[k].cnt), backgroundColor:'rgba(75, 192, 192, 0.6)'}]
