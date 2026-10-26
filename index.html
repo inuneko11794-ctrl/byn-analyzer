@@ -1,1608 +1,400 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BNYサイト3つ寄れば文殊超え</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNYサイト3つ寄れば文殊超え</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-2 md:p-6 text-gray-800">
-
-  <div id="loading" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center text-white text-xl font-bold hidden">
-    画像を解析中...
-  </div>
-
-  <div class="max-w-6xl mx-auto">
-    <h1 class="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
-      <span>🚴‍♂️ BNYサイト3つ寄れば文殊超え</span>
-    </h1>
-
-            <!-- 🌐 万車ノート埋め込みエリア -->
-    <details open class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center hover:bg-blue-100 transition-colors">
-        <span>🌐 万車ノート (Grok)</span>
-        <span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-2 border-t">
-        <iframe src="https://brook-beam-sunny-arch.grok.me" class="w-full h-[500px] border rounded"></iframe>
-      </div>
-    </details>
-
-    <!-- 🤖 専用AIボット埋め込みエリア -->
-    <details class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-teal-50 text-teal-800 flex justify-between items-center hover:bg-teal-100 transition-colors">
-        <span>🤖 競輪予想屋さん (専用AI)</span>
-        <span class="text-teal-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-2 border-t">
-        <iframe src="https://www.coze.com/store/agent/7700716983747198981?bot_id=true" class="w-full h-[500px] border rounded"></iframe>
-        <p class="text-xs text-gray-500 mt-2 text-center">※バックアップ保存したJSONデータをAIに投げて、「現在のデータ傾向を教えて」と質問できます。</p>
-      </div>
-    </details>
-
-        <!- 🎯 サイト別・万車的中時の1着車番分析エリア（ここにプログラムも内蔵） -->
-    < class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center hover:bg-purple-100 transition-colors">
-        <span>🎯 万車券的中時の「1着車番」分析（B・Y・N軍）</span>
-        <span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-4 border-t">
+<body class="bg-gray-100 min-h-screen p-4 pb-20">
+    <div class="max-w-4xl mx-auto space-y-4">
         
-        <div class="flex flex-col gap-3 mb-4">
-          <!-- ① 現在のデータで計算するボタン -->
-          <button onclick="analyzeManshaFirstCar()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full text-sm font-bold shadow transition-colors">
-            📊 現在ツールに入っているデータで計算する
-          </button>
-          
-                   <!-- ② JSONファイルを読み込んで計算するエリア -->
-          <div class="border-2 border-dashed border-purple-300 rounded p-3 text-center bg-purple-50">
-            <label class="block text-sm font-bold text-purple-800 mb-2">📁 過去のバックアップ(JSON)を読み込んで計算</label>
-            <input 
-              type="file" 
-              accept=".json,application/json" 
-              onchange="handleManshaFileUpload(event)" 
-              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer" 
-            />
+        <!-- ヘッダー -->
+        <header class="mb-6 text-center">
+            <h1 class="text-2xl font-black text-gray-800 tracking-tight">BNYサイト3つ寄れば文殊超え</h1>
+            <p class="text-xs text-gray-500 mt-1">競輪データ管理・分析ダッシュボード</p>
+        </header>
+
+        <!-- ① 万車ノート (Grok) -->
+        <details class="bg-white rounded-lg shadow-sm border group">
+          <summary class="font-bold p-3 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center hover:bg-blue-100 transition-colors">
+            <span class="flex items-center gap-2">🌐 万車ノート (Grok)</span>
+            <span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="p-2 border-t">
+            <iframe src="https://brook-beam-sunny-arch.grok.me" class="w-full h-[500px] border rounded"></iframe>
           </div>
+        </details>
 
-        <!-- 結果表示エリア -->
-        <div id="manshaCarResult" class="text-sm text-gray-700 space-y-4">
-          <p class="text-gray-400 text-center py-2">ボタンを押すか、ファイルを選ぶと結果が表示されます</p>
-        </div>
-      </div>
-      
-      <!-- 動かすためのプログラム -->
-      <script>
-      // 📁 ファイルが選ばれたときの処理
-      function handleManshaFileUpload(event) {
-          const file = event.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = function(e) {
-              try {
-                  const jsonData = JSON.parse(e.target.result);
-                  analyzeManshaFirstCar(jsonData); // 読み込んだデータを渡して計算を実行
-              } catch (err) {
-                  document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>ファイルの読み込みに失敗しました。正しいJSONファイルを選んでください。</p>";
-              }
-          };
-          reader.readAsText(file);
-      }
-
-      // 📊 分析を実行する関数 (customDataがあればファイルから、なければツールのデータを使う)
-      function analyzeManshaFirstCar(customData = null) {
-          let data = [];
-          
-          if (customData) {
-              data = customData; // ファイルのデータを使う
-          } else {
-              // ツールに保存されているデータを使う
-              try {
-                  if (typeof savedData !== 'undefined') data = savedData;
-                  else if (typeof raceData !== 'undefined') data = raceData;
-                  else data = JSON.parse(localStorage.getItem('byn3_data')) || [];
-              } catch(e) {}
-          }
-
-          if (!data || data.length === 0) {
-              document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>データが見つかりません。</p>";
-              return;
-          }
-
-          const sites = ['B', 'Y', 'N'];
-          const stats = { B: { total: 0, cars: {} }, Y: { total: 0, cars: {} }, N: { total: 0, cars: {} } };
-
-          data.forEach(race => {
-              const payout3 = Number(race.payout3) || 0;
-              if (payout3 >= 10000) {
-                  let firstCar = null;
-      <!-- 動かすためのプログラム -->
-      <script>
-      // 📁 ファイルが選ばれたときの処理
-      function handleManshaFileUpload(event) {
-          const file = event.target.files[0];
-          if (!file) return;
-
-          const reader = new FileReader();
-          reader.onload = function(e) {
-              try {
-                  const jsonData = JSON.parse(e.target.result);
-                  analyzeManshaFirstCar(jsonData); 
-              } catch (err) {
-                  document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>ファイルの読み込みに失敗しました。</p>";
-              }
-          };
-          reader.readAsText(file);
-      }
-
-      // 📊 分析を実行する関数
-      function analyzeManshaFirstCar(customData = null) {
-          let data = [];
-          
-          if (customData) {
-              data = customData;
-          } else {
-              try {
-                  if (typeof savedData !== 'undefined') data = savedData;
-    <!-- 🎯 サイト別・万車的中時の1着車番分析エリア（ここにプログラムも内蔵） -->
-    <details class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center hover:bg-purple-100 transition-colors">
-        <span>🎯 万車券的中時の「1着車番」分析（B・Y・N軍）</span>
-        <span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-4 border-t">
-        
-        <div class="flex flex-col gap-3 mb-4">
-          <!-- ① 現在のデータで計算するボタン -->
-          <button onclick="analyzeManshaFirstCar()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full text-sm font-bold shadow transition-colors">
-            📊 現在ツールに入っているデータで計算する
-          </button>
-          
-          <!-- ② JSONファイルを読み込んで計算するエリア -->
-          <div class="border-2 border-dashed border-purple-300 rounded p-3 text-center bg-purple-50">
-            <label class="block text-sm font-bold text-purple-800 mb-2">📁 過去のバックアップ(JSON)を読み込んで計算</label>
-            <input type="file" accept=".json,application/json" onchange="handleManshaFileUpload(event)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer" />
+        <!-- ② 競輪予想屋さん (Coze AI) -->
+        <details class="bg-white rounded-lg shadow-sm border group">
+          <summary class="font-bold p-3 cursor-pointer bg-teal-50 text-teal-800 flex justify-between items-center hover:bg-teal-100 transition-colors">
+            <span class="flex items-center gap-2">🤖 競輪予想屋さん (専用AI)</span>
+            <span class="text-teal-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="p-2 border-t">
+            <iframe src="https://www.coze.com/store/agent/7700716983747198981?bot_id=true" class="w-full h-[500px] border rounded"></iframe>
+            <p class="text-xs text-gray-500 mt-2 text-center">※バックアップ保存したJSONデータをAIに投げて、「現在のデータ傾向を教えて」と質問できます。</p>
           </div>
-        </div>
+        </details>
 
-        <!-- 結果表示エリア -->
-        <div id="manshaCarResult" class="text-sm text-gray-700 space-y-4">
-          <p class="text-gray-400 text-center py-2">ボタンを押すか、ファイルを選ぶと結果が表示されます</p>
-        </div>
-      </div>
-      
-      <!-- 動かすためのプログラム -->
-      <script>
-      function handleManshaFileUpload(event) {
-          const file = event.target.files[0];
-          if (!file) return;
+        <!-- ③ 万車券的中時の1着車番分析 -->
+        <details class="bg-white rounded-lg shadow-sm border group">
+          <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center hover:bg-purple-100 transition-colors">
+            <span class="flex items-center gap-2">🎯 万車券的中時の「1着車番」分析（B・Y・N軍）</span>
+            <span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="p-4 border-t">
+            <div class="flex flex-col gap-3 mb-4">
+              <button id="btnManshaCalc" class="bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 w-full text-sm font-bold shadow transition-colors flex justify-center items-center gap-2">
+                📊 現在ツールに入っているデータで計算する
+              </button>
+              <div class="border-2 border-dashed border-purple-300 rounded-lg p-3 text-center bg-purple-50/50">
+                <label class="block text-sm font-bold text-purple-800 mb-2">📁 過去のバックアップ(JSON)を読込</label>
+                <input type="file" id="manshaFileInput" accept=".json,application/json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer" />
+              </div>
+            </div>
+            <div id="manshaCarResult" class="text-sm text-gray-700 space-y-4">
+              <p class="text-gray-400 text-center py-4 bg-gray-50 rounded border border-dashed">ボタンを押すか、ファイルを選ぶと結果が表示されます</p>
+            </div>
+          </div>
+        </details>
+        <!-- ④ 着順・払戻 スクショ読込 ＆ 手動登録 -->
+        <details class="bg-white rounded-lg shadow-sm border group" open>
+          <summary class="font-bold p-3 cursor-pointer bg-orange-50 text-orange-800 flex justify-between items-center hover:bg-orange-100 transition-colors">
+            <span class="flex items-center gap-2">📸 スクショ読込 ＆ ✍️ データ登録</span>
+            <span class="text-orange-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="p-4 border-t bg-white">
+            <!-- スクショ機能プレースホルダー -->
+            <div class="mb-4 p-3 border border-orange-200 bg-orange-50 rounded-lg text-center">
+              <p class="text-xs text-orange-800 font-bold mb-2">📸 画像解析（準備中）</p>
+              <input type="file" accept="image/*" class="block w-full text-sm text-gray-500 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-orange-200 file:text-orange-800 cursor-pointer mb-2">
+              <p class="text-[10px] text-gray-500">※現在は手動入力をご利用ください</p>
+            </div>
 
-          const reader = new FileReader();
-          reader.onload = function(e) {
-              try {
-                  const jsonData = JSON.parse(e.target.result);
-                  analyzeManshaFirstCar(jsonData); 
-              } catch (err) {
-                  document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>ファイルの読み込みに失敗しました。</p>";
-              }
-          };
-          reader.readAsText(file);
-      }
-
-      function analyzeManshaFirstCar(customData = null) {
-          let data = [];
-          
-          if (customData) {
-              data = customData;
-          } else {
-              try {
-                  if (typeof savedData !== 'undefined') data = savedData;
-                  else if (typeof raceData !== 'undefined') data = raceData;
-                  else data = JSON.parse(localStorage.getItem('byn3_data')) || [];
-              } catch(e) {}
-          }
-
-          if (data && !Array.isArray(data)) {
-              if (data.races) data = data.races;
-              else data = Object.values(data);
-          }
-          if (Array.isArray(data)) {
-              data = data.flat(Infinity);
-          }
-
-          if (!data || data.length === 0) {
-              document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>データが見つかりません。0件です。</p>";
-              return;
-          }
-
-          const sites = ['B', 'Y', 'N'];
-          const stats = { B: { total: 0, cars: {} }, Y: { total: 0, cars: {} }, N: { total: 0, cars: {} } };
-
-          let totalRaces = data.length;
-          let manshaCount = 0;
-
-          data.forEach(race => {
-              if(!race) return;
+            <!-- 入力フォーム -->
+            <div class="grid grid-cols-2 gap-3 mb-4">
+              <div><label class="block text-xs font-bold text-gray-600 mb-1">レースR</label><input type="number" id="inputRaceNo" class="w-full border rounded p-2 text-sm" placeholder="例: 1"></div>
+              <div><label class="block text-xs font-bold text-gray-600 mb-1">3連単 着順</label><input type="text" id="inputOrder" class="w-full border rounded p-2 text-sm" placeholder="例: 7-2-5"></div>
+              <div><label class="block text-xs font-bold text-gray-600 mb-1">2車単 配当</label><input type="number" id="inputPayout2" class="w-full border rounded p-2 text-sm" placeholder="例: 310"></div>
+              <div><label class="block text-xs font-bold text-gray-600 mb-1">3連単 配当</label><input type="number" id="inputPayout3" class="w-full border rounded p-2 text-sm" placeholder="例: 2460"></div>
               
-              let p3Str = String(race.payout3 || race.pay3 || race.payout || "0").replace(/[^0-9]/g, '');
-              const payout3 = Number(p3Str) || 0;
+              <div><label class="block text-xs font-bold text-gray-600 mb-1">車立て</label>
+                <select id="inputRacers" class="w-full border rounded p-2 text-sm"><option value="7">7車</option><option value="9">9車</option></select>
+              </div>
+              <div><label class="block text-xs font-bold text-gray-600 mb-1">戦型</label>
+                <select id="inputBattle" class="w-full border rounded p-2 text-sm"><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option></select>
+              </div>
+              
+              <div><label class="block text-xs font-bold text-gray-600 mb-1">決まり手1</label>
+                <select id="inputTech1" class="w-full border rounded p-2 text-sm"><option value="逃">逃</option><option value="捲">捲</option><option value="差">差</option></select>
+              </div>
+              <div><label class="block text-xs font-bold text-gray-600 mb-1">決まり手2</label>
+                <select id="inputTech2" class="w-full border rounded p-2 text-sm"><option value="逃">逃</option><option value="捲">捲</option><option value="差">差</option><option value="マ">マ</option></select>
+              </div>
+            </div>
 
-              if (payout3 >= 10000) {
-                  manshaCount++;
-                  
-                  let firstCar = null;
-                  let resultStr = String(race.order || race.result || race.winCar || "");
-                  if (resultStr && resultStr !== "undefined") {
-                      firstCar = resultStr.split('-')[0].trim();
-                  }
+            <!-- サイト別判定 -->
+            <div class="bg-gray-50 p-3 rounded border mb-4">
+              <p class="text-xs font-bold text-gray-700 mb-2 text-center">🏆 サイト別 的中判定</p>
+              <div class="flex justify-between gap-2">
+                <label class="flex-1 flex flex-col items-center p-2 bg-white border rounded cursor-pointer hover:bg-gray-100"><span class="font-bold text-sm mb-1">B軍</span><input type="checkbox" id="hitB" class="w-5 h-5 accent-orange-500"></label>
+                <label class="flex-1 flex flex-col items-center p-2 bg-white border rounded cursor-pointer hover:bg-gray-100"><span class="font-bold text-sm mb-1">Y軍</span><input type="checkbox" id="hitY" class="w-5 h-5 accent-orange-500"></label>
+                <label class="flex-1 flex flex-col items-center p-2 bg-white border rounded cursor-pointer hover:bg-gray-100"><span class="font-bold text-sm mb-1">N軍</span><input type="checkbox" id="hitN" class="w-5 h-5 accent-orange-500"></label>
+              </div>
+            </div>
+            
+            <button id="btnSaveData" class="w-full bg-gray-800 text-white font-bold py-3 rounded-lg shadow hover:bg-black transition-colors">➕ このレースデータを保存</button>
+          </div>
+        </details>
 
-                  if (firstCar) {
-                      sites.forEach(site => {
-                          let siteDataObj = (race.sites && race.sites[site]) ? race.sites[site] : null;
-                          if (siteDataObj) {
-                              let isHit = (siteDataObj.hit === true || siteDataObj.hit === "true" || siteDataObj.hit === 1);
-                              if (isHit) {
-                                  stats[site].total++;
-                                  stats[site].cars[firstCar] = (stats[site].cars[firstCar] || 0) + 1;
-                              }
-                          }
-<script>
-/* =========================================
-   万車券的中時の1着車番分析
-   対応：バックアップJSON・現在の保存データ
-   ========================================= */
+        <!-- ⑤ 保存データ一覧＆バックアップ -->
+        <details class="bg-white rounded-lg shadow-sm border group">
+          <summary class="font-bold p-3 cursor-pointer bg-gray-50 text-gray-800 flex justify-between items-center hover:bg-gray-100 transition-colors">
+            <span class="flex items-center gap-2">📁 保存済みデータ一覧 ＆ バックアップ</span>
+            <span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+          <div class="p-4 border-t">
+            <div class="flex justify-between items-center mb-3">
+              <span class="text-sm font-bold bg-gray-200 px-2 py-1 rounded">登録数: <span id="dataCount">0</span>件</span>
+              <div class="flex gap-2">
+                <button id="btnDownloadJson" class="bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-blue-600">📥 JSON保存</button>
+                <button id="btnClearData" class="bg-red-500 text-white text-xs font-bold px-3 py-2 rounded shadow hover:bg-red-600">🗑 全消去</button>
+              </div>
+            </div>
+            <div class="overflow-x-auto border rounded-lg max-h-[300px] overflow-y-auto">
+              <table class="w-full text-xs text-left whitespace-nowrap">
+                <thead class="bg-gray-100 sticky top-0">
+                  <tr><th class="p-2">R</th><th class="p-2">着順</th><th class="p-2">3連単</th><th class="p-2 text-center">B</th><th class="p-2 text-center">Y</th><th class="p-2 text-center">N</th></tr>
+                </thead>
+                <tbody id="dataTableBody" class="divide-y bg-white">
+                  <!-- データがここに入ります -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </details>
+    </div><!-- container end -->
 
-// JSONバックアップを読み込む
-function handleManshaFileUpload(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    <!-- ここからJavaScriptが始まります -->
+    <script>
+    /* =========================================
+       1. 基本データ管理（登録・表示・JSON保存）
+       ========================================= */
+    const STORAGE_KEY = 'byn3_data';
+    let raceData = [];
 
-    const result = document.getElementById('manshaCarResult');
-    result.innerHTML =
-        "<p class='text-center py-3'>JSONを読み込んでいます...</p>";
+    // 画面ロード時にデータを読み込む
+    document.addEventListener("DOMContentLoaded", () => {
+        loadData();
+        setupEventListeners();
+    });
 
-    const reader = new FileReader();
-
-    reader.onload = function(e) {
-        try {
-            const jsonData = JSON.parse(e.target.result);
-            analyzeManshaFirstCar(jsonData);
-        } catch (err) {
-            console.error("JSON読み込みエラー:", err);
-            result.innerHTML =
-                "<p class='text-red-600 font-bold text-center'>" +
-                "JSONを解析できません。バックアップファイルを確認してください。</p>";
+    function loadData() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try { raceData = JSON.parse(stored); } catch (e) { raceData = []; }
         }
-    };
-
-    reader.onerror = function() {
-        result.innerHTML =
-            "<p class='text-red-600 font-bold text-center'>" +
-            "ファイルを読み込めませんでした。</p>";
-    };
-
-    reader.readAsText(file, "UTF-8");
-}
-
-
-// データの形式を配列に統一する
-function normalizeManshaData(source) {
-    if (Array.isArray(source)) {
-        return source.flat(Infinity).filter(
-            item => item && typeof item === "object" && !Array.isArray(item)
-        );
+        renderTable();
     }
 
-    if (!source || typeof source !== "object") {
-        return [];
+    function saveData() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(raceData));
+        renderTable();
     }
 
-    // バックアップの形式が異なる場合にも対応
-    const possibleKeys = [
-        "races",
-        "data",
-        "records",
-        "raceData",
-        "savedData",
-        "byn3_data"
-    ];
-
-    for (const key of possibleKeys) {
-        if (source[key] !== undefined) {
-            const result = normalizeManshaData(source[key]);
-            if (result.length > 0) return result;
+    // フォームからデータを追加
+    function handleSaveRace() {
+        const raceNo = document.getElementById("inputRaceNo").value;
+        const order = document.getElementById("inputOrder").value;
+        const payout3 = document.getElementById("inputPayout3").value;
+        if (!raceNo || !order) {
+            alert("レースRと着順は入力してください！");
+            return;
         }
-    }
 
-    // レース情報が直接格納されたオブジェクトにも対応
-    if (
-        source.order !== undefined ||
-        source.payout3 !== undefined ||
-        source.pay3 !== undefined
-    ) {
-        return [source];
-    }
-
-    // レースIDをキーにした形式にも対応
-    return Object.values(source).filter(
-        item => item && typeof item === "object" &&
-        !Array.isArray(item) &&
-        (
-            item.order !== undefined ||
-            item.payout3 !== undefined ||
-            item.pay3 !== undefined
-        )
-    );
-}
-
-
-// 配当を数値に変換する
-function getManshaPayout(race) {
-    const raw =
-        race.payout3 ??
-        race.pay3 ??
-        race.payout ??
-        0;
-
-    // 数値・文字列・カンマ・円表記に対応
-    const digits = String(raw).replace(/[^0-9]/g, "");
-    return Number(digits) || 0;
-}
-
-
-// 的中判定を統一する
-function isManshaHit(siteData) {
-    if (!siteData || typeof siteData !== "object") {
-        return false;
-    }
-
-    const hit = siteData.hit;
-
-    return hit === true ||
-           hit === 1 ||
-           hit === "1" ||
-           String(hit).toLowerCase() === "true";
-}
-
-
-// HTML表示用の文字列処理
-function escapeManshaHTML(value) {
-    return String(value).replace(/[&<>"']/g, char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-    })[char]);
-}
-
-
-// メイン分析
-function analyzeManshaFirstCar(customData = null) {
-    const result = document.getElementById("manshaCarResult");
-
-    let source = customData;
-
-    // 引数がない場合は現在のツールのデータを探す
-    if (source === null) {
-        try {
-            if (typeof savedData !== "undefined" &&
-                savedData != null) {
-                source = savedData;
-            } else if (
-                typeof raceData !== "undefined" &&
-                raceData != null
-            ) {
-                source = raceData;
-            } else {
-                const stored = localStorage.getItem("byn3_data");
-                source = stored ? JSON.parse(stored) : [];
+        const newRace = {
+            id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+            raceNo: Number(raceNo),
+            order: order,
+            payout2: Number(document.getElementById("inputPayout2").value) || 0,
+            payout3: Number(payout3) || 0,
+            racers: document.getElementById("inputRacers").value,
+            battle: document.getElementById("inputBattle").value,
+            winLine: "", // 必要に応じてフォーム拡張
+            linePos: "", 
+            tech1: document.getElementById("inputTech1").value,
+            tech2: document.getElementById("inputTech2").value,
+            sites: {
+                B: { bet: document.getElementById("hitB").checked, hit: document.getElementById("hitB").checked },
+                Y: { bet: document.getElementById("hitY").checked, hit: document.getElementById("hitY").checked },
+                N: { bet: document.getElementById("hitN").checked, hit: document.getElementById("hitN").checked }
             }
-        } catch (err) {
-            console.error("保存データ取得エラー:", err);
-            source = [];
+        };
+
+        raceData.unshift(newRace); // 先頭に追加
+        saveData();
+        
+        // フォームをリセット
+        document.getElementById("inputRaceNo").value = "";
+        document.getElementById("inputOrder").value = "";
+        document.getElementById("inputPayout2").value = "";
+        document.getElementById("inputPayout3").value = "";
+        document.getElementById("hitB").checked = false;
+        document.getElementById("hitY").checked = false;
+        document.getElementById("hitN").checked = false;
+        
+        alert("レースデータを保存しました！");
+    }
+
+    // テーブルを描画
+    function renderTable() {
+        const tbody = document.getElementById("dataTableBody");
+        const countSpan = document.getElementById("dataCount");
+        if(!tbody || !countSpan) return;
+
+        countSpan.textContent = raceData.length;
+        tbody.innerHTML = "";
+
+        raceData.forEach(race => {
+            const tr = document.createElement("tr");
+            const hitB = race.sites?.B?.hit ? '🎯' : '❌';
+            const hitY = race.sites?.Y?.hit ? '🎯' : '❌';
+            const hitN = race.sites?.N?.hit ? '🎯' : '❌';
+            
+            tr.innerHTML = `
+                <td class="p-2">${race.raceNo}R</td>
+                <td class="p-2 font-bold">${race.order || '-'}</td>
+                <td class="p-2 text-right">${(race.payout3 || 0).toLocaleString()}円</td>
+                <td class="p-2 text-center text-lg">${hitB}</td>
+                <td class="p-2 text-center text-lg">${hitY}</td>
+                <td class="p-2 text-center text-lg">${hitN}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // JSONダウンロード
+    function downloadJSON() {
+        if (raceData.length === 0) { alert("保存するデータがありません。"); return; }
+        const jsonStr = JSON.stringify(raceData, null, 2);
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        const dateStr = new Date().toISOString().split('T')[0];
+        a.href = url;
+        a.download = `byn3_backup_${dateStr}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function clearAllData() {
+        if(confirm("本当にすべてのデータを消去しますか？（消去前にJSON保存をおすすめします）")) {
+            raceData = [];
+            saveData();
         }
     }
 
-    const data = normalizeManshaData(source);
+    function setupEventListeners() {
+        document.getElementById("btnSaveData")?.addEventListener("click", handleSaveRace);
+        document.getElementById("btnDownloadJson")?.addEventListener("click", downloadJSON);
+        document.getElementById("btnClearData")?.addEventListener("click", clearAllData);
+        
+        // 1着車番分析のイベントリスナー
+        document.getElementById("manshaFileInput")?.addEventListener("change", handleManshaFileUpload);
+        document.getElementById("btnManshaCalc")?.addEventListener("click", () => analyzeManshaFirstCar(null));
+    }
+    /* =========================================
+       2. 万車券的中時の1着車番分析（スマホ・完全対応版）
+       ========================================= */
 
-    if (data.length === 0) {
-        result.innerHTML =
-            "<div class='p-4 rounded border border-red-200 bg-red-50'>" +
-            "<p class='font-bold text-red-600'>レースデータが見つかりません。</p>" +
-            "<p class='mt-2'>JSONの中に order、payout3、sites などの項目があるか確認してください。</p>" +
-            "</div>";
-        return;
+    function normalizeManshaData(source) {
+      if (Array.isArray(source)) {
+        return source.flat(Infinity).filter(item => item && typeof item === "object" && !Array.isArray(item));
+      }
+      if (!source || typeof source !== "object") return [];
+      
+      const possibleKeys = ["races", "data", "records", "raceData", "savedData", "byn3_data"];
+      for (const key of possibleKeys) {
+        if (source[key] !== undefined) {
+          const result = normalizeManshaData(source[key]);
+          if (result.length > 0) return result;
+        }
+      }
+      if (source.order !== undefined || source.payout3 !== undefined || source.pay3 !== undefined) return [source];
+      
+      return Object.values(source).filter(item => item && typeof item === "object" && !Array.isArray(item) &&
+        (item.order !== undefined || item.payout3 !== undefined || item.pay3 !== undefined)
+      );
     }
 
-    const sites = ["B", "Y", "N"];
+    function getManshaPayout(race) {
+      const raw = race.payout3 ?? race.pay3 ?? race.payout ?? 0;
+      const digits = String(raw).replace(/[^0-9]/g, "");
+      return Number(digits) || 0;
+    }
 
-    const stats = {
-        B: { total: 0, cars: {} },
-        Y: { total: 0, cars: {} },
-        N: { total: 0, cars: {} }
-    };
+    function isManshaHit(siteData) {
+      if (!siteData || typeof siteData !== "object") return false;
+      const hit = siteData.hit;
+      return hit === true || hit === 1 || hit === "1" || String(hit).toLowerCase() === "true";
+    }
 
-    let manshaCount = 0;
-    let validOrderCount = 0;
-    let missingSiteCount = 0;
+    function escapeManshaHTML(value) {
+      return String(value).replace(/[&<>"']/g, char => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"})[char]);
+    }
 
-    data.forEach(race => {
-        // 3連単配当が10,000円以上のレースを対象にする
-        const payout3 = getManshaPayout(race);
+    function analyzeManshaFirstCar(customData = null) {
+      const result = document.getElementById("manshaCarResult");
+      if (!result) return;
 
-        if (payout3 < 10000) return;
+      let source = customData !== null ? customData : raceData;
+      const data = normalizeManshaData(source);
 
+      if (data.length === 0) {
+        result.innerHTML = "<div class='p-4 rounded border border-red-200 bg-red-50 text-red-600 font-bold text-center'>レースデータが見つかりません。</div>";
+        return;
+      }
+
+      const sites = ["B", "Y", "N"];
+      const stats = { B: { total: 0, cars: {} }, Y: { total: 0, cars: {} }, N: { total: 0, cars: {} } };
+      let manshaCount = 0, validOrderCount = 0, missingSiteCount = 0;
+
+      data.forEach(race => {
+        if (getManshaPayout(race) < 10000) return;
         manshaCount++;
 
-        // 1着車番を抽出
-        const order = String(
-            race.order ??
-            race.result ??
-            race.winCar ??
-            ""
-        ).trim();
-
-        const match = order.match(/^\s*(\d+)/);
-
+        const match = String(race.order ?? race.result ?? race.winCar ?? "").trim().match(/^\s*(\d+)/);
         if (!match) return;
 
         const firstCar = match[1];
         validOrderCount++;
 
-        // 各サイトの的中データを集計
         sites.forEach(site => {
-            const siteData =
-                race.sites && race.sites[site]
-                    ? race.sites[site]
-                    : null;
-
-            if (!siteData) {
-                missingSiteCount++;
-                return;
-            }
-
-            if (isManshaHit(siteData)) {
-                stats[site].total++;
-
-                stats[site].cars[firstCar] =
-                    (stats[site].cars[firstCar] || 0) + 1;
-            }
+          const siteData = race.sites?.[site];
+          if (!siteData) { missingSiteCount++; return; }
+          if (isManshaHit(siteData)) {
+            stats[site].total++;
+            stats[site].cars[firstCar] = (stats[site].cars[firstCar] || 0) + 1;
+          }
         });
-    });
+      });
 
-    let html = `
-        <div class="mb-4 p-3 rounded border border-purple-200 bg-purple-50 text-center">
-            <p class="font-bold text-gray-800">分析結果</p>
-            <p class="mt-2">読み込みレース数：
-                <strong>${data.length}件</strong>
-            </p>
-            <p>3連単10,000円以上：
-                <strong class="text-purple-700">${manshaCount}件</strong>
-            </p>
-            <p>1着車番を取得できた件数：
-                <strong>${validOrderCount}件</strong>
-            </p>
+      let html = `
+        <div class="mb-4 p-3 rounded border border-purple-200 bg-purple-50 text-center text-gray-800">
+          <p class="font-bold mb-1">📊 分析結果</p>
+          <div class="flex justify-center gap-4 text-xs">
+            <p>読込: <strong>${data.length}件</strong></p>
+            <p>万車: <strong class="text-purple-700">${manshaCount}件</strong></p>
+            <p>取得: <strong>${validOrderCount}件</strong></p>
+          </div>
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    `;
-
-    <!-- 🎯 サイト別・万車的中時の1着車番分析エリア（プログラム内蔵・完全版） -->
-    <details class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center hover:bg-purple-100 transition-colors">
-        <span>🎯 万車券的中時の「1着車番」分析（B・Y・N軍）</span>
-        <span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-4 border-t">
-        
-        <div class="flex flex-col gap-3 mb-4">
-          <!-- ① 現在のデータで計算するボタン -->
-          <button onclick="analyzeManshaFirstCar()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full text-sm font-bold shadow transition-colors">
-            📊 現在ツールに入っているデータで計算する
-          </button>
-          
-          <!-- ② JSONファイルを読み込んで計算するエリア -->
-          <div class="border-2 border-dashed border-purple-300 rounded p-3 text-center bg-purple-50">
-            <label class="block text-sm font-bold text-purple-800 mb-2">📁 過去のバックアップ(JSON)を読み込んで計算</label>
-            <input type="file" accept=".json,application/json" onchange="handleManshaFileUpload(event)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer" />
-          </div>
-        </div>
-
-        <!-- 結果表示エリア -->
-        <div id="manshaCarResult" class="text-sm text-gray-700 space-y-4">
-          <p class="text-gray-400 text-center py-2">ボタンを押すか、ファイルを選ぶと結果が表示されます</p>
-        </div>
-      </div>
-      
-      <!-- 動かすためのプログラム（頑丈版） -->
-      <script>
-      /* =========================================
-         万車券的中時の1着車番分析
-         対応：バックアップJSON・現在の保存データ
-         ========================================= */
-
-      // JSONバックアップを読み込む
-      function handleManshaFileUpload(event) {
-          const file = event.target.files?.[0];
-          if (!file) return;
-
-          const result = document.getElementById('manshaCarResult');
-          result.innerHTML =
-              "<p class='text-center py-3'>JSONを読み込んでいます...</p>";
-
-          const reader = new FileReader();
-
-          reader.onload = function(e) {
-              try {
-                  const jsonData = JSON.parse(e.target.result);
-                  analyzeManshaFirstCar(jsonData);
-              } catch (err) {
-                  console.error("JSON読み込みエラー:", err);
-                  result.innerHTML =
-                      "<p class='text-red-600 font-bold text-center'>" +
-                      "JSONを解析できません。バックアップファイルを確認してください。</p>";
-              }
-          };
-
-          reader.onerror = function() {
-              result.innerHTML =
-                  "<p class='text-red-600 font-bold text-center'>" +
-                  "ファイルを読み込めませんでした。</p>";
-          };
-
-          reader.readAsText(file, "UTF-8");
-      }
-
-      // データの形式を配列に統一する
-      function normalizeManshaData(source) {
-          if (Array.isArray(source)) {
-              return source.flat(Infinity).filter(
-                  item => item && typeof item === "object" && !Array.isArray(item)
-              );
-          }
-
-          if (!source || typeof source !== "object") {
-              return [];
-          }
-
-          // バックアップの形式が異なる場合にも対応
-          const possibleKeys = [
-              "races",
-              "data",
-              "records",
-              "raceData",
-              "savedData",
-              "byn3_data"
-          ];
-
-          for (const key of possibleKeys) {
-              if (source[key] !== undefined) {
-                  const result = normalizeManshaData(source[key]);
-                  if (result.length > 0) return result;
-              }
-          }
-
-          // レース情報が直接格納されたオブジェクトにも対応
-          if (
-              source.order !== undefined ||
-              source.payout3 !== undefined ||
-              source.pay3 !== undefined
-          ) {
-              return [source];
-          }
-
-          // レースIDをキーにした形式にも対応
-          return Object.values(source).filter(
-              item => item && typeof item === "object" &&
-              !Array.isArray(item) &&
-              (
-                  item.order !== undefined ||
-                  item.payout3 !== undefined ||
-                  item.pay3 !== undefined
-              )
-          );
-      }
-
-      // 配当を数値に変換する
-      function getManshaPayout(race) {
-          const raw =
-              race.payout3 ??
-              race.pay3 ??
-              race.payout ??
-              0;
-
-          // 数値・文字列・カンマ・円表記に対応
-          const digits = String(raw).replace(/[^0-9]/g, "");
-          return Number(digits) || 0;
-      }
-
-      // 的中判定を統一する
-      function isManshaHit(siteData) {
-          if (!siteData || typeof siteData !== "object") {
-              return false;
-          }
-
-          const hit = siteData.hit;
-
-          return hit === true ||
-                 hit === 1 ||
-                 hit === "1" ||
-                 String(hit).toLowerCase() === "true";
-      }
-
-      // HTML表示用の文字列処理
-      function escapeManshaHTML(value) {
-          return String(value).replace(/[&<>"']/g, char => ({
-              "&": "&amp;",
-              "<": "&lt;",
-              ">": "&gt;",
-              '"': "&quot;",
-              "'": "&#39;"
-          })[char]);
-      }
-
-      // メイン分析
-      function analyzeManshaFirstCar(customData = null) {
-          const result = document.getElementById("manshaCarResult");
-
-          let source = customData;
-
-          // 引数がない場合は現在のツールのデータを探す
-          if (source === null) {
-              try {
-                  if (typeof savedData !== "undefined" &&
-                      savedData != null) {
-                      source = savedData;
-                  } else if (
-                      typeof raceData !== "undefined" &&
-                      raceData != null
-                  ) {
-                      source = raceData;
-                  } else {
-                      const stored = localStorage.getItem("byn3_data");
-                      source = stored ? JSON.parse(stored) : [];
-                  }
-              } catch (err) {
-                  console.error("保存データ取得エラー:", err);
-                  source = [];
-              }
-          }
-
-          const data = normalizeManshaData(source);
-
-          if (data.length === 0) {
-              result.innerHTML =
-                  "<div class='p-4 rounded border border-red-200 bg-red-50'>" +
-                  "<p class='font-bold text-red-600'>レースデータが見つかりません。</p>" +
-                  "<p class='mt-2'>JSONの中に order、payout3、sites などの項目があるか確認してください。</p>" +
-                  "</div>";
-              return;
-          }
-
-          const sites = ["B", "Y", "N"];
-
-          const stats = {
-              B: { total: 0, cars: {} },
-              Y: { total: 0, cars: {} },
-              N: { total: 0, cars: {} }
-          };
-
-          let manshaCount = 0;
-          let validOrderCount = 0;
-          let missingSiteCount = 0;
-
-          data.forEach(race => {
-              // 3連単配当が10,000円以上のレースを対象にする
-              const payout3 = getManshaPayout(race);
-
-              if (payout3 < 10000) return;
-
-              manshaCount++;
-
-              // 1着車番を抽出
-              const order = String(
-                  race.order ??
-                  race.result ??
-                  race.winCar ??
-                  ""
-              ).trim();
-
-              const match = order.match(/^\s*(\d+)/);
-
-              if (!match) return;
-
-              const firstCar = match[1];
-              validOrderCount++;
-
-              // 各サイトの的中データを集計
-              sites.forEach(site => {
-                  const siteData =
-                      race.sites && race.sites[site]
-                          ? race.sites[site]
-                          : null;
-
-                  if (!siteData) {
-                      missingSiteCount++;
-                      return;
-                  }
-
-                  if (isManshaHit(siteData)) {
-                      stats[site].total++;
-
-                      stats[site].cars[firstCar] =
-                          (stats[site].cars[firstCar] || 0) + 1;
-                  }
-              });
-          });
-
-          let html = `
-              <div class="mb-4 p-3 rounded border border-purple-200 bg-purple-50 text-center">
-                  <p class="font-bold text-gray-800">分析結果</p>
-                  <p class="mt-2 text-sm">読み込みレース数：
-                      <strong>${data.length}件</strong>
-                  </p>
-                  <p class="text-sm">3連単10,000円以上：
-                      <strong class="text-purple-700">${manshaCount}件</strong>
-                  </p>
-                  <p class="text-sm">1着車番を取得できた件数：
-                      <strong>${validOrderCount}件</strong>
-                  </p>
-              </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          `;
-
-          sites.forEach(site => {
-              const siteStats = stats[site];
-
-<!-- 🎯 万車券的中時の1着車番分析（スマホ対応版） -->
-**Summary:**
-
-    <span>🎯 万車券的中時の「1着車番」分析（B・Y・N軍）</span>
-    <span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
-  
-  <div class="p-4 border-t">
-    
-    <div class="flex flex-col gap-3 mb-4">
-      <!-- ① 現在のデータで計算するボタン -->
-      <button id="btnManshaCalc" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full text-sm font-bold shadow transition-colors">
-        📊 現在ツールに入っているデータで計算する
-      </button>
-      
-      <!-- ② JSONファイルを読み込んで計算するエリア -->
-      <div class="border-2 border-dashed border-purple-300 rounded p-3 text-center bg-purple-50">
-        <label class="block text-sm font-bold text-purple-800 mb-2">📁 過去のバックアップ(JSON)を読み込んで計算</label>
-        <input type="file" 
-               id="manshaFileInput" 
-               accept=".json,application/json" 
-               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer" />
-      </div>
-    </div>
-
-    <!-- 結果表示エリア -->
-    <div id="manshaCarResult" class="text-sm text-gray-700 space-y-4">
-      <p class="text-gray-400 text-center py-2">ボタンを押すか、ファイルを選ぶと結果が表示されます</p>
-    </div>
-  </div>
-
-<!-- スクリプトは details の外に置く（スマホ対策） -->
-<script>
-/* =========================================
-   万車券的中時の1着車番分析（スマホ対応版）
-   ========================================= */
-
-// データの形式を配列に統一する
-function normalizeManshaData(source) {
-  if (Array.isArray(source)) {
-    return source.flat(Infinity).filter(
-      item => item && typeof item === "object" && !Array.isArray(item)
-    );
-  }
-
-  if (!source || typeof source !== "object") {
-    return [];
-  }
-
-  const possibleKeys = ["races", "data", "records", "raceData", "savedData", "byn3_data"];
-
-  for (const key of possibleKeys) {
-    if (source[key] !== undefined) {
-      const result = normalizeManshaData(source[key]);
-      if (result.length > 0) return result;
-    }
-  }
-
-  if (
-    source.order !== undefined ||
-    source.payout3 !== undefined ||
-    source.pay3 !== undefined
-  ) {
-    return [source];
-  }
-
-  return Object.values(source).filter(
-    item => item && typeof item === "object" &&
-    !Array.isArray(item) &&
-    (
-      item.order !== undefined ||
-      item.payout3 !== undefined ||
-      item.pay3 !== undefined
-    )
-  );
-}
-
-// 配当を数値に変換する
-function getManshaPayout(race) {
-  const raw = race.payout3 ?? race.pay3 ?? race.payout ?? 0;
-  const digits = String(raw).replace(/[^0-9]/g, "");
-  return Number(digits) || 0;
-}
-
-// 的中判定を統一する
-function isManshaHit(siteData) {
-  if (!siteData || typeof siteData !== "object") return false;
-  const hit = siteData.hit;
-  return hit === true || hit === 1 || hit === "1" || String(hit).toLowerCase() === "true";
-}
-
-// HTML表示用の文字列処理
-function escapeManshaHTML(value) {
-  return String(value).replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[char]);
-}
-
-// メイン分析
-function analyzeManshaFirstCar(customData = null) {
-  const result = document.getElementById("manshaCarResult");
-  if (!result) return;
-
-  let source = customData;
-
-  if (source === null) {
-    try {
-      if (typeof savedData !== "undefined" && savedData != null) {
-        source = savedData;
-      } else if (typeof raceData !== "undefined" && raceData != null) {
-        source = raceData;
-      } else {
-        const stored = localStorage.getItem("byn3_data");
-        source = stored ? JSON.parse(stored) : [];
-      }
-    } catch (err) {
-      console.error("保存データ取得エラー:", err);
-      source = [];
-    }
-  }
-
-  const data = normalizeManshaData(source);
-
-  if (data.length === 0) {
-    result.innerHTML =
-      "<div class='p-4 rounded border border-red-200 bg-red-50'>" +
-      "<p class='font-bold text-red-600'>レースデータが見つかりません。</p>" +
-      "<p class='mt-2'>JSONの中に order、payout3、sites などの項目があるか確認してください。</p>" +
-      "</div>";
-    return;
-  }
-
-  const sites = ["B", "Y", "N"];
-  const stats = {
-    B: { total: 0, cars: {} },
-    Y: { total: 0, cars: {} },
-    N: { total: 0, cars: {} }
-  };
-
-  let manshaCount = 0;
-  let validOrderCount = 0;
-  let missingSiteCount = 0;
-
-  data.forEach(race => {
-    const payout3 = getManshaPayout(race);
-    if (payout3 < 10000) return;
-
-    manshaCount++;
-
-    const order = String(race.order ?? race.result ?? race.winCar ?? "").trim();
-    const match = order.match(/^\s*(\d+)/);
-    if (!match) return;
-
-    const firstCar = match[1];
-    validOrderCount++;
-
-    sites.forEach(site => {
-      const siteData = race.sites && race.sites[site] ? race.sites[site] : null;
-      if (!siteData) {
-        missingSiteCount++;
-        return;
-      }
-      if (isManshaHit(siteData)) {
-        stats[site].total++;
-        stats[site].cars[firstCar] = (stats[site].cars[firstCar] || 0) + 1;
-      }
-    });
-  });
-
-  let html = `
-    <div class="mb-4 p-3 rounded border border-purple-200 bg-purple-50 text-center">
-      <p class="font-bold text-gray-800">分析結果</p>
-      <p class="mt-2 text-sm">読み込みレース数：<strong>${data.length}件</strong></p>
-      <p class="text-sm">3連単10,000円以上：<strong class="text-purple-700">${manshaCount}件</strong></p>
-      <p class="text-sm">1着車番を取得できた件数：<strong>${validOrderCount}件</strong></p>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-  `;
-
-  sites.forEach(site => {
-    const siteStats = stats[site];
-
-    html += `
-      <div class="bg-white p-3 rounded border-2 border-purple-200 shadow-sm">
-        <h4 class="font-bold text-lg border-b-2 border-purple-100 pb-2 mb-3 text-purple-900">${site}軍</h4>
-        <p class="text-sm text-gray-600 mb-3">万車券的中：<strong>${siteStats.total}回</strong></p>
-    `;
-
-    if (siteStats.total === 0) {
-      html += `<p class="text-gray-500 text-center py-4 text-sm">該当する的中データがありません</p></div>`;
-      return;
-    }
-
-    const sortedCars = Object.keys(siteStats.cars).sort(
-      (a, b) => siteStats.cars[b] - siteStats.cars[a] || Number(a) - Number(b)
-    );
-
-    html += `<ul class="space-y-3">`;
-    sortedCars.forEach(car => {
-      const count = siteStats.cars[car];
-      const percent = (count / siteStats.total * 100).toFixed(1);
-      html += `
-        <li>
-          <div class="flex items-center justify-between mb-1">
-            <span class="font-black text-gray-800 text-lg">${escapeManshaHTML(car)}番</span>
-            <span class="text-sm font-bold text-gray-700">\( {percent}% <span class="font-normal text-xs text-gray-500">（ \){count}回）</span></span>
-          </div>
-          <div class="w-full h-4 bg-gray-100 rounded-full overflow-hidden">
-            <div class="bg-purple-600 h-full rounded-full transition-all duration-500" style="width:${percent}%"></div>
-          </div>
-        </li>
       `;
-    });
-    html += `</ul></div>`;
-  });
 
-  html += `</div>`;
-
-  if (missingSiteCount > 0) {
-    html += `<p class="mt-3 text-xs text-gray-500 text-center">※サイト情報が存在しない箇所：${missingSiteCount}件</p>`;
-  }
-
-  result.innerHTML = html;
-}
-
-// ファイル読み込み処理
-function handleManshaFileUpload(event) {
-  const file = event.target.files?.[0];
-  const result = document.getElementById("manshaCarResult");
-  if (!result) return;
-
-  if (!file) {
-    result.innerHTML = "<p class='text-red-600 font-bold text-center'>ファイルが選択されていません。</p>";
-    return;
-  }
-
-  result.innerHTML = "<p class='text-center py-3'>JSONを読み込んでいます...</p>";
-
-  const reader = new FileReader();
-
-  reader.onload = function(e) {
-    try {
-      const jsonData = JSON.parse(e.target.result);
-      analyzeManshaFirstCar(jsonData);
-    } catch (err) {
-      console.error("JSON読み込みエラー:", err);
-      result.innerHTML = "<p class='text-red-600 font-bold text-center'>JSONを解析できません。バックアップファイルを確認してください。</p>";
-    }
-  };
-
-  reader.onerror = function() {
-    result.innerHTML = "<p class='text-red-600 font-bold text-center'>ファイルを読み込めませんでした。</p>";
-  };
-
-  reader.readAsText(file, "UTF-8");
-}
-
-// イベント登録（スマホでも安定）
-document.addEventListener("DOMContentLoaded", function() {
-  // ファイル選択
-  const fileInput = document.getElementById("manshaFileInput");
-  if (fileInput) {
-    fileInput.addEventListener("change", handleManshaFileUpload);
-  }
-
-  // 現在データで計算ボタン
-  const calcBtn = document.getElementById("btnManshaCalc");
-  if (calcBtn) {
-    calcBtn.addEventListener("click", function() {
-      analyzeManshaFirstCar();
-    });
-  }
-});
-</script>
-
-    <!-- 1. 画像読み込み -->
-    <details open class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center hover:bg-blue-100 transition-colors">
-        <span>📸 着順・払戻 スクショ読込 (ペースト or 選択)</span>
-        <span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-4 border-t">
-        <input type="file" id="fileUp" accept="image/*" multiple class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
-        <p class="text-xs text-gray-500 mt-2">※スマホの場合、ここに画像を長押しして貼り付け（ペースト）するか、上のボタンから画像を選んでください。</p>
-      </div>
-    </details>
-
-    <!-- 2. 読込プレビュー -->
-    <details open class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-yellow-50 text-yellow-800 flex justify-between items-center hover:bg-yellow-100 transition-colors">
-        <span>📝 読込プレビュー (<span id="stgCount">0</span>件)</span>
-        <span class="text-yellow-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-2 overflow-x-auto border-t">
-        <table class="w-full text-left border-collapse min-w-[800px] whitespace-nowrap">
-          <thead>
-            <tr class="bg-gray-200 text-gray-700 text-xs">
-              <th class="p-2 border">R</th><th class="p-2 border">着順</th><th class="p-2 border">決まり手</th><th class="p-2 border">ライン位置</th><th class="p-2 border">2連単</th><th class="p-2 border">3連単</th><th class="p-2 border">車立</th><th class="p-2 border">戦型</th><th class="p-2 border">1着L</th><th class="p-2 border text-center">B(予/的)</th><th class="p-2 border text-center">Y(予/的)</th><th class="p-2 border text-center">N(予/的)</th><th class="p-2 border text-center">操作</th>
-            </tr>
-          </thead>
-          <tbody id="stgBody" class="text-sm"></tbody>
-        </table>
-        <div class="mt-3 flex justify-end">
-          <button id="applyBtn" onclick="window.applyStg()" class="bg-blue-600 text-white font-bold px-4 py-2 rounded opacity-50 cursor-not-allowed text-sm" disabled>保存済み一覧へ反映する</button>
-        </div>
-      </div>
-    </details>
-    <!-- 3. 手動データ追加 -->
-    <details open class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-green-50 text-green-800 flex justify-between items-center hover:bg-green-100 transition-colors">
-        <span>➕ 手動データ追加</span>
-        <span class="text-green-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-4 border-t flex flex-wrap gap-2 items-center text-sm">
-        <input type="text" id="mOrd" placeholder="着順 (例: 1-2-3)" class="border p-2 rounded w-32 text-center">
-        <input type="text" id="mP2" placeholder="2連単払戻" class="border p-2 rounded w-28 text-center">
-        <input type="text" id="mP3" placeholder="3連単払戻" class="border p-2 rounded w-28 text-center">
-        <select id="mRac" class="border p-2 rounded"><option value="7">7車</option><option value="9">9車</option><option value="8">8車</option><option value="6">6車</option><option value="5">5車</option></select>
-        <select id="mBattle" class="border p-2 rounded"><option value="">戦型選択</option><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option></select>
-        <select id="mWinLine" class="border p-2 rounded"><option value="単">1着L:単</option><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select>
-        <button onclick="window.addManual()" class="bg-green-600 text-white font-bold px-4 py-2 rounded text-sm hover:bg-green-700">追加</button>
-      </div>
-    </details>
-
-    <!-- 4. データ管理 (バックアップ・復元) -->
-    <details open class="bg-white rounded shadow group mb-4">
-      <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center hover:bg-purple-100 transition-colors">
-        <span>💾 データ管理 (バックアップ・復元)</span>
-        <span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-4 border-t flex gap-2">
-        <button onclick="window.backupData(event)" class="bg-gray-600 text-white text-xs px-3 py-2 rounded">バックアップ保存</button>
-        <label for="restoreFileTop" class="bg-gray-600 text-white text-xs px-3 py-2 rounded cursor-pointer">ファイル復元</label>
-        <input type="file" id="restoreFileTop" accept=".json" class="hidden" onchange="window.restoreData(event)">
-        <button onclick="window.clearData(event)" class="bg-red-500 text-white text-xs px-3 py-2 rounded">全データ消去</button>
-      </div>
-    </details>
-
-    <!-- 5. 究極分析ダッシュボード -->
-    <details open class="bg-white rounded shadow group mb-3">
-      <summary class="font-bold p-3 cursor-pointer bg-red-50 text-red-800 flex justify-between items-center hover:bg-red-100 transition-colors">
-        <span>📊 究極分析ダッシュボード</span>
-        <span class="text-red-400 group-open:rotate-180 transition-transform">▼</span>
-      </summary>
-      <div class="p-4 border-t">
-        <div class="mb-4 flex items-center gap-2">
-          <span class="font-bold">🎯 車立で絞り込み:</span>
-          <select id="dashFilter" class="border p-2 rounded bg-white shadow-sm" onchange="window.updateDash()">
-            <option value="all">全て表示</option><option value="9">9車のみ</option><option value="8">8車のみ</option><option value="7">7車のみ</option><option value="6">6車のみ</option><option value="5">5車のみ</option>
-          </select>
-        </div>
-
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
-          <div class="bg-gray-100 p-3 rounded text-center"><div class="text-xs text-gray-500">集計対象</div><div id="d_total" class="text-xl font-bold">0</div></div>
-          <div class="bg-blue-50 p-3 rounded text-center border-b-4 border-blue-500"><div class="text-xs font-bold text-blue-700">B的軍</div><div id="d_b_rate" class="text-xl font-bold">0%</div><div id="d_b_man" class="text-xs mt-1">万車:0</div></div>
-          <div class="bg-yellow-50 p-3 rounded text-center border-b-4 border-yellow-500"><div class="text-xs font-bold text-yellow-700">Y的軍</div><div id="d_y_rate" class="text-xl font-bold">0%</div><div id="d_y_man" class="text-xs mt-1">万車:0</div></div>
-          <div class="bg-purple-50 p-3 rounded text-center border-b-4 border-purple-500"><div class="text-xs font-bold text-purple-700">N的軍</div><div id="d_n_rate" class="text-xl font-bold">0%</div><div id="d_n_man" class="text-xs mt-1">万車:0</div></div>
-        </div>
-
-        <!-- グラフエリア -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">① 🔥 万車時の1着車番</p><canvas id="winCarChart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">② 🏆 1着ライン割合(全体)</p><canvas id="winLineChart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">③ 📈 1着ライン割合(万車時)</p><canvas id="manshaLineChart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">④ 🎯 サイト別 万車的中時ライン</p><canvas id="siteLineChart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">⑤ 🏆 1着の決まり手</p><canvas id="tech1Chart"></canvas></div>
-          <div class="border rounded p-2 bg-gray-50"><p class="text-xs font-bold mb-1 text-center">⑥ 🔗 決まり手の組み合わせ</p><canvas id="techPairChart"></canvas></div>
-        </div>
-
-        <div class="border rounded p-2 bg-gray-50 mb-4">
-          <p class="text-xs font-bold mb-1 text-center">⑦ 📈 合計値分布＆配当推移</p>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-            <div><canvas id="sumDistChart"></canvas></div>
-            <div><canvas id="sumPayoutChart"></canvas></div>
-          </div>
-        </div>
+      sites.forEach(site => {
+        const s = stats[site];
+        html += `<div class="bg-white p-3 rounded border-2 border-purple-200 shadow-sm"><h4 class="font-bold text-lg border-b-2 border-purple-100 pb-1 mb-2 text-purple-900">${site}軍</h4><p class="text-xs text-gray-600 mb-3">万車的中：<strong>${s.total}回</strong></p>`;
         
-        <div class="border rounded p-2 bg-gray-50">
-          <p class="text-xs font-bold mb-2 text-center">⑧ 📊 被り状況別 成績</p>
-          <div class="overflow-x-auto">
-            <table class="w-full text-center text-sm border-collapse bg-white">
-              <thead><tr class="bg-gray-200"><th class="border p-1">被り</th><th class="border p-1">件数</th><th class="border p-1">3連単平均</th><th class="border p-1">2連単平均</th></tr></thead>
-              <tbody id="kaburiTbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </details>
-    <!-- 6. 保存済み一覧 -->
-    <details open class="bg-white rounded shadow group mb-8">
-      <summary class="font-bold p-3 cursor-pointer bg-green-50 text-green-800 flex justify-between items-center hover:bg-green-100 transition-colors">
-        <div class="flex items-center gap-2"><span>📂 保存済み一覧 (自動保存)</span><span class="text-green-400 group-open:rotate-180 transition-transform">▼</span></div>
-        <div class="flex gap-2">
-          <button onclick="window.backupData(event)" class="text-xs bg-gray-600 text-white px-2 py-1 rounded">バックアップ</button>
-          <label for="restoreFile" onclick="event.stopPropagation();" class="text-xs bg-gray-600 text-white px-2 py-1 rounded cursor-pointer">復元</label>
-          <button onclick="window.clearData(event)" class="text-xs bg-red-500 text-white px-2 py-1 rounded">全消去</button>
-        </div>
-      </summary>
-      <div class="p-2 overflow-x-auto border-t">
-        <input type="file" id="restoreFile" accept=".json" class="hidden" onchange="window.restoreData(event)">
-        <table class="w-full text-left border-collapse min-w-[800px] whitespace-nowrap">
-          <thead>
-            <tr class="bg-gray-200 text-gray-700 text-xs">
-              <th class="p-2 border">着順</th><th class="p-2 border">決まり手</th><th class="p-2 border">ライン位置</th><th class="p-2 border">2連単</th><th class="p-2 border">3連単</th><th class="p-2 border">車立</th><th class="p-2 border">戦型</th><th class="p-2 border">1着L</th><th class="p-2 border text-center">B(予/的)</th><th class="p-2 border text-center">Y(予/的)</th><th class="p-2 border text-center">N(予/的)</th><th class="p-2 border text-center">操作</th>
-            </tr>
-          </thead>
-          <tbody id="svBody" class="text-sm"></tbody>
-        </table>
-      </div>
-    </details>
-  </div>
+        if (s.total === 0) {
+            html += `<p class="text-gray-400 text-center py-2 text-xs">的中データなし</p></div>`;
+            return;
+        }
 
-  <script type="module">
-    import { rasterOf, ingestShot } from './read-shot.js';
-
-    window.stg = [];
-    window.sv = JSON.parse(localStorage.getItem('byn3_data')) || [];
-    window.charts = {};
-
-    let orderRows = null;
-    let payRows = null;
-
-    function destroyCharts() {
-      Object.keys(window.charts).forEach(k => {
-        if(window.charts[k]) window.charts[k].destroy();
+        const sorted = Object.keys(s.cars).sort((a, b) => s.cars[b] - s.cars[a] || Number(a) - Number(b));
+        html += `<ul class="space-y-2">`;
+        sorted.forEach(car => {
+          const pct = (s.cars[car] / s.total * 100).toFixed(1);
+          html += `<li>
+            <div class="flex items-center justify-between mb-1 text-sm">
+              <span class="font-black text-gray-800">${escapeManshaHTML(car)}番</span>
+              <span class="font-bold text-gray-700">${pct}% <span class="font-normal text-xs text-gray-500">(${s.cars[car]}回)</span></span>
+            </div>
+            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div class="bg-purple-600 h-full transition-all" style="width:${pct}%"></div></div>
+          </li>`;
+        });
+        html += `</ul></div>`;
       });
-      window.charts = {};
+      html += `</div>`;
+      if (missingSiteCount > 0) html += `<p class="mt-3 text-[10px] text-gray-400 text-center">※サイト情報欠損：${missingSiteCount}件</p>`;
+      
+      result.innerHTML = html;
     }
 
-    // --- 📸 画像アップロード＆ペースト処理（自動的中チェック付き） ---
-    window.handleImageUpload = async function (e) {
-      const files = [];
-      if (e.type === "paste") {
-        const items = e.clipboardData?.items || e.clipboardData?.files;
-        if (items) {
-          for (const item of items) {
-            const file = item.getAsFile ? item.getAsFile() : item;
-            if (file && file.type.startsWith("image/")) {
-              files.push(file);
-            }
-          }
-        }
-      } else {
-        files.push(...(e.target.files || (e.dataTransfer && e.dataTransfer.files) || []));
-      }
-      if (!files.length) return;
+    function handleManshaFileUpload(event) {
+      const file = event.target.files?.[0];
+      const result = document.getElementById("manshaCarResult");
+      if (!file) return;
+      result.innerHTML = "<p class='text-center py-3 text-sm'>JSONを読み込んでいます...</p>";
       
-      const ov = document.getElementById("loading");
-      ov.classList.remove("hidden");
-      
-      try {
-        for (const file of files) {
-          const shot = ingestShot(await rasterOf(file));
-          if (shot.kind === "order") orderRows = shot.order;
-          else if (shot.kind === "payout") payRows = shot.payout;
-        }
-        
-        const n = Math.max(orderRows?.length || 0, payRows?.length || 0);
-        window.stg = Array.from({ length: n }, (_, idx) => {
-          const order = orderRows?.[idx];
-          const pay = payRows?.[idx];
-          
-          let d = {
-            id: crypto.randomUUID(),
-            raceNo: idx + 1,
-            order: order ? order.cars.join("-") : "",
-            payout2: pay ? pay.nirentan : "",
-            payout3: pay ? pay.sanrentan : "",
-            racers: "7",
-            battle: "",
-            winLine: "単",
-            linePos: "",
-            tech1: order?.techs?.[0] || "",
-            tech2: order?.techs?.[1] || "",
-            sites: {
-              B: { bet: false, hit: false },
-              Y: { bet: false, hit: false },
-              N: { bet: false, hit: false },
-            },
-          };
-
-          // 💡 1万円以上の万車券なら自動的中チェック
-          let p2 = parseInt(d.payout2) || 0;
-          let p3 = parseInt(d.payout3) || 0;
-          if (p2 >= 10000 || p3 >= 10000) {
-            ['B', 'Y', 'N'].forEach(s => {
-              if (d.sites[s].bet) d.sites[s].hit = true;
-            });
-          }
-
-          return d;
-        });
-        
-        if (e.target && e.target.id === "fileUp") e.target.value = "";
-        window.renderStg();
-        const btn = document.getElementById("applyBtn");
-        btn.classList.remove("opacity-50", "cursor-not-allowed");
-        btn.removeAttribute("disabled");
-        alert("着順 " + (orderRows?.length || 0) + "件、払戻 " + (payRows?.length || 0) + "件を読み込みました！");
-      } catch (err) {
-        alert("エラー: " + err.message);
-      } finally {
-        ov.classList.add("hidden");
-      }
-    };
-
-    document.getElementById('fileUp').addEventListener('change', window.handleImageUpload);
-    document.addEventListener('paste', window.handleImageUpload);
-
-    // --- HTML描画系 ---
-    window.renderStg = function() {
-      const tbody = document.getElementById('stgBody');
-      document.getElementById('stgCount').innerText = window.stg.length;
-      tbody.innerHTML = window.stg.map((d, i) => window.rowHTML(d, i, 'stg')).join('');
-    };
-
-    window.renderSaved = function() {
-      const tbody = document.getElementById('svBody');
-      tbody.innerHTML = window.sv.map((d, i) => window.rowHTML(d, i, 'sv')).join('');
-    };
-
-    window.rowHTML = function(d, i, type) {
-      const siteBtn = (s) => {
-        let sd = d.sites[s];
-        let betC = sd.bet ? (s==='B'?'bg-blue-500':s==='Y'?'bg-yellow-500':'bg-purple-500')+' text-white' : 'bg-gray-200 text-gray-400';
-        let hitC = sd.hit ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400';
-        return `<div class="flex flex-col gap-1 items-center">
-                  <button onclick="window.toggleSite('${type}',${i},'${s}','bet')" class="w-8 h-8 rounded-full text-xs font-bold ${betC}">予</button>
-                  <button onclick="window.toggleSite('${type}',${i},'${s}','hit')" class="w-8 h-8 rounded-full text-xs font-bold ${hitC}">的</button>
-                </div>`;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try { analyzeManshaFirstCar(JSON.parse(e.target.result)); } 
+        catch (err) { result.innerHTML = "<p class='text-red-500 font-bold text-center'>JSON解析エラーです</p>"; }
       };
-      
-      let techDisplay = d.tech1 || d.tech2 ? `${d.tech1}-${d.tech2}` : "";
-      
-      let inp = (f, w, p) => `<input type="text" value="${d[f]||''}" onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1 w-${w} text-center" placeholder="${p||''}">`;
-      let sel = (f, opts) => `<select onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1"><option value="">-</option>${opts.map(o=>`<option value="${o}" ${d[f]==o?'selected':''}>${o}</option>`).join('')}</select>`;
-      
-      let raceTd = type === 'stg' ? `<td class="p-1">${d.raceNo}</td>` : '';
-
-      return `<tr class="border-b hover:bg-gray-50">
-        ${raceTd}
-        <td class="p-1">${inp('order', 16, '1-2-3')}</td>
-        <td class="p-1 text-center font-bold text-gray-600">${techDisplay}</td>
-        <td class="p-1">${inp('linePos', 16, '位置/番手')}</td>
-        <td class="p-1">${inp('payout2', 20)}</td>
-        <td class="p-1">${inp('payout3', 24)}</td>
-        <td class="p-1">${sel('racers', ['9','8','7','6','5'])}</td>
-        <td class="p-1">${sel('battle', ['2分戦','3分戦','4分戦','単騎戦'])}</td>
-        <td class="p-1">${sel('winLine', ['単','0','1','2','3','4'])}</td>
-        <td class="p-1">${siteBtn('B')}</td><td class="p-1">${siteBtn('Y')}</td><td class="p-1">${siteBtn('N')}</td>
-        <td class="p-1 text-center"><button onclick="window.delRow('${type}',${i})" class="text-red-500 font-bold hover:bg-red-100 px-2 py-1 rounded">✖</button></td>
-      </tr>`;
-    };
-    window.updateVal = function(type, i, field, val) {
-      let arr = type === 'stg' ? window.stg : window.sv;
-      arr[i][field] = val;
-      if (field === 'payout2' || field === 'payout3') window.autoCheckHit(type, i);
-      if (type === 'sv') { window.saveLS(); window.updateDash(); }
-    };
-
-    window.toggleSite = function(type, i, site, field) {
-      let arr = type === 'stg' ? window.stg : window.sv;
-      arr[i].sites[site][field] = !arr[i].sites[site][field];
-      
-      // 💡 「予」をONにしたとき、すでに万車券（1万円以上）なら「的」も自動でONにする
-      if (field === 'bet' && arr[i].sites[site].bet) {
-        let p2 = parseInt(arr[i].payout2) || 0;
-        let p3 = parseInt(arr[i].payout3) || 0;
-        if (p2 >= 10000 || p3 >= 10000) {
-          arr[i].sites[site].hit = true;
-        }
-      }
-
-      if (type === 'stg') window.renderStg();
-      else { window.saveLS(); window.renderSaved(); window.updateDash(); }
-    };
-
-    window.delRow = function(type, i) {
-      if(!confirm("削除しますか？")) return;
-      if (type === 'stg') { window.stg.splice(i, 1); window.renderStg(); }
-      else { window.sv.splice(i, 1); window.saveLS(); window.renderSaved(); window.updateDash(); }
-    };
-
-    window.autoCheckHit = function(type, i) {
-      let d = (type === 'stg' ? window.stg : window.sv)[i];
-      let p2 = parseInt(d.payout2)||0; let p3 = parseInt(d.payout3)||0;
-      if (p2 >= 10000 || p3 >= 10000) {
-        ['B','Y','N'].forEach(s => { if(d.sites[s].bet) d.sites[s].hit = true; });
-        if(type==='stg') window.renderStg(); else { window.saveLS(); window.renderSaved(); window.updateDash(); }
-      }
-    };
-
-    window.addManual = function() {
-      let o = document.getElementById('mOrd').value.trim(), 
-          p2 = document.getElementById('mP2').value.trim(), 
-          p3 = document.getElementById('mP3').value.trim(), 
-          r = document.getElementById('mRac').value,
-          b = document.getElementById('mBattle').value,
-          wL = document.getElementById('mWinLine').value; 
-      
-      if (!o && !p2 && !p3) return alert("入力してください");
-      window.sv.push({
-        id: crypto.randomUUID(), order: o, payout2: p2, payout3: p3, racers: r, battle: b, winLine: wL || "単",
-        linePos: "", tech1: "", tech2: "",
-        sites: { B: { bet: false, hit: false }, Y: { bet: false, hit: false }, N: { bet: false, hit: false } }
-      });
-      window.saveLS(); window.renderSaved(); window.updateDash();
-      document.getElementById('mOrd').value=''; document.getElementById('mP2').value=''; document.getElementById('mP3').value='';
-    };
-
-    window.applyStg = function() {
-      if (!window.stg.length) return;
-      window.stg.forEach(d => window.sv.push(JSON.parse(JSON.stringify(d))));
-      window.stg.length = 0;
-      orderRows = null;
-      payRows = null;
-      window.renderStg(); window.saveLS(); window.renderSaved(); window.updateDash();
-      document.getElementById('applyBtn').classList.add('opacity-50', 'cursor-not-allowed');
-      document.getElementById('applyBtn').setAttribute('disabled', 'true');
-      alert("保存しました！");
-    };
-
-    window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
-
-    window.backupData = function(e) {
-      e.stopPropagation();
-      let blob = new Blob([JSON.stringify(window.sv)], {type: 'application/json'});
-      let a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `byn3_backup_${new Date().toISOString().slice(0,10)}.json`;
-      a.click();
-    };
-
-    window.restoreData = function(e) {
-      let file = e.target.files[0];
-      if(!file) return;
-      let reader = new FileReader();
-      reader.onload = function(ev) {
-        try {
-          let data = JSON.parse(ev.target.result);
-          if(Array.isArray(data)) { window.sv = data; window.saveLS(); window.renderSaved(); window.updateDash(); alert("復元完了！"); }
-        } catch(err) { alert("無効なファイルです"); }
-      };
-      reader.readAsText(file);
-    };
-
-    window.clearData = function(e) {
-      e.stopPropagation();
-      if(confirm("全ての保存データを消去しますか？(元には戻せません)")){
-        window.sv = []; window.saveLS(); window.renderSaved(); window.updateDash();
-      }
-    };
-
-    // --- 📊 ダッシュボード描画処理 ---
-    window.updateDash = function() {
-      destroyCharts();
-      let f = document.getElementById('dashFilter').value;
-      let data = window.sv.filter(d => f === 'all' || d.racers === f);
-      document.getElementById('d_total').innerText = data.length;
-
-      let stats = { B: {bet:0, hit:0, man:0}, Y: {bet:0, hit:0, man:0}, N: {bet:0, hit:0, man:0} };
-      data.forEach(d => {
-        let isMan = (parseInt(d.payout2)>=10000 || parseInt(d.payout3)>=10000);
-        ['B','Y','N'].forEach(s => {
-          if(d.sites[s].bet) {
-            stats[s].bet++;
-            if(d.sites[s].hit) { stats[s].hit++; if(isMan) stats[s].man++; }
-          }
-        });
-      });
-      ['B','Y','N'].forEach(s => {
-        let rate = stats[s].bet ? Math.round((stats[s].hit/stats[s].bet)*100) : 0;
-        document.getElementById(`d_${s.toLowerCase()}_rate`).innerText = `${rate}%`;
-        document.getElementById(`d_${s.toLowerCase()}_man`).innerText = `万車:${stats[s].man}`;
-      });
-
-      if (data.length === 0) return;
-
-      Chart.defaults.font.family = 'sans-serif';
-      
-      const c = (id, type, d, opts={}) => window.charts[id] = new Chart(document.getElementById(id), {
-        type: type, 
-        data: d, 
-        options: { responsive: true, plugins:{legend:{position:'bottom'}}, ...opts }
-      });
-
-      // ① 万車時の1着車番分布
-      let manData = data.filter(d => parseInt(d.payout3) >= 10000 && d.order);
-      let winCars = manData.map(d => d.order.split('-')[0]).filter(x=>x);
-      let wcCount = {}; winCars.forEach(ca => wcCount[ca] = (wcCount[ca]||0)+1);
-      c('winCarChart', 'bar', {
-        labels: Object.keys(wcCount),
-        datasets: [{label:'出現回数', data: Object.values(wcCount), backgroundColor:'rgba(255, 99, 132, 0.5)'}]
-      }, {indexAxis:'x'});
-
-      // ② 1着ライン割合(全体)
-      let lineCount = {}; data.forEach(d => {if(d.winLine) lineCount[d.winLine] = (lineCount[d.winLine]||0)+1;});
-      c('winLineChart', 'doughnut', {
-        labels: Object.keys(lineCount),
-        datasets: [{data: Object.values(lineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
-      });
-
-      // ③ 1着ライン割合(万車時)
-      let mLineCount = {}; manData.forEach(d => {if(d.winLine) mLineCount[d.winLine] = (mLineCount[d.winLine]||0)+1;});
-      c('manshaLineChart', 'pie', {
-        labels: Object.keys(mLineCount),
-        datasets: [{data: Object.values(mLineCount), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
-      });
-
-                 // ④ 🎯 サイト別 戦型別の成績（的中率と回数）
-      let bHit = { B:{}, Y:{}, N:{} };
-      let bBet = { B:{}, Y:{}, N:{} };
-      let battleTypes = ['2分戦', '3分戦', '4分戦', '単騎戦'];
-      
-      data.forEach(d => {
-        let b = d.battle;
-        if (battleTypes.includes(b)) {
-          ['B','Y','N'].forEach(s => {
-            if (d.sites[s].bet) {
-              bBet[s][b] = (bBet[s][b]||0) + 1;
-              if (d.sites[s].hit) {
-                bHit[s][b] = (bHit[s][b]||0) + 1;
-              }
-            }
-          });
-        }
-      });
-
-      const getRate = (site, b) => {
-        let bets = bBet[site][b] || 0;
-        let hits = bHit[site][b] || 0;
-        return bets > 0 ? Math.round((hits / bets) * 100) : 0;
-      };
-
-      c('siteLineChart', 'bar', {
-        labels: battleTypes,
-        datasets: [
-          {label:'B軍', data:battleTypes.map(k=>getRate('B', k)), backgroundColor:'rgba(59, 130, 246, 0.8)'},
-          {label:'Y軍', data:battleTypes.map(k=>getRate('Y', k)), backgroundColor:'rgba(245, 158, 11, 0.8)'},
-          {label:'N軍', data:battleTypes.map(k=>getRate('N', k)), backgroundColor:'rgba(139, 92, 246, 0.8)'}
-        ]
-      }, {
-        scales: { 
-          x: { stacked: false }, 
-          y: { stacked: false, title: { display: true, text: '的中率 (%)' }, max: 100 } 
-        },
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: function(ctx) {
-                let site = ctx.dataset.label.replace('軍','');
-                let b = ctx.label;
-                let rate = ctx.raw || 0;
-                let bets = bBet[site][b] || 0;
-                let hits = bHit[site][b] || 0;
-                return `${ctx.dataset.label} : 的中率 ${rate}% (的中 ${hits}回 / 予想 ${bets}回)`;
-              }
-            }
-          }
-        }
-      });
-
-      // ⑤ 1着の決まり手
-      let t1Count = {};
-      data.forEach(d => { if(d.tech1) t1Count[d.tech1] = (t1Count[d.tech1]||0)+1; });
-      c('tech1Chart', 'doughnut', {
-        labels: Object.keys(t1Count),
-        datasets: [{data: Object.values(t1Count), backgroundColor: ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#6b7280']}]
-      });
-
-      // ⑥ 決まり手の組み合わせ
-      let tpCount = {};
-      data.forEach(d => {
-        if(d.tech1 || d.tech2) {
-          let pair = `${d.tech1 || '-'}-${d.tech2 || '-'}`;
-          tpCount[pair] = (tpCount[pair]||0)+1;
-        }
-      });
-      c('techPairChart', 'bar', {
-        labels: Object.keys(tpCount),
-        datasets: [{label:'出現回数', data: Object.values(tpCount), backgroundColor:'rgba(59, 130, 246, 0.6)'}]
-      }, {indexAxis:'x'});
-
-      // ⑦ 合計値分布＆配当推移
-      let sumGrp = {};
-      data.forEach(d => {
-        if(!d.order) return;
-        let p = d.order.split('-').map(Number);
-        if(p.length===3 && !p.includes(NaN)) {
-          let sum = p[0]+p[1]+p[2];
-          if(!sumGrp[sum]) sumGrp[sum] = {cnt:0, p3:0};
-          sumGrp[sum].cnt++; sumGrp[sum].p3 += parseInt(d.payout3)||0;
-        }
-      });
-      let sums = Object.keys(sumGrp).sort((a,b)=>a-b);
-      c('sumDistChart', 'bar', {
-        labels: sums,
-        datasets: [{label:'出現回数', data: sums.map(k=>sumGrp[k].cnt), backgroundColor:'rgba(75, 192, 192, 0.6)'}]
-      });
-      c('sumPayoutChart', 'line', {
-        labels: sums,
-        datasets: [{label:'平均3連単', data: sums.map(k=>Math.round(sumGrp[k].p3/sumGrp[k].cnt)), borderColor:'#ef4444', fill:false}]
-      });
-
-           // ⑧ 被り状況別 成績
-      let kGrp = {};
-      data.forEach(d => {
-        let bets = [];
-        ['B','Y','N'].forEach(s => { if(d.sites[s].bet) bets.push(s); });
-        let key = bets.length ? bets.join('+') : 'なし';
-        if(!kGrp[key]) kGrp[key] = {cnt:0, p2:0, p3:0};
-        kGrp[key].cnt++; kGrp[key].p2 += parseInt(d.payout2)||0; kGrp[key].p3 += parseInt(d.payout3)||0;
-      });
-      document.getElementById('kaburiTbody').innerHTML = Object.entries(kGrp).sort((a,b)=>b[1].cnt-a[1].cnt).map(([k,v])=>
-        `<tr><td class="border p-1">${k}</td><td class="border p-1">${v.cnt}</td><td class="border p-1">${Math.round(v.p3/v.cnt)}円</td><td class="border p-1">${Math.round(v.p2/v.cnt)}円</td></tr>`
-      ).join('');
-
-      // ⑨ 🔢 2連単合計値別 データ
-      let s2Grp = {};
-      data.forEach(d => {
-        if(!d.order) return;
-        let p = d.order.split('-').map(Number);
-        if(p.length===3 && !p.includes(NaN)) {
-          let s2 = p[0] + p[1];
-          if(!s2Grp[s2]) s2Grp[s2] = {cnt:0, p2:0, p3:0};
-          s2Grp[s2].cnt++; 
-          s2Grp[s2].p2 += parseInt(d.payout2)||0;
-          s2Grp[s2].p3 += parseInt(d.payout3)||0;
-        }
-      });
-      document.getElementById('sum2Tbody').innerHTML = Object.keys(s2Grp).sort((a,b)=>a-b).map(k=>{
-        let v = s2Grp[k];
-        let a2 = Math.round(v.p2/v.cnt);
-        let a3 = Math.round(v.p3/v.cnt);
-        let bai = a2 > 0 ? (a3/a2).toFixed(1) : 0;
-        return `<tr><td class="border p-1">${k}</td><td class="border p-1">${v.cnt}</td><td class="border p-1">${a2}円</td><td class="border p-1">${a3}円</td><td class="border p-1 font-bold text-red-600">${bai}倍</td></tr>`;
-      }).join('');
-    }; // ← ★これが updateDash を閉じるカッコです（重要！）
-
-    window.renderSaved();
-    window.updateDash();
-  </script>
+      reader.readAsText(file, "UTF-8");
+    }
+    </script>
 </body>
 </html>
-
