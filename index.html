@@ -55,58 +55,39 @@
           </div>
         </details>
 
-        <!-- ==========================================
+                <!-- ==========================================
              ③ スクショ読込・手動登録・データ管理
         =========================================== -->
-        <details class="bg-white rounded shadow border group" open>
+        <details class="bg-white rounded shadow border group mb-4" open>
           <summary class="font-bold p-3 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center">
             <span>📸 着順・払戻 スクショ読込 (ペースト or 選択)</span><span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div class="p-4 border-t">
-            <div class="border-2 border-dashed border-blue-300 rounded p-4 text-center bg-blue-50/50 mb-4">
-              <input type="file" accept="image/*" class="block w-full text-sm text-gray-500 mx-auto" />
-              <p class="text-xs text-gray-500 mt-2">※スマホの場合、ここに画像を長押しして貼り付け（ペースト）するか、上のボタンから画像を選んでください。</p>
+            <div id="dropZone" class="border-2 border-dashed border-blue-300 rounded p-6 text-center bg-blue-50/50 mb-2 transition-colors hover:bg-blue-100">
+              <!-- ★ここに multiple を追加して複数選択可能にしました！ -->
+              <input type="file" id="fileInput" accept="image/*" multiple class="block w-full text-sm text-gray-500 mx-auto cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
+              <p class="text-xs text-gray-500 mt-3">※スマホの場合、ここに画像を長押しして貼り付け（ペースト）するか、上のボタンから画像を選んでください。<br>（出走表と払戻金など、複数枚同時に選択できます）</p>
             </div>
           </div>
         </details>
 
-        <details class="bg-white rounded shadow border group" open>
-          <summary class="font-bold p-3 cursor-pointer bg-green-50 text-green-800 flex justify-between items-center">
-            <span>➕ 手動データ追加</span><span class="text-green-400 group-open:rotate-180 transition-transform">▼</span>
+        <!-- 📝 読込プレビュー (復活！) -->
+        <details class="bg-white rounded shadow border group mb-4" open>
+          <summary class="font-bold p-3 cursor-pointer bg-yellow-50 text-yellow-800 flex justify-between items-center">
+            <span>📝 読込プレビュー (<span id="previewCount">0</span>件)</span><span class="text-yellow-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
-          <div class="p-4 border-t">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-              <input type="number" id="inpRace" placeholder="レースR" class="border rounded p-2 text-sm">
-              <input type="text" id="inpOrder" placeholder="着順(例: 1-2-3)" class="border rounded p-2 text-sm">
-              <input type="number" id="inpPay2" placeholder="2連単払戻" class="border rounded p-2 text-sm">
-              <input type="number" id="inpPay3" placeholder="3連単払戻" class="border rounded p-2 text-sm">
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-              <select id="inpRacers" class="border rounded p-2 text-sm"><option value="7">7車</option><option value="9">9車</option></select>
-              <select id="inpBattle" class="border rounded p-2 text-sm"><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option></select>
-              <select id="inpLinePos" class="border rounded p-2 text-sm"><option value="1">1着L: 1</option><option value="2">1着L: 2</option><option value="3">1着L: 3</option><option value="4">1着L: 4</option><option value="単">1着L: 単</option><option value="無">1着L: 無</option></select>
-              <select id="inpTech1" class="border rounded p-2 text-sm"><option value="逃">逃</option><option value="捲">捲</option><option value="差">差</option></select>
-              <select id="inpTech2" class="border rounded p-2 text-sm"><option value="逃">逃</option><option value="捲">捲</option><option value="差">差</option><option value="マ">マ</option></select>
-            </div>
-            <div class="bg-gray-50 p-2 rounded border mb-4 flex justify-around">
-              <label class="flex items-center gap-1 font-bold text-sm"><input type="checkbox" id="hitB" class="w-4 h-4"> B軍的中</label>
-              <label class="flex items-center gap-1 font-bold text-sm"><input type="checkbox" id="hitY" class="w-4 h-4"> Y軍的中</label>
-              <label class="flex items-center gap-1 font-bold text-sm"><input type="checkbox" id="hitN" class="w-4 h-4"> N軍的中</label>
-            </div>
-            <button id="btnSaveData" class="w-full bg-green-600 text-white font-bold py-2 rounded shadow hover:bg-green-700">追加</button>
-          </div>
-        </details>
-
-        <details class="bg-white rounded shadow border group">
-          <summary class="font-bold p-3 cursor-pointer bg-red-50 text-red-800 flex justify-between items-center">
-            <span>💾 データ管理 (バックアップ・復元)</span><span class="text-red-400 group-open:rotate-180 transition-transform">▼</span>
-          </summary>
-          <div class="p-4 border-t flex flex-wrap gap-2 justify-center">
-            <button id="btnBackup" class="bg-gray-800 text-white text-sm font-bold px-4 py-2 rounded hover:bg-gray-900">バックアップ保存</button>
-            <label class="bg-gray-600 text-white text-sm font-bold px-4 py-2 rounded hover:bg-gray-700 cursor-pointer">
-              ファイル復元<input type="file" id="btnRestore" accept=".json" class="hidden">
-            </label>
-            <button id="btnClear" class="bg-red-500 text-white text-sm font-bold px-4 py-2 rounded hover:bg-red-600">全データ消去</button>
+          <div class="p-4 border-t overflow-x-auto">
+            <table class="w-full text-xs text-left whitespace-nowrap mb-3">
+              <thead class="bg-gray-100 border-b">
+                <tr>
+                  <th class="p-2">R</th><th class="p-2">着順</th><th class="p-2">決まり手</th><th class="p-2">ライン位置</th><th class="p-2">2連単</th><th class="p-2">3連単</th>
+                </tr>
+              </thead>
+              <tbody id="previewTableBody" class="divide-y">
+                <!-- プレビューデータがここに入ります -->
+              </tbody>
+            </table>
+            <button id="btnApplyPreview" class="w-full bg-blue-400 text-white font-bold py-2 rounded shadow hover:bg-blue-500 transition-colors">保存済み一覧へ反映する</button>
           </div>
         </details>
 
