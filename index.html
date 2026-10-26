@@ -55,12 +55,16 @@
             📊 現在ツールに入っているデータで計算する
           </button>
           
-          <!-- ② JSONファイルを読み込んで計算するエリア -->
+                   <!-- ② JSONファイルを読み込んで計算するエリア -->
           <div class="border-2 border-dashed border-purple-300 rounded p-3 text-center bg-purple-50">
             <label class="block text-sm font-bold text-purple-800 mb-2">📁 過去のバックアップ(JSON)を読み込んで計算</label>
-            <input type="file" accept=".json" onchange="handleManshaFileUpload(event)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer" />
+            <input 
+              type="file" 
+              accept=".json,application/json" 
+              onchange="handleManshaFileUpload(event)" 
+              class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer" 
+            />
           </div>
-        </div>
 
         <!-- 結果表示エリア -->
         <div id="manshaCarResult" class="text-sm text-gray-700 space-y-4">
