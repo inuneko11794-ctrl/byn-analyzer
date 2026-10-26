@@ -9,7 +9,7 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-100 min-h-screen p-2 md:p-4 pb-20">
+<body class="bg-gray-100 min-h-screen p-2 md:p-4 pb-24">
     <div class="max-w-4xl mx-auto space-y-4">
         
         <header class="mb-4 text-center">
@@ -25,15 +25,15 @@
         <!-- ==========================================
              ① 万車ノート (Grok) & 専用AI
         =========================================== -->
-        <details class="bg-white rounded shadow border group">
-          <summary class="font-bold p-3 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center">
+        <details class="bg-white rounded-xl shadow border group">
+          <summary class="font-bold p-3.5 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center text-sm md:text-base">
             <span>🌐 万車ノート (Grok)</span><span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div class="p-2 border-t"><iframe src="https://brook-beam-sunny-arch.grok.me" class="w-full h-[400px] border rounded"></iframe></div>
         </details>
 
-        <details class="bg-white rounded shadow border group">
-          <summary class="font-bold p-3 cursor-pointer bg-teal-50 text-teal-800 flex justify-between items-center">
+        <details class="bg-white rounded-xl shadow border group">
+          <summary class="font-bold p-3.5 cursor-pointer bg-teal-50 text-teal-800 flex justify-between items-center text-sm md:text-base">
             <span>🤖 競輪予想屋さん (専用AI)</span><span class="text-teal-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div class="p-2 border-t"><iframe src="https://www.coze.com/store/agent/7700716983747198981?bot_id=true" class="w-full h-[400px] border rounded"></iframe></div>
@@ -42,108 +42,109 @@
         <!-- ==========================================
              ② 万車券1着車番分析
         =========================================== -->
-        <details class="bg-white rounded shadow border group">
-          <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center">
-            <span>🎯 万車券的中時の「1着車番」分析（B・Y・N軍）</span><span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+        <details class="bg-white rounded-xl shadow border group">
+          <summary class="font-bold p-3.5 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center text-sm md:text-base">
+            <span>🎯 万車券的中時の「1着車番」分析</span><span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
-          <div class="p-4 border-t">
-            <div class="flex flex-col gap-3 mb-4">
-              <button id="btnManshaCalc" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full text-sm font-bold shadow">
-                📊 現在ツールに入っているデータで計算する
-              </button>
-              <div class="border-2 border-dashed border-purple-300 rounded p-3 bg-purple-50">
-                <label class="block text-sm font-bold text-purple-800 mb-2 text-center">📁 過去のバックアップ(JSON)を読込</label>
-                <input type="file" id="manshaFileInput" accept=".json,application/json" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 cursor-pointer" />
-              </div>
+          <div class="p-4 border-t space-y-3">
+            <button id="btnManshaCalc" class="bg-purple-600 text-white p-3 rounded-xl hover:bg-purple-700 w-full text-sm font-bold shadow active:scale-[0.98] transition-transform">
+              📊 現在のデータで計算する
+            </button>
+            <div class="border-2 border-dashed border-purple-300 rounded-xl p-3 bg-purple-50 text-center">
+              <label class="block text-sm font-bold text-purple-800 mb-2">📁 過去のバックアップ(JSON)を読込</label>
+              <input type="file" id="manshaFileInput" accept=".json,application/json" class="block w-full text-xs text-gray-500 file:mr-2 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 cursor-pointer" />
             </div>
             <div id="manshaCarResult" class="text-sm text-gray-700"><p class="text-gray-400 text-center py-2">結果がここに表示されます</p></div>
           </div>
         </details>
-
         <!-- ==========================================
-             ③ 着順・払戻 スクショ読込 (自動解析)
+             ③ 着順・払戻 スクショ読込 (スマホ優先)
         =========================================== -->
-        <details class="bg-white rounded shadow border group mb-4" open>
-          <summary class="font-bold p-3 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center">
-            <span>📸 着順・払戻 スクショ読込 (ペースト or 選択)</span><span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
+        <details class="bg-white rounded-xl shadow border group mb-4" open>
+          <summary class="font-bold p-3.5 cursor-pointer bg-blue-50 text-blue-800 flex justify-between items-center text-sm md:text-base">
+            <span>📸 スクショ読込 (画像選択・ペースト)</span><span class="text-blue-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
           <div class="p-4 border-t">
-            <div class="border-2 border-dashed border-blue-300 rounded p-6 text-center bg-blue-50/50 mb-2">
-              <input type="file" id="fileUp" accept="image/*" multiple class="block w-full text-sm text-gray-500 mx-auto cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200" />
-              <p class="text-xs text-gray-500 mt-3">※出走表と払戻金の画像を同時に選択するか、ここに画像を長押しして貼り付け（ペースト）してください。</p>
+            <div class="border-2 border-dashed border-blue-300 rounded-xl p-5 text-center bg-blue-50/50">
+              <input type="file" id="fileUp" accept="image/*" multiple class="block w-full text-sm text-gray-500 mx-auto cursor-pointer file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700" />
+              <p class="text-xs text-gray-500 mt-3">※出走表と払戻金の画像を同時に選択してください。</p>
             </div>
           </div>
         </details>
 
         <!-- 📝 読込プレビュー (stg) -->
-        <details class="bg-white rounded shadow border group mb-4" open>
-          <summary class="font-bold p-3 cursor-pointer bg-yellow-50 text-yellow-800 flex justify-between items-center">
+        <details class="bg-white rounded-xl shadow border group mb-4" open>
+          <summary class="font-bold p-3.5 cursor-pointer bg-yellow-50 text-yellow-800 flex justify-between items-center text-sm md:text-base">
             <span>📝 読込プレビュー (<span id="stgCount">0</span>件)</span><span class="text-yellow-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
-          <div class="p-4 border-t overflow-x-auto">
+          <div class="p-3 md:p-4 border-t overflow-x-auto">
             <table class="w-full text-xs text-left whitespace-nowrap mb-3 border">
               <thead class="bg-gray-100 border-b">
                 <tr>
-                  <th class="p-1">R</th><th class="p-1">着順</th><th class="p-1">決まり手</th><th class="p-1">2連単</th><th class="p-1">3連単</th><th class="p-1">車</th><th class="p-1">戦型</th><th class="p-1">1着L</th><th class="p-1 text-center">B</th><th class="p-1 text-center">Y</th><th class="p-1 text-center">N</th><th class="p-1"></th>
+                  <th class="p-2">R</th><th class="p-2">着順</th><th class="p-2">決まり手</th><th class="p-2">2連単</th><th class="p-2">3連単</th><th class="p-2">車</th><th class="p-2">戦型</th><th class="p-2">1着L</th><th class="p-2 text-center">B</th><th class="p-2 text-center">Y</th><th class="p-2 text-center">N</th><th class="p-2"></th>
                 </tr>
               </thead>
               <tbody id="stgBody" class="divide-y">
                 <tr><td colspan="12" class="p-4 text-center text-gray-400">画像を選択するとここにプレビューが表示されます</td></tr>
               </tbody>
             </table>
-            <button id="applyBtn" onclick="window.applyStg()" class="w-full bg-blue-500 text-white font-bold py-2 rounded shadow opacity-50 cursor-not-allowed transition-colors" disabled>保存済み一覧へ反映する</button>
+            <button id="applyBtn" onclick="window.applyStg()" class="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow opacity-50 cursor-not-allowed active:scale-[0.98] transition-all" disabled>保存済み一覧へ反映する</button>
           </div>
         </details>
 
         <!-- ==========================================
              ④ 手動データ追加
         =========================================== -->
-        <details class="bg-white rounded shadow border group" open>
-          <summary class="font-bold p-3 cursor-pointer bg-green-50 text-green-800 flex justify-between items-center">
+        <details class="bg-white rounded-xl shadow border group" open>
+          <summary class="font-bold p-3.5 cursor-pointer bg-green-50 text-green-800 flex justify-between items-center text-sm md:text-base">
             <span>➕ 手動データ追加</span><span class="text-green-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
-          <div class="p-4 border-t">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
-              <input type="text" id="mOrd" placeholder="着順(例: 1-2-3)" class="border rounded p-2 text-sm">
-              <input type="text" id="mP2" placeholder="2連単払戻" class="border rounded p-2 text-sm">
-              <input type="text" id="mP3" placeholder="3連単払戻" class="border rounded p-2 text-sm">
-              <select id="mRac" class="border rounded p-2 text-sm">
-                <option value="9">9車</option>
-                <option value="8">8車</option>
-                <option value="7" selected>7車</option>
-                <option value="6">6車</option>
-                <option value="5">5車</option>
+          <div class="p-4 border-t space-y-3">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="mOrd" placeholder="着順(例:1-2-3)" class="border rounded-xl p-2.5 text-sm">
+              <select id="mRac" class="border rounded-xl p-2.5 text-sm bg-white">
+                <option value="9">9車</option><option value="8">8車</option><option value="7" selected>7車</option><option value="6">6車</option><option value="5">5車</option>
               </select>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-4">
-              <select id="mBattle" class="border rounded p-2 text-sm"><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option></select>
-              <select id="mWinLine" class="border rounded p-2 text-sm"><option value="単">1着L: 単</option><option value="0">1着L: 0</option><option value="1">1着L: 1</option><option value="2">1着L: 2</option><option value="3">1着L: 3</option><option value="4">1着L: 4</option></select>
-              <button onclick="window.addManual()" class="bg-green-600 text-white font-bold py-2 rounded shadow hover:bg-green-700">追加</button>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="mP2" placeholder="2連単払戻" class="border rounded-xl p-2.5 text-sm">
+              <input type="text" id="mP3" placeholder="3連単払戻" class="border rounded-xl p-2.5 text-sm">
             </div>
+            <div class="grid grid-cols-2 gap-2">
+              <select id="mBattle" class="border rounded-xl p-2.5 text-sm bg-white"><option value="2分戦">2分戦</option><option value="3分戦">3分戦</option><option value="4分戦">4分戦</option><option value="単騎戦">単騎戦</option></select>
+              <select id="mWinLine" class="border rounded-xl p-2.5 text-sm bg-white"><option value="単">1着L: 単</option><option value="0">1着L: 0</option><option value="1">1着L: 1</option><option value="2">1着L: 2</option><option value="3">1着L: 3</option><option value="4">1着L: 4</option></select>
+            </div>
+            <button onclick="window.addManual()" class="w-full bg-green-600 text-white font-bold py-3 rounded-xl shadow hover:bg-green-700 active:scale-[0.98] transition-all">データを追加する</button>
           </div>
         </details>
 
         <!-- ==========================================
-             ⑤ 保存済み一覧 ＆ データ管理（復元ボタン完備）
+             ⑤ 保存済み一覧 ＆ データ管理 (スマホ優先)
         =========================================== -->
-        <details class="bg-white rounded shadow border group" open>
-          <summary class="font-bold p-3 cursor-pointer bg-gray-50 text-gray-800 flex justify-between items-center">
-            <span>📁 保存済みデータ一覧 ＆ データ管理</span><span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+        <details class="bg-white rounded-xl shadow border group" open>
+          <summary class="font-bold p-3.5 cursor-pointer bg-gray-50 text-gray-800 flex justify-between items-center text-sm md:text-base">
+            <span>📁 保存済みデータ一覧 ＆ 管理</span><span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
           </summary>
-          <div class="p-4 border-t space-y-3">
-            <div class="flex flex-wrap gap-2 justify-center pb-2 border-b">
-              <button onclick="window.backupData(event)" class="bg-gray-800 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-gray-900">📥 バックアップ保存</button>
-              <label class="bg-blue-600 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-blue-700 cursor-pointer">
-                📁 ファイル復元（JSON選択）<input type="file" id="btnRestore" accept=".json" onchange="window.restoreData(event)" class="hidden">
+          <div class="p-4 border-t space-y-4">
+            <!-- スマホで押しやすい縦並び・大きめボタン配置 -->
+            <div class="flex flex-col gap-2.5 pb-3 border-b">
+              <button onclick="window.backupData(event)" class="bg-gray-800 text-white text-sm font-bold py-3 px-4 rounded-xl shadow hover:bg-gray-900 active:scale-[0.98] transition-all text-center">
+                📥 バックアップ保存 (JSON)
+              </button>
+              <label class="bg-blue-600 text-white text-sm font-bold py-3 px-4 rounded-xl shadow hover:bg-blue-700 active:scale-[0.98] transition-all text-center cursor-pointer block">
+                📁 ファイル復元（JSON選択）
+                <input type="file" id="btnRestore" accept=".json" onchange="window.restoreData(event)" class="hidden">
               </label>
-              <button onclick="window.clearData(event)" class="bg-red-500 text-white text-xs font-bold px-4 py-2 rounded shadow hover:bg-red-600">🗑 全データ消去</button>
+              <button onclick="window.clearData(event)" class="bg-red-500 text-white text-sm font-bold py-3 px-4 rounded-xl shadow hover:bg-red-600 active:scale-[0.98] transition-all text-center">
+                🗑 全データ消去
+              </button>
             </div>
 
-            <div class="overflow-x-auto max-h-60">
-              <table class="w-full text-xs text-left whitespace-nowrap border">
-                <thead class="bg-gray-100 sticky top-0 border-b">
+            <div class="overflow-x-auto max-h-72 rounded-lg border">
+              <table class="w-full text-xs text-left whitespace-nowrap">
+                <thead class="bg-gray-100 sticky top-0 border-b z-10">
                   <tr>
-                    <th class="p-1">R</th><th class="p-1">着順</th><th class="p-1">決まり手</th><th class="p-1">2連単</th><th class="p-1">3連単</th><th class="p-1">車</th><th class="p-1">戦型</th><th class="p-1">1着L</th><th class="p-1 text-center">B</th><th class="p-1 text-center">Y</th><th class="p-1 text-center">N</th><th class="p-1"></th>
+                    <th class="p-2">R</th><th class="p-2">着順</th><th class="p-2">決まり手</th><th class="p-2">2連単</th><th class="p-2">3連単</th><th class="p-2">車</th><th class="p-2">戦型</th><th class="p-2">1着L</th><th class="p-2 text-center">B</th><th class="p-2 text-center">Y</th><th class="p-2 text-center">N</th><th class="p-2"></th>
                   </tr>
                 </thead>
                 <tbody id="svBody" class="divide-y">
@@ -154,79 +155,75 @@
           </div>
         </details>
 
-        <!-- ==========================================
-             ⑥ ダッシュボード分析グラフ（番号・説明文付き）
+         <!-- ==========================================
+             ⑥ ダッシュボード分析グラフ (①〜⑦の番号・解説付き)
         =========================================== -->
-        <div class="space-y-4 mt-8 bg-white p-4 rounded shadow border">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="font-bold text-gray-700">📊 分析ダッシュボード (総データ: <span id="d_total">0</span>件)</h2>
-              <select id="dashFilter" onchange="window.updateDash()" class="border p-1 text-sm rounded">
+        <div class="space-y-4 mt-8 bg-white p-4 md:p-6 rounded-xl shadow border">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+              <h2 class="font-bold text-gray-700 text-sm md:text-base">📊 分析ダッシュボード (総データ: <span id="d_total">0</span>件)</h2>
+              <select id="dashFilter" onchange="window.updateDash()" class="border p-2 text-sm rounded-xl bg-white w-full md:w-auto">
                 <option value="all">全車立 (なし)</option>
-                <option value="9">9車</option>
-                <option value="8">8車</option>
-                <option value="7">7車</option>
-                <option value="6">6車</option>
-                <option value="5">5車</option>
+                <option value="9">9車</option><option value="8">8車</option><option value="7">7車</option><option value="6">6車</option><option value="5">5車</option>
               </select>
             </div>
 
             <!-- 軍別サマリー -->
             <div class="grid grid-cols-3 gap-2 text-center text-xs font-bold mb-4">
-              <div class="bg-blue-50 p-2 rounded border border-blue-200">B軍的中率: <span id="d_b_rate">0%</span><br><span id="d_b_man" class="text-[10px] text-gray-500">万車:0</span></div>
-              <div class="bg-yellow-50 p-2 rounded border border-yellow-200">Y軍的中率: <span id="d_y_rate">0%</span><br><span id="d_y_man" class="text-[10px] text-gray-500">万車:0</span></div>
-              <div class="bg-purple-50 p-2 rounded border border-purple-200">N軍的中率: <span id="d_n_rate">0%</span><br><span id="d_n_man" class="text-[10px] text-gray-500">万車:0</span></div>
+              <div class="bg-blue-50 p-2.5 rounded-xl border border-blue-200">B軍的中率: <span id="d_b_rate">0%</span><br><span id="d_b_man" class="text-[10px] text-gray-500">万車:0</span></div>
+              <div class="bg-yellow-50 p-2.5 rounded-xl border border-yellow-200">Y軍的中率: <span id="d_y_rate">0%</span><br><span id="d_y_man" class="text-[10px] text-gray-500">万車:0</span></div>
+              <div class="bg-purple-50 p-2.5 rounded-xl border border-purple-200">N軍的中率: <span id="d_n_rate">0%</span><br><span id="d_n_man" class="text-[10px] text-gray-500">万車:0</span></div>
             </div>
             
             <div class="space-y-6">
-              <div class="bg-gray-50 p-3 rounded border">
+              <div class="bg-gray-50 p-3.5 rounded-xl border">
                 <h3 class="font-bold text-sm mb-1">① 🏆 1着車番 (万車時)</h3>
                 <p class="text-xs text-gray-500 mb-2">3連単が1万円以上の万車券決着になった際、どの車番が1着になりやすいかを示します。</p>
                 <div class="relative h-64"><canvas id="winCarChart"></canvas></div>
               </div>
 
-              <div class="bg-gray-50 p-3 rounded border">
+              <div class="bg-gray-50 p-3.5 rounded-xl border">
                 <h3 class="font-bold text-sm mb-1">② 🏆 1着ライン割合(全体)</h3>
                 <p class="text-xs text-gray-500 mb-2">全登録レースにおける1着ライン（または車番位置）の割合を円グラフで表します。</p>
                 <div class="relative h-64"><canvas id="winLineChart"></canvas></div>
               </div>
 
-              <div class="bg-gray-50 p-3 rounded border">
+              <div class="bg-gray-50 p-3.5 rounded-xl border">
                 <h3 class="font-bold text-sm mb-1">③ 📈 1着ライン割合(万車時)</h3>
                 <p class="text-xs text-gray-500 mb-2">万車券決着レースに限定した、1着ラインの割合を示します。</p>
                 <div class="relative h-64"><canvas id="manshaLineChart"></canvas></div>
               </div>
 
-              <div class="bg-gray-50 p-3 rounded border">
+              <div class="bg-gray-50 p-3.5 rounded-xl border">
                 <h3 class="font-bold text-sm mb-1">④ 🎯 サイト別 万車的中時ライン</h3>
                 <p class="text-xs text-gray-500 mb-2">B軍・Y軍・N軍が万車券を的中させた際のライン傾向を比較します。</p>
                 <div class="relative h-64"><canvas id="siteLineChart"></canvas></div>
               </div>
 
-              <div class="bg-gray-50 p-3 rounded border">
+              <div class="bg-gray-50 p-3.5 rounded-xl border">
                 <h3 class="font-bold text-sm mb-1">⑤ 📈 合計値分布</h3>
                 <p class="text-xs text-gray-500 mb-2">3連単の車番の合計値（例: 1-2-3なら6）がどのような分布で出現しているかを示します。</p>
                 <div class="relative h-64"><canvas id="sumDistChart"></canvas></div>
               </div>
 
-              <div class="bg-gray-50 p-3 rounded border">
+              <div class="bg-gray-50 p-3.5 rounded-xl border">
                 <h3 class="font-bold text-sm mb-1">⑥ 💰 合計値別 平均3連単払戻</h3>
                 <p class="text-xs text-gray-500 mb-2">車番の合計値ごとに、平均してどの程度の3連単払戻金額がついているか推移を表します。</p>
                 <div class="relative h-64"><canvas id="sumPayoutChart"></canvas></div>
               </div>
             </div>
 
-            <div class="mt-6 overflow-x-auto bg-gray-50 p-3 rounded border">
+            <div class="mt-6 overflow-x-auto bg-gray-50 p-3.5 rounded-xl border">
               <h3 class="font-bold text-sm mb-1">⑦ 🤝 サイト被り状況</h3>
               <p class="text-xs text-gray-500 mb-2">どのサイトの予想が重なっているか、その組合せごとの的中回数や平均払戻金額を確認できます。</p>
-              <table class="w-full text-xs text-center border bg-white">
-                <thead><tr class="bg-gray-100"><th class="border p-1">組合せ</th><th class="border p-1">回数</th><th class="border p-1">平均3連単</th><th class="border p-1">平均2連単</th></tr></thead>
+              <table class="w-full text-xs text-center border bg-white rounded-lg overflow-hidden">
+                <thead><tr class="bg-gray-100"><th class="border p-2">組合せ</th><th class="border p-2">回数</th><th class="border p-2">平均3連単</th><th class="border p-2">平均2連単</th></tr></thead>
                 <tbody id="kaburiTbody"></tbody>
               </table>
             </div>
         </div>
     </div>
 
-    <!-- ==========================================
+     <!-- ==========================================
          JavaScript (モジュール連携 ＆ グラフ処理)
     =========================================== -->
     <script type="module">
@@ -293,8 +290,7 @@
               },
             };
           });
-          
-          if (e.target && e.target.id === "fileUp") e.target.value = "";
+            if (e.target && e.target.id === "fileUp") e.target.value = "";
           window.renderStg();
           const btn = document.getElementById("applyBtn");
           btn.classList.remove("opacity-50", "cursor-not-allowed");
@@ -310,7 +306,7 @@
       document.getElementById('fileUp').addEventListener('change', window.handleImageUpload);
       document.addEventListener('paste', window.handleImageUpload);
 
-         // --- HTML描画系 ---
+      // --- HTML描画系 ---
       window.renderStg = function() {
         const tbody = document.getElementById('stgBody');
         document.getElementById('stgCount').innerText = window.stg.length;
@@ -336,30 +332,29 @@
           let betC = sd.bet ? (s==='B'?'bg-blue-500':s==='Y'?'bg-yellow-500':'bg-purple-500')+' text-white' : 'bg-gray-200 text-gray-400';
           let hitC = sd.hit ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-400';
           return `<div class="flex gap-1 items-center justify-center">
-                    <button onclick="window.toggleSite('${type}',${i},'${s}','bet')" class="w-6 h-6 rounded text-[10px] font-bold ${betC}">予</button>
-                    <button onclick="window.toggleSite('${type}',${i},'${s}','hit')" class="w-6 h-6 rounded text-[10px] font-bold ${hitC}">的</button>
+                    <button onclick="window.toggleSite('${type}',${i},'${s}','bet')" class="w-7 h-7 rounded-lg text-xs font-bold ${betC}">予</button>
+                    <button onclick="window.toggleSite('${type}',${i},'${s}','hit')" class="w-7 h-7 rounded-lg text-xs font-bold ${hitC}">的</button>
                   </div>`;
         };
         
         let techDisplay = d.tech1 || d.tech2 ? `${d.tech1}-${d.tech2}` : "";
-        let inp = (f, w, p) => `<input type="text" value="${d[f]||''}" onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1 w-${w} text-center text-xs" placeholder="${p||''}">`;
-        let sel = (f, opts) => `<select onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1 text-xs"><option value="">-</option>${opts.map(o=>`<option value="${o}" ${d[f]==o?'selected':''}>${o}</option>`).join('')}</select>`;
+        let inp = (f, w, p) => `<input type="text" value="${d[f]||''}" onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1.5 w-${w} text-center text-xs rounded-lg" placeholder="${p||''}">`;
+        let sel = (f, opts) => `<select onchange="window.updateVal('${type}',${i},'${f}',this.value)" class="border p-1.5 text-xs rounded-lg bg-white"><option value="">-</option>${opts.map(o=>`<option value="${o}" ${d[f]==o?'selected':''}>${o}</option>`).join('')}</select>`;
         
         return `<tr class="border-b hover:bg-gray-50">
-          <td class="p-1 text-xs">${type==='stg'? d.raceNo : (d.raceNo||i+1)}</td>
-          <td class="p-1">${inp('order', 16, '1-2-3')}</td>
-          <td class="p-1 text-center font-bold text-gray-600 text-xs">${techDisplay}</td>
-          <td class="p-1">${inp('payout2', 16)}</td>
-          <td class="p-1">${inp('payout3', 20)}</td>
-          <td class="p-1">${sel('racers', ['9','8','7','6','5'])}</td>
-          <td class="p-1">${sel('battle', ['2分戦','3分戦','4分戦','単騎戦'])}</td>
-          <td class="p-1">${sel('winLine', ['単','0','1','2','3','4'])}</td>
-          <td class="p-1">${siteBtn('B')}</td><td class="p-1">${siteBtn('Y')}</td><td class="p-1">${siteBtn('N')}</td>
-          <td class="p-1 text-center"><button onclick="window.delRow('${type}',${i})" class="text-red-500 font-bold hover:bg-red-100 px-1 rounded text-xs">✖</button></td>
+          <td class="p-2 text-xs">${type==='stg'? d.raceNo : (d.raceNo||i+1)}</td>
+          <td class="p-2">${inp('order', 16, '1-2-3')}</td>
+          <td class="p-2 text-center font-bold text-gray-600 text-xs">${techDisplay}</td>
+          <td class="p-2">${inp('payout2', 16)}</td>
+          <td class="p-2">${inp('payout3', 20)}</td>
+          <td class="p-2">${sel('racers', ['9','8','7','6','5'])}</td>
+          <td class="p-2">${sel('battle', ['2分戦','3分戦','4分戦','単騎戦'])}</td>
+          <td class="p-2">${sel('winLine', ['単','0','1','2','3','4'])}</td>
+          <td class="p-2">${siteBtn('B')}</td><td class="p-2">${siteBtn('Y')}</td><td class="p-2">${siteBtn('N')}</td>
+          <td class="p-2 text-center"><button onclick="window.delRow('${type}',${i})" class="text-red-500 font-bold hover:bg-red-100 p-2 rounded-lg text-xs">✖</button></td>
         </tr>`;
       };
-
-      // --- データ操作系 ---
+        // --- データ操作系 ---
       window.updateVal = function(type, i, field, val) {
         let arr = type === 'stg' ? window.stg : window.sv;
         arr[i][field] = val;
@@ -420,16 +415,17 @@
         document.getElementById('applyBtn').setAttribute('disabled', 'true');
         alert("保存済み一覧へ反映しました！");
       };
-
         window.saveLS = () => localStorage.setItem('byn3_data', JSON.stringify(window.sv));
 
       window.backupData = function(e) {
         e.stopPropagation();
         let blob = new Blob([JSON.stringify(window.sv, null, 2)], {type: 'application/json'});
+        let url = URL.createObjectURL(blob);
         let a = document.createElement('a');
         a.href = url;
         a.download = `byn3_backup_${new Date().toISOString().slice(0,10)}.json`;
         a.click();
+        URL.revokeObjectURL(url);
       };
 
       window.restoreData = function(e) {
@@ -476,34 +472,22 @@
             });
         });
 
-        let html = `<div class="bg-purple-100 p-2 text-center rounded mb-2 text-xs">総読込: ${data.length}件 | 万車: <b>${manshaCount}</b>件</div><div class="grid grid-cols-1 md:grid-cols-3 gap-2">`;
+        let html = `<div class="bg-purple-100 p-2.5 rounded-xl text-center mb-2 text-xs">総読込: ${data.length}件 | 万車: <b>${manshaCount}</b>件</div><div class="grid grid-cols-1 gap-2">`;
         sites.forEach(s => {
             const st = stats[s];
-            html += `<div class="border-2 border-purple-200 p-2 rounded bg-white"><h4 class="font-bold border-b border-purple-100 text-purple-900 text-sm">${s}軍 (万車的中:${st.t})</h4><ul class="mt-2 space-y-1">`;
+            html += `<div class="border-2 border-purple-200 p-3 rounded-xl bg-white"><h4 class="font-bold border-b border-purple-100 text-purple-900 text-sm mb-2">${s}軍 (万車的中:${st.t})</h4><ul class="space-y-1.5">`;
             if(st.t === 0) {
                 html += `<p class="text-gray-400 text-center py-2 text-xs">該当データなし</p>`;
             } else {
                 Object.keys(st.c).sort((a,b)=>st.c[b]-st.c[a]).forEach(car => {
                     const pct = (st.c[car]/st.t*100).toFixed(1);
-                    html += `<li class="flex text-xs items-center justify-between"><span class="w-8 font-bold">${car}番</span><div class="flex-1 mx-1 h-3 bg-gray-100 rounded-full overflow-hidden"><div class="bg-purple-500 h-full rounded-full" style="width:${pct}%"></div></div><span class="w-12 text-right">${pct}%(${st.c[car]}回)</span></li>`;
+                    html += `<li class="flex text-xs items-center justify-between"><span class="w-8 font-bold">${car}番</span><div class="flex-1 mx-2 h-3.5 bg-gray-100 rounded-full overflow-hidden"><div class="bg-purple-500 h-full rounded-full" style="width:${pct}%"></div></div><span class="w-16 text-right">${pct}%(${st.c[car]}回)</span></li>`;
                 });
             }
             html += `</ul></div>`;
         });
         result.innerHTML = html + `</div>`;
       };
-
-      document.getElementById('btnManshaCalc')?.addEventListener('click', () => window.analyzeManshaFirstCar(window.sv));
-      document.getElementById('manshaFileInput')?.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = ev => { 
-            try { window.analyzeManshaFirstCar(JSON.parse(ev.target.result)); } 
-            catch(err){ alert("JSON解析エラー"); } 
-        };
-        reader.readAsText(file);
-      });
         // --- 📊 ダッシュボード描画処理 ---
       window.updateDash = function() {
         destroyCharts();
@@ -533,7 +517,7 @@
         const c = (id, type, d, opts={}) => window.charts[id] = new Chart(document.getElementById(id), {
           type: type, 
           data: d, 
-          options: { responsive: true, plugins:{legend:{position:'bottom'}}, ...opts }
+          options: { responsive: true, maintainAspectRatio: false, plugins:{legend:{position:'bottom'}}, ...opts }
         });
 
         let manData = data.filter(d => parseInt(d.payout3) >= 10000 && d.order);
@@ -581,7 +565,7 @@
             sumGrp[sum].cnt++; sumGrp[sum].p3 += parseInt(d.payout3)||0;
           }
         });
-        let sums = Object.keys(sumGrp).sort((a,b)=>a-b);
+          let sums = Object.keys(sumGrp).sort((a,b)=>a-b);
         c('sumDistChart', 'bar', {
           labels: sums,
           datasets: [{label:'出現回数', data: sums.map(k=>sumGrp[k].cnt), backgroundColor:'rgba(75, 192, 192, 0.6)'}]
@@ -602,7 +586,7 @@
         const kaburiEl = document.getElementById('kaburiTbody');
         if(kaburiEl) {
             kaburiEl.innerHTML = Object.entries(kGrp).sort((a,b)=>b[1].cnt-a[1].cnt).map(([k,v])=>
-              `<tr><td class="border p-1">${k}</td><td class="border p-1">${v.cnt}</td><td class="border p-1">${Math.round(v.p3/v.cnt)}円</td><td class="border p-1">${Math.round(v.p2/v.cnt)}円</td></tr>`
+              `<tr><td class="border p-2">${k}</td><td class="border p-2">${v.cnt}</td><td class="border p-2">${Math.round(v.p3/v.cnt)}円</td><td class="border p-2">${Math.round(v.p2/v.cnt)}円</td></tr>`
             ).join('');
         }
       };
