@@ -41,7 +41,7 @@
       </div>
     </details>
 
-        <!-- 🎯 サイト別・万車的中時の1着車番分析エリア（ここにプログラムも内蔵） -->
+        <!- 🎯 サイト別・万車的中時の1着車番分析エリア（ここにプログラムも内蔵） -->
     <details class="bg-white rounded shadow group mb-4">
       <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center hover:bg-purple-100 transition-colors">
         <span>🎯 万車券的中時の「1着車番」分析（B・Y・N軍）</span>
@@ -146,74 +146,148 @@
           } else {
               try {
                   if (typeof savedData !== 'undefined') data = savedData;
+    <!-- 🎯 サイト別・万車的中時の1着車番分析エリア（ここにプログラムも内蔵） -->
+    <details class="bg-white rounded shadow group mb-4">
+      <summary class="font-bold p-3 cursor-pointer bg-purple-50 text-purple-800 flex justify-between items-center hover:bg-purple-100 transition-colors">
+        <span>🎯 万車券的中時の「1着車番」分析（B・Y・N軍）</span>
+        <span class="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+      </summary>
+      <div class="p-4 border-t">
+        
+        <div class="flex flex-col gap-3 mb-4">
+          <!-- ① 現在のデータで計算するボタン -->
+          <button onclick="analyzeManshaFirstCar()" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 w-full text-sm font-bold shadow transition-colors">
+            📊 現在ツールに入っているデータで計算する
+          </button>
+          
+          <!-- ② JSONファイルを読み込んで計算するエリア -->
+          <div class="border-2 border-dashed border-purple-300 rounded p-3 text-center bg-purple-50">
+            <label class="block text-sm font-bold text-purple-800 mb-2">📁 過去のバックアップ(JSON)を読み込んで計算</label>
+            <input type="file" accept=".json,application/json" onchange="handleManshaFileUpload(event)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer" />
+          </div>
+        </div>
+
+        <!-- 結果表示エリア -->
+        <div id="manshaCarResult" class="text-sm text-gray-700 space-y-4">
+          <p class="text-gray-400 text-center py-2">ボタンを押すか、ファイルを選ぶと結果が表示されます</p>
+        </div>
+      </div>
+      
+      <!-- 動かすためのプログラム -->
+      <script>
+      function handleManshaFileUpload(event) {
+          const file = event.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = function(e) {
+              try {
+                  const jsonData = JSON.parse(e.target.result);
+                  analyzeManshaFirstCar(jsonData); 
+              } catch (err) {
+                  document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>ファイルの読み込みに失敗しました。</p>";
+              }
+          };
+          reader.readAsText(file);
+      }
+
+      function analyzeManshaFirstCar(customData = null) {
+          let data = [];
+          
+          if (customData) {
+              data = customData;
+          } else {
+              try {
+                  if (typeof savedData !== 'undefined') data = savedData;
                   else if (typeof raceData !== 'undefined') data = raceData;
                   else data = JSON.parse(localStorage.getItem('byn3_data')) || [];
               } catch(e) {}
           }
 
+          if (data && !Array.isArray(data)) {
+              if (data.races) data = data.races;
+              else data = Object.values(data);
+          }
+          if (Array.isArray(data)) {
+              data = data.flat(Infinity);
+          }
+
           if (!data || data.length === 0) {
-              document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>データが見つかりません。</p>";
+              document.getElementById('manshaCarResult').innerHTML = "<p class='text-red-500 font-bold text-center'>データが見つかりません。0件です。</p>";
               return;
           }
 
           const sites = ['B', 'Y', 'N'];
           const stats = { B: { total: 0, cars: {} }, Y: { total: 0, cars: {} }, N: { total: 0, cars: {} } };
 
+          let totalRaces = data.length;
+          let manshaCount = 0;
+
           data.forEach(race => {
-              const payout3 = Number(race.payout3) || 0;
+              if(!race) return;
+              
+              let p3Str = String(race.payout3 || race.pay3 || race.payout || "0").replace(/[^0-9]/g, '');
+              const payout3 = Number(p3Str) || 0;
+
               if (payout3 >= 10000) {
-                  let firstCar = null;
+                  manshaCount++;
                   
-                  // ⚠️ ここを "order" に修正しました！
-                  if (race.order && typeof race.order === 'string') {
-                      firstCar = race.order.split('-')[0];
-                  } else if (race.result && typeof race.result === 'string') {
-                      firstCar = race.result.split('-')[0];
-                  } else if (race.winCar) {
-                      firstCar = race.winCar;
+                  let firstCar = null;
+                  let resultStr = String(race.order || race.result || race.winCar || "");
+                  if (resultStr && resultStr !== "undefined") {
+                      firstCar = resultStr.split('-')[0].trim();
                   }
 
                   if (firstCar) {
                       sites.forEach(site => {
-                          if (race.sites && race.sites[site] && race.sites[site].hit) {
-                              stats[site].total++;
-                              stats[site].cars[firstCar] = (stats[site].cars[firstCar] || 0) + 1;
+                          let siteDataObj = (race.sites && race.sites[site]) ? race.sites[site] : null;
+                          if (siteDataObj) {
+                              let isHit = (siteDataObj.hit === true || siteDataObj.hit === "true" || siteDataObj.hit === 1);
+                              if (isHit) {
+                                  stats[site].total++;
+                                  stats[site].cars[firstCar] = (stats[site].cars[firstCar] || 0) + 1;
+                              }
                           }
                       });
                   }
               }
           });
 
-          let html = '<div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
+          let html = `<div class="mb-3 text-sm text-gray-800 bg-purple-100 p-2 rounded text-center border border-purple-200 shadow-sm">
+                        🔍 読込件数: <strong>${totalRaces}件</strong> / うち万車券: <strong class="text-purple-700">${manshaCount}件</strong>
+                      </div>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">`;
+          
           sites.forEach(site => {
               const siteData = stats[site];
               if (siteData.total === 0) {
-                  html += `<div class="bg-gray-50 p-3 rounded border"><h4 class="font-bold text-lg border-b pb-1 mb-2">${site}軍</h4><p class="text-gray-500">万車券の的中データなし</p></div>`;
+                  html += `<div class="bg-gray-50 p-3 rounded border"><h4 class="font-bold text-lg border-b pb-1 mb-2">${site}軍</h4><p class="text-gray-500 text-center py-4">万車券の的中なし</p></div>`;
                   return;
               }
 
-              html += `<div class="bg-purple-50 p-3 rounded border border-purple-200"><h4 class="font-bold text-lg border-b border-purple-200 pb-1 mb-2 text-purple-900">${site}軍 <span class="text-sm font-normal text-gray-600">(万車的中: ${siteData.total}回)</span></h4><ul class="space-y-1 mt-2">`;
+              html += `<div class="bg-white p-3 rounded border-2 border-purple-200 shadow-sm"><h4 class="font-bold text-lg border-b-2 border-purple-100 pb-1 mb-3 text-purple-900 flex justify-between items-end">${site}軍 <span class="text-xs font-normal text-gray-500 bg-purple-50 px-2 py-1 rounded-full">万車的中: ${siteData.total}回</span></h4><ul class="space-y-2">`;
               const sortedCars = Object.keys(siteData.cars).sort((a, b) => siteData.cars[b] - siteData.cars[a]);
 
               sortedCars.forEach(car => {
                   const count = siteData.cars[car];
                   const percent = ((count / siteData.total) * 100).toFixed(1);
                   html += `
-                      <li class="flex items-center justify-between">
-                          <span class="w-12 font-bold text-gray-800">${car}番車</span>
-                          <div class="flex-1 mx-2 h-3 bg-gray-200 rounded overflow-hidden">
-                              <div class="bg-purple-500 h-full" style="width: ${percent}%"></div>
+                      <li class="flex items-center justify-between group">
+                          <span class="w-10 font-black text-gray-700 text-lg">${car}<span class="text-xs font-normal">番</span></span>
+                          <div class="flex-1 mx-2 h-4 bg-gray-100 rounded-full overflow-hidden shadow-inner">
+                              <div class="bg-gradient-to-r from-purple-400 to-purple-600 h-full transition-all duration-500" style="width: ${percent}%"></div>
                           </div>
-                          <span class="w-16 text-right text-xs font-bold text-gray-600">${percent}% <span class="text-gray-400 font-normal">(${count}回)</span></span>
+                          <span class="w-16 text-right text-sm font-bold text-gray-600">${percent}% <span class="text-gray-400 font-normal text-xs block -mt-1">(${count}回)</span></span>
                       </li>`;
               });
               html += `</ul></div>`;
           });
           html += '</div>';
 
-    　　  document.getElementById('manshaCarResult').innerHTML = html;
+          document.getElementById('manshaCarResult').innerHTML = html;
       }
       </script>
+    </details>
 
     <!-- 1. 画像読み込み -->
     <details open class="bg-white rounded shadow group mb-4">
